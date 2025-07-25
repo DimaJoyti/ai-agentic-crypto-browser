@@ -196,3 +196,29 @@ export function getExplorerUrl(chainId: number, hash: string, type: 'tx' | 'addr
   if (!baseUrl) return ''
   return `${baseUrl}/${type}/${hash}`
 }
+
+export function formatDuration(seconds: number): string {
+  if (seconds < 60) {
+    return `${seconds.toFixed(1)}s`
+  }
+
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+
+  if (minutes < 60) {
+    return remainingSeconds > 0
+      ? `${minutes}m ${remainingSeconds.toFixed(0)}s`
+      : `${minutes}m`
+  }
+
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+
+  return remainingMinutes > 0
+    ? `${hours}h ${remainingMinutes}m`
+    : `${hours}h`
+}
+
+export function formatPercentage(value: number, decimals = 1): string {
+  return `${value.toFixed(decimals)}%`
+}

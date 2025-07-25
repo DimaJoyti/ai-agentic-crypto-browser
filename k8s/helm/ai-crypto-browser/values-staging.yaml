@@ -1,0 +1,219 @@
+# Staging Environment Values for AI Crypto Browser
+
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# Application configuration
+app:
+  name: ai-crypto-browser
+  version: "1.0.0"
+  environment: staging
+
+# Namespace configuration
+namespace:
+  create: true
+  name: agentic-browser-staging
+
+# Image configuration
+images:
+  apiGateway:
+    repository: ai-crypto-browser/api-gateway
+    tag: latest
+    pullPolicy: Always
+  authService:
+    repository: ai-crypto-browser/auth-service
+    tag: latest
+    pullPolicy: Always
+  browserService:
+    repository: ai-crypto-browser/browser-service
+    tag: latest
+    pullPolicy: Always
+  web3Service:
+    repository: ai-crypto-browser/web3-service
+    tag: latest
+    pullPolicy: Always
+  frontend:
+    repository: ai-crypto-browser/frontend
+    tag: latest
+    pullPolicy: Always
+
+# Service configuration (staging-optimized)
+services:
+  apiGateway:
+    enabled: true
+    type: LoadBalancer
+    port: 80
+    targetPort: 8080
+    replicas: 2
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "200m"
+      limits:
+        memory: "512Mi"
+        cpu: "400m"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  authService:
+    enabled: true
+    type: ClusterIP
+    port: 8081
+    targetPort: 8081
+    replicas: 2
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "200m"
+      limits:
+        memory: "512Mi"
+        cpu: "400m"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 4
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  browserService:
+    enabled: true
+    type: ClusterIP
+    port: 8082
+    targetPort: 8082
+    replicas: 2
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "300m"
+      limits:
+        memory: "1Gi"
+        cpu: "600m"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 4
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  web3Service:
+    enabled: true
+    type: ClusterIP
+    port: 8083
+    targetPort: 8083
+    replicas: 2
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "200m"
+      limits:
+        memory: "512Mi"
+        cpu: "400m"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 4
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  frontend:
+    enabled: true
+    type: LoadBalancer
+    port: 80
+    targetPort: 3000
+    replicas: 2
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "200m"
+      limits:
+        memory: "512Mi"
+        cpu: "400m"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+# Configuration
+config:
+  # Application settings
+  appEnv: staging
+  logLevel: info
+  logFormat: json
+  
+  # Service URLs
+  authServiceUrl: "http://auth-service:8081"
+  browserServiceUrl: "http://browser-service:8082"
+  web3ServiceUrl: "http://web3-service:8083"
+  
+  # AI settings
+  ollamaHost: "http://ollama-service:11434"
+  ollamaModel: "qwen3"
+  ollamaTimeout: "300s"
+  
+  # Security settings
+  corsAllowedOrigins: "https://staging.ai-agentic-browser.com"
+  rateLimitRequests: "200"
+  rateLimitWindow: "60s"
+  
+  # Monitoring settings
+  metricsEnabled: "true"
+  metricsPort: "9090"
+  healthCheckInterval: "30s"
+
+# Secrets configuration
+secrets:
+  externalSecrets:
+    enabled: true
+    secretStore:
+      name: aws-secrets-manager
+      region: us-east-1
+    
+    database:
+      secretName: database-secret
+      remoteSecretName: ai-crypto-browser-staging/rds/postgres/password
+    
+    redis:
+      secretName: redis-secret
+      remoteSecretName: ai-crypto-browser-staging/elasticache/redis/auth-token
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:ACCOUNT:certificate/CERT-ID
+  hosts:
+    - host: staging.ai-agentic-browser.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: staging-tls
+      hosts:
+        - staging.ai-agentic-browser.com
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Monitoring
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 30s
+    scrapeTimeout: 10s

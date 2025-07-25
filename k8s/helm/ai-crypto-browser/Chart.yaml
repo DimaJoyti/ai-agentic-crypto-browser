@@ -1,0 +1,26 @@
+apiVersion: v2
+name: ai-crypto-browser
+description: A Helm chart for AI Agentic Crypto Browser application
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - ai
+  - crypto
+  - browser
+  - web3
+  - microservices
+
+home: https://github.com/your-org/ai-agentic-crypto-browser
+sources:
+  - https://github.com/your-org/ai-agentic-crypto-browser
+
+maintainers:
+  - name: AI Crypto Browser Team
+    email: team@example.com
+
+dependencies: []
+
+annotations:
+  category: Application

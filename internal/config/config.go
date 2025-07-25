@@ -9,16 +9,16 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	Server       ServerConfig
-	Database     DatabaseConfig
-	Redis        RedisConfig
-	JWT          JWTConfig
-	AI           AIConfig
-	Web3         Web3Config
-	Browser      BrowserConfig
+	Server        ServerConfig
+	Database      DatabaseConfig
+	Redis         RedisConfig
+	JWT           JWTConfig
+	AI            AIConfig
+	Web3          Web3Config
+	Browser       BrowserConfig
 	Observability ObservabilityConfig
-	RateLimit    RateLimitConfig
-	Security     SecurityConfig
+	RateLimit     RateLimitConfig
+	Security      SecurityConfig
 }
 
 type ServerConfig struct {
@@ -43,16 +43,43 @@ type RedisConfig struct {
 }
 
 type JWTConfig struct {
-	Secret              string
-	Expiry              time.Duration
-	RefreshTokenExpiry  time.Duration
+	Secret             string
+	Expiry             time.Duration
+	RefreshTokenExpiry time.Duration
 }
 
 type AIConfig struct {
-	Provider    string
-	OpenAIKey   string
-	AnthropicKey string
-	ModelName   string
+	Provider       string
+	OpenAIKey      string
+	AnthropicKey   string
+	ModelName      string
+	OllamaConfig   OllamaConfig
+	LMStudioConfig LMStudioConfig
+}
+
+type OllamaConfig struct {
+	BaseURL             string
+	Model               string
+	Temperature         float64
+	TopP                float64
+	TopK                int
+	NumCtx              int
+	Timeout             time.Duration
+	MaxRetries          int
+	RetryDelay          time.Duration
+	HealthCheckInterval time.Duration
+}
+
+type LMStudioConfig struct {
+	BaseURL             string
+	Model               string
+	Temperature         float64
+	MaxTokens           int
+	TopP                float64
+	Timeout             time.Duration
+	MaxRetries          int
+	RetryDelay          time.Duration
+	HealthCheckInterval time.Duration
 }
 
 type Web3Config struct {
@@ -63,10 +90,10 @@ type Web3Config struct {
 }
 
 type BrowserConfig struct {
-	Headless    bool
-	DisableGPU  bool
-	NoSandbox   bool
-	Timeout     time.Duration
+	Headless   bool
+	DisableGPU bool
+	NoSandbox  bool
+	Timeout    time.Duration
 }
 
 type ObservabilityConfig struct {
@@ -78,12 +105,12 @@ type ObservabilityConfig struct {
 
 type RateLimitConfig struct {
 	RequestsPerMinute int
-	Burst            int
+	Burst             int
 }
 
 type SecurityConfig struct {
 	CORSAllowedOrigins []string
-	BCryptCost        int
+	BCryptCost         int
 }
 
 // Load loads configuration from environment variables
@@ -117,6 +144,29 @@ func Load() (*Config, error) {
 			OpenAIKey:    getEnv("OPENAI_API_KEY", ""),
 			AnthropicKey: getEnv("ANTHROPIC_API_KEY", ""),
 			ModelName:    getEnv("AI_MODEL_NAME", "gpt-4-turbo-preview"),
+			OllamaConfig: OllamaConfig{
+				BaseURL:             getEnv("OLLAMA_BASE_URL", "http://localhost:11434"),
+				Model:               getEnv("OLLAMA_MODEL", "qwen3"),
+				Temperature:         getFloatEnv("OLLAMA_TEMPERATURE", 0.7),
+				TopP:                getFloatEnv("OLLAMA_TOP_P", 1.0),
+				TopK:                getIntEnv("OLLAMA_TOP_K", 40),
+				NumCtx:              getIntEnv("OLLAMA_NUM_CTX", 2048),
+				Timeout:             getDurationEnv("OLLAMA_TIMEOUT", 300*time.Second),
+				MaxRetries:          getIntEnv("OLLAMA_MAX_RETRIES", 3),
+				RetryDelay:          getDurationEnv("OLLAMA_RETRY_DELAY", 2*time.Second),
+				HealthCheckInterval: getDurationEnv("OLLAMA_HEALTH_CHECK_INTERVAL", 30*time.Second),
+			},
+			LMStudioConfig: LMStudioConfig{
+				BaseURL:             getEnv("LMSTUDIO_BASE_URL", "http://localhost:1234/v1"),
+				Model:               getEnv("LMSTUDIO_MODEL", "local-model"),
+				Temperature:         getFloatEnv("LMSTUDIO_TEMPERATURE", 0.7),
+				MaxTokens:           getIntEnv("LMSTUDIO_MAX_TOKENS", 4000),
+				TopP:                getFloatEnv("LMSTUDIO_TOP_P", 1.0),
+				Timeout:             getDurationEnv("LMSTUDIO_TIMEOUT", 300*time.Second),
+				MaxRetries:          getIntEnv("LMSTUDIO_MAX_RETRIES", 3),
+				RetryDelay:          getDurationEnv("LMSTUDIO_RETRY_DELAY", 2*time.Second),
+				HealthCheckInterval: getDurationEnv("LMSTUDIO_HEALTH_CHECK_INTERVAL", 30*time.Second),
+			},
 		},
 		Web3: Web3Config{
 			EthereumRPC: getEnv("ETHEREUM_RPC_URL", ""),
@@ -138,11 +188,11 @@ func Load() (*Config, error) {
 		},
 		RateLimit: RateLimitConfig{
 			RequestsPerMinute: getIntEnv("RATE_LIMIT_REQUESTS_PER_MINUTE", 100),
-			Burst:            getIntEnv("RATE_LIMIT_BURST", 20),
+			Burst:             getIntEnv("RATE_LIMIT_BURST", 20),
 		},
 		Security: SecurityConfig{
 			CORSAllowedOrigins: getSliceEnv("CORS_ALLOWED_ORIGINS", []string{"http://localhost:3000"}),
-			BCryptCost:        getIntEnv("BCRYPT_COST", 12),
+			BCryptCost:         getIntEnv("BCRYPT_COST", 12),
 		},
 	}
 
@@ -184,6 +234,15 @@ func getBoolEnv(key string, defaultValue bool) bool {
 	if value := os.Getenv(key); value != "" {
 		if boolValue, err := strconv.ParseBool(value); err == nil {
 			return boolValue
+		}
+	}
+	return defaultValue
+}
+
+func getFloatEnv(key string, defaultValue float64) float64 {
+	if value := os.Getenv(key); value != "" {
+		if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
+			return floatValue
 		}
 	}
 	return defaultValue

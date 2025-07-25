@@ -70,6 +70,69 @@ providers:
     max_retries: 3
     retry_delay: "1s"
 
+  ollama:
+    enabled: true
+    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
+    models:
+      - name: "qwen3"
+        temperature: 0.7
+        top_p: 1.0
+        top_k: 40
+        num_ctx: 2048
+      - name: "qwen3:4b"
+        temperature: 0.7
+        top_p: 1.0
+        top_k: 40
+        num_ctx: 4096
+      - name: "codellama"
+        temperature: 0.3
+        top_p: 0.9
+        top_k: 40
+        num_ctx: 4096
+      - name: "mistral"
+        temperature: 0.7
+        top_p: 1.0
+        top_k: 40
+        num_ctx: 4096
+      - name: "neural-chat"
+        temperature: 0.7
+        top_p: 1.0
+        top_k: 40
+        num_ctx: 2048
+    timeout: "300s"
+    max_retries: 3
+    retry_delay: "2s"
+    health_check_interval: "30s"
+
+  lmstudio:
+    enabled: true
+    base_url: "${LMSTUDIO_BASE_URL:-http://localhost:1234/v1}"
+    models:
+      - name: "local-model"
+        max_tokens: 4000
+        temperature: 0.7
+        top_p: 1.0
+      - name: "llama-2-7b-chat"
+        max_tokens: 4000
+        temperature: 0.7
+        top_p: 1.0
+      - name: "llama-2-13b-chat"
+        max_tokens: 4000
+        temperature: 0.7
+        top_p: 1.0
+      - name: "code-llama-7b-instruct"
+        max_tokens: 4000
+        temperature: 0.3
+        top_p: 0.9
+      - name: "mistral-7b-instruct"
+        max_tokens: 4000
+        temperature: 0.7
+        top_p: 1.0
+    timeout: "300s"
+    max_retries: 3
+    retry_delay: "2s"
+    health_check_interval: "30s"
+
 # Default AI Configuration
 default:
   provider: "openai"

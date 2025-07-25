@@ -1,0 +1,267 @@
+# Production Environment Values for AI Crypto Browser
+
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: "gp3"
+
+# Application configuration
+app:
+  name: ai-crypto-browser
+  version: "1.0.0"
+  environment: production
+
+# Namespace configuration
+namespace:
+  create: true
+  name: agentic-browser
+
+# Image configuration
+images:
+  apiGateway:
+    repository: ai-crypto-browser/api-gateway
+    tag: latest
+    pullPolicy: Always
+  authService:
+    repository: ai-crypto-browser/auth-service
+    tag: latest
+    pullPolicy: Always
+  browserService:
+    repository: ai-crypto-browser/browser-service
+    tag: latest
+    pullPolicy: Always
+  web3Service:
+    repository: ai-crypto-browser/web3-service
+    tag: latest
+    pullPolicy: Always
+  frontend:
+    repository: ai-crypto-browser/frontend
+    tag: latest
+    pullPolicy: Always
+
+# Service configuration (production-optimized)
+services:
+  apiGateway:
+    enabled: true
+    type: LoadBalancer
+    port: 80
+    targetPort: 8080
+    replicas: 3
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  authService:
+    enabled: true
+    type: ClusterIP
+    port: 8081
+    targetPort: 8081
+    replicas: 3
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  browserService:
+    enabled: true
+    type: ClusterIP
+    port: 8082
+    targetPort: 8082
+    replicas: 3
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "750m"
+      limits:
+        memory: "2Gi"
+        cpu: "1500m"
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  web3Service:
+    enabled: true
+    type: ClusterIP
+    port: 8083
+    targetPort: 8083
+    replicas: 3
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  frontend:
+    enabled: true
+    type: LoadBalancer
+    port: 80
+    targetPort: 3000
+    replicas: 3
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+# Configuration
+config:
+  # Application settings
+  appEnv: production
+  logLevel: warn
+  logFormat: json
+  
+  # Service URLs
+  authServiceUrl: "http://auth-service:8081"
+  browserServiceUrl: "http://browser-service:8082"
+  web3ServiceUrl: "http://web3-service:8083"
+  
+  # AI settings
+  ollamaHost: "http://ollama-service:11434"
+  ollamaModel: "qwen3"
+  ollamaTimeout: "300s"
+  
+  # Security settings
+  corsAllowedOrigins: "https://ai-agentic-browser.com"
+  rateLimitRequests: "100"
+  rateLimitWindow: "60s"
+  
+  # Monitoring settings
+  metricsEnabled: "true"
+  metricsPort: "9090"
+  healthCheckInterval: "30s"
+
+# Secrets configuration
+secrets:
+  externalSecrets:
+    enabled: true
+    secretStore:
+      name: aws-secrets-manager
+      region: us-east-1
+    
+    database:
+      secretName: database-secret
+      remoteSecretName: ai-crypto-browser-prod/rds/postgres/password
+    
+    redis:
+      secretName: redis-secret
+      remoteSecretName: ai-crypto-browser-prod/elasticache/redis/auth-token
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:ACCOUNT:certificate/CERT-ID
+    alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:us-east-1:ACCOUNT:webacl/prod-waf/ID
+  hosts:
+    - host: ai-agentic-browser.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: production-tls
+      hosts:
+        - ai-agentic-browser.com
+
+# Security context (production hardened)
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+
+# Pod security context (production hardened)
+podSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Network policies
+networkPolicy:
+  enabled: true
+
+# Monitoring
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 15s
+    scrapeTimeout: 10s
+
+# Node selector for production workloads
+nodeSelector:
+  node-type: "production"
+
+# Tolerations for production nodes
+tolerations:
+  - key: "production"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+# Affinity rules for high availability
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - api-gateway
+            - auth-service
+            - browser-service
+            - web3-service
+            - frontend
+        topologyKey: kubernetes.io/hostname

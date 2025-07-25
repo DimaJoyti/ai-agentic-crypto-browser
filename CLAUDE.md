@@ -19,7 +19,7 @@ AI-Powered Agentic Crypto Browser - An intelligent web browser that uses AI agen
 - `make deps` - Download and tidy Go dependencies (`go mod download && go mod tidy`)
 - `make setup` - Full environment setup (install tools, deps, create .env)
 
-**Note**: This project uses a Go workspace (`go.work`) with a single module containing all services.
+**Note**: This project uses Go 1.23+ with a single module containing all services. Go workspace support is available via `go.work.sum`.
 
 ### Individual Services (Default Ports)
 - `go run cmd/auth-service/main.go` - Start auth service (port 8081)
@@ -42,13 +42,21 @@ AI-Powered Agentic Crypto Browser - An intelligent web browser that uses AI agen
 - `cd web && npm run lint` - Run ESLint
 - `cd web && npm run type-check` - Run TypeScript type checking
 
+### Frontend Tech Stack
+- **Next.js 14** with App Router, **TypeScript**, **TailwindCSS**
+- **UI Components**: Radix UI primitives, Shadcn/ui components
+- **State Management**: Zustand, TanStack Query for server state
+- **Web3**: Wagmi v2, Viem for blockchain interactions
+- **Styling**: Tailwind with class-variance-authority, framer-motion
+
 ### Docker Operations
 - `make docker-up` - Start all services with Docker Compose
 - `make docker-down` - Stop all Docker services
 - `make docker-logs` - View all service logs
 - `make docker-build` - Build Docker images
 - `make health` - Check health of all services (requires curl and jq)
-- `docker-compose up -d` - Direct docker-compose command
+- **Test Environment**: `docker/docker-compose.test.yml` - Isolated test environment
+- **Production**: `docker/docker-compose.prod.yml` - Production configuration
 
 ## Architecture
 
@@ -63,6 +71,10 @@ AI-Powered Agentic Crypto Browser - An intelligent web browser that uses AI agen
 
 **Core packages:**
 - `internal/config/` - Environment-based configuration management
+- `internal/ai/` - AI provider integrations (OpenAI, Anthropic, Ollama, LM Studio)
+- `internal/auth/` - Authentication, JWT, MFA, RBAC services
+- `internal/browser/` - Chromedp automation and vision services
+- `internal/web3/` - Multi-chain blockchain interactions and DeFi protocols
 - `pkg/database/` - PostgreSQL and Redis database utilities  
 - `pkg/middleware/` - HTTP middleware (JWT auth, rate limiting, CORS, logging, tracing)
 - `pkg/observability/` - OpenTelemetry tracing and structured logging
@@ -84,7 +96,7 @@ AI-Powered Agentic Crypto Browser - An intelligent web browser that uses AI agen
 JWT-based authentication with refresh tokens. Protected routes use JWT middleware to extract user context. All services except auth-service require valid Authorization header. Sessions stored in Redis with configurable expiry.
 
 ### AI Agent Integration  
-Supports OpenAI and Anthropic providers via AI_MODEL_PROVIDER env var. The AI service integrates with browser service for task execution. Task types include navigate, extract, interact. Some endpoints are implemented as TODO placeholders.
+Supports multiple AI providers via AI_MODEL_PROVIDER env var: OpenAI, Anthropic, Ollama (local), and LM Studio (local). The AI service integrates with browser service for task execution. Task types include navigate, extract, interact, summarize, search, fill_form, screenshot, analyze, custom. Provider-specific configurations available in `configs/ai.yaml` and documented in `docs/AI_PROVIDERS.md`.
 
 ### Browser Automation
 Uses chromedp for headless Chrome automation. Session-based architecture - users create browser sessions via API. Supports element interaction, content extraction, screenshots. Configured for Docker with disabled GPU and sandbox.
@@ -101,15 +113,27 @@ Essential environment variables (copy from `.env.example`):
 ```bash
 # Required for all services
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/agentic_browser?sslmode=disable
+REDIS_URL=redis://localhost:6379
 JWT_SECRET=your-super-secure-jwt-secret  # Change in production!
 
-# Required for AI features
+# AI Provider Configuration (choose one)
+AI_MODEL_PROVIDER=openai  # openai, anthropic, ollama, lmstudio
 OPENAI_API_KEY=sk-your-openai-key
 # OR
 ANTHROPIC_API_KEY=your-anthropic-key
+# OR for local providers
+OLLAMA_BASE_URL=http://localhost:11434
+LMSTUDIO_BASE_URL=http://localhost:1234/v1
 
-# Optional Web3 features
+# Web3 Multi-chain Support
 ETHEREUM_RPC_URL=https://mainnet.infura.io/v3/your-project-id
+POLYGON_RPC_URL=https://polygon-mainnet.infura.io/v3/your-project-id
+ARBITRUM_RPC_URL=https://arbitrum-mainnet.infura.io/v3/your-project-id
+OPTIMISM_RPC_URL=https://optimism-mainnet.infura.io/v3/your-project-id
+
+# Frontend Configuration
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your-walletconnect-project-id
 ```
 
 **Setup**: Run `make setup` to install tools, dependencies, and create .env from example.
@@ -118,7 +142,7 @@ ETHEREUM_RPC_URL=https://mainnet.infura.io/v3/your-project-id
 
 - **Unit Tests**: `go test ./...` for all Go packages
 - **Test with Coverage**: `make test-coverage` (creates coverage.html report)  
-- **Integration Tests**: Not yet implemented (no docker-compose.test.yml found)
+- **Integration Tests**: Available via `docker/docker-compose.test.yml` with isolated test environment
 - **Individual Service Tests**: `make test-auth`, `make test-ai`, `make test-browser` (automated test runners)
 - **Setup Validation**: `./scripts/test-setup.sh` - Validates environment and dependencies
 
@@ -150,9 +174,30 @@ Services have these startup dependencies:
 
 ## Code Conventions
 
-- **Go**: Standard Go conventions, use gofmt/goimports
-- **Error Handling**: Always return detailed error context
-- **Logging**: Use structured logging with context
-- **HTTP**: JSON APIs with proper status codes
-- **Database**: Use transactions for multi-table operations
-- **Security**: Validate all inputs, use prepared statements
+- **Go**: Standard Go conventions, use gofmt/goimports, golangci-lint for linting
+- **TypeScript/React**: ESLint, Prettier formatting, follow Next.js app router patterns  
+- **Error Handling**: Always return detailed error context, use structured errors
+- **Logging**: Use structured logging with context via observability package
+- **HTTP**: JSON APIs with proper status codes, consistent error responses
+- **Database**: Use transactions for multi-table operations, prepared statements
+- **Security**: Validate all inputs, sanitize outputs, use RBAC for authorization
+- **Testing**: Unit tests for business logic, integration tests via Docker compose
+
+## Infrastructure and Deployment
+
+### Kubernetes Support
+- **Base configurations**: `k8s/base/` with Kustomize overlays for environments
+- **Helm charts**: `k8s/helm/` for parameterized deployments
+- **Environments**: Separate overlays for dev/staging/production
+
+### Terraform Infrastructure  
+- **Modules**: `terraform/modules/` for reusable infrastructure components (VPC, EKS, RDS, ElastiCache)
+- **Environments**: `terraform/environments/` with per-environment configurations
+- **Cloud Provider**: AWS-focused with EKS, RDS PostgreSQL, ElastiCache Redis
+
+### Monitoring and Observability
+- **Metrics**: Prometheus with custom business metrics
+- **Tracing**: Jaeger distributed tracing across all services
+- **Logging**: Structured JSON logging with correlation IDs
+- **Dashboards**: Grafana dashboards in `configs/grafana/dashboards/`
+- **Alerts**: Prometheus alerting rules in `deployments/monitoring/`

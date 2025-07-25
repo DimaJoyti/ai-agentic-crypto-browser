@@ -11,13 +11,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/ai-agentic-browser/internal/ai"
 	"github.com/ai-agentic-browser/internal/browser"
 	"github.com/ai-agentic-browser/internal/config"
 	"github.com/ai-agentic-browser/pkg/database"
 	"github.com/ai-agentic-browser/pkg/middleware"
 	"github.com/ai-agentic-browser/pkg/observability"
+	"github.com/google/uuid"
 )
 
 func main() {
@@ -105,7 +105,7 @@ func setupRoutes(aiService *ai.Service, cfg *config.Config, logger *observabilit
 		),
 	)
 
-	// Health check endpoint
+	// Health check endpoints
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -119,6 +119,12 @@ func setupRoutes(aiService *ai.Service, cfg *config.Config, logger *observabilit
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
 	})
+
+	// AI providers health check
+	mux.HandleFunc("GET /health/ai", handleAIHealth(aiService, logger))
+	mux.HandleFunc("GET /health/ai/{provider}", handleProviderHealth(aiService, logger))
+	mux.HandleFunc("POST /health/ai/{provider}/check", handleProviderHealthCheck(aiService, logger))
+	mux.HandleFunc("GET /health/ai/{provider}/models", handleProviderModels(aiService, logger))
 
 	// Protected AI endpoints
 	protectedMux := http.NewServeMux()
@@ -265,6 +271,114 @@ func handleGetConversation(aiService *ai.Service, logger *observability.Logger) 
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"conversation_id": conversationID.String(),
 			"message":         "Conversation retrieval not implemented yet",
+		})
+	}
+}
+
+// Health check handlers
+
+func handleAIHealth(aiService *ai.Service, logger *observability.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		healthResponse := aiService.GetHealthStatus()
+
+		// Set appropriate status code based on overall health
+		statusCode := http.StatusOK
+		if healthResponse.Status == "unhealthy" {
+			statusCode = http.StatusServiceUnavailable
+		} else if healthResponse.Status == "degraded" {
+			statusCode = http.StatusPartialContent
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(statusCode)
+		json.NewEncoder(w).Encode(healthResponse)
+	}
+}
+
+func handleProviderHealth(aiService *ai.Service, logger *observability.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		provider := r.PathValue("provider")
+		if provider == "" {
+			http.Error(w, "Provider name is required", http.StatusBadRequest)
+			return
+		}
+
+		status, exists := aiService.GetProviderHealth(provider)
+		if !exists {
+			http.Error(w, "Provider not found", http.StatusNotFound)
+			return
+		}
+
+		statusCode := http.StatusOK
+		if !status.Healthy {
+			statusCode = http.StatusServiceUnavailable
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(statusCode)
+		json.NewEncoder(w).Encode(status)
+	}
+}
+
+func handleProviderHealthCheck(aiService *ai.Service, logger *observability.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		provider := r.PathValue("provider")
+		if provider == "" {
+			http.Error(w, "Provider name is required", http.StatusBadRequest)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		err := aiService.CheckProviderHealth(ctx, provider)
+		if err != nil {
+			logger.Error(r.Context(), "Provider health check failed", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Get updated status after check
+		status, exists := aiService.GetProviderHealth(provider)
+		if !exists {
+			http.Error(w, "Provider not found", http.StatusNotFound)
+			return
+		}
+
+		statusCode := http.StatusOK
+		if !status.Healthy {
+			statusCode = http.StatusServiceUnavailable
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(statusCode)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Health check completed",
+			"status":  status,
+		})
+	}
+}
+
+func handleProviderModels(aiService *ai.Service, logger *observability.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		provider := r.PathValue("provider")
+		if provider == "" {
+			http.Error(w, "Provider name is required", http.StatusBadRequest)
+			return
+		}
+
+		models, err := aiService.GetProviderModels(provider)
+		if err != nil {
+			logger.Error(r.Context(), "Failed to get provider models", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"provider": provider,
+			"models":   models,
+			"count":    len(models),
 		})
 	}
 }

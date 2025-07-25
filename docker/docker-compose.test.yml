@@ -1,0 +1,166 @@
+version: '3.8'
+
+services:
+  # Database Services
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: agentic-browser-postgres-test
+    environment:
+      POSTGRES_DB: agentic_browser_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: agentic-browser-redis-test
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Application Services
+  api-gateway-test:
+    build:
+      context: .
+      dockerfile: cmd/api-gateway/Dockerfile
+    container_name: agentic-browser-api-gateway-test
+    ports:
+      - "8080:8080"
+    environment:
+      - GIN_MODE=release
+      - PORT=8080
+      - DATABASE_URL=postgres://postgres:postgres@postgres-test:5432/agentic_browser_test?sslmode=disable
+      - REDIS_URL=redis://redis-test:6379/0
+      - JWT_SECRET=test-jwt-secret-key-for-testing-only
+      - AI_AGENT_URL=http://ai-agent-test:8082
+      - BROWSER_SERVICE_URL=http://browser-service-test:8083
+      - WEB3_SERVICE_URL=http://web3-service-test:8084
+      - AUTH_SERVICE_URL=http://auth-service-test:8085
+      - LOG_LEVEL=info
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+      auth-service-test:
+        condition: service_started
+      ai-agent-test:
+        condition: service_started
+      browser-service-test:
+        condition: service_started
+      web3-service-test:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  auth-service-test:
+    build:
+      context: .
+      dockerfile: cmd/auth-service/Dockerfile
+    container_name: agentic-browser-auth-test
+    ports:
+      - "8085:8085"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres-test:5432/agentic_browser_test?sslmode=disable
+      - REDIS_URL=redis://redis-test:6379
+      - JWT_SECRET=test-jwt-secret-key-for-testing-only
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+
+  ai-agent-test:
+    build:
+      context: .
+      dockerfile: cmd/ai-agent/Dockerfile
+    container_name: agentic-browser-ai-agent-test
+    ports:
+      - "8082:8082"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres-test:5432/agentic_browser_test?sslmode=disable
+      - REDIS_URL=redis://redis-test:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-test-key}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-test-key}
+      - AI_MODEL_PROVIDER=openai
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+
+  browser-service-test:
+    build:
+      context: .
+      dockerfile: cmd/browser-service/Dockerfile
+    container_name: agentic-browser-service-test
+    ports:
+      - "8083:8083"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres-test:5432/agentic_browser_test?sslmode=disable
+      - REDIS_URL=redis://redis-test:6379
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp:unconfined
+
+  web3-service-test:
+    build:
+      context: .
+      dockerfile: cmd/web3-service/Dockerfile
+    container_name: agentic-browser-web3-test
+    ports:
+      - "8084:8084"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres-test:5432/agentic_browser_test?sslmode=disable
+      - REDIS_URL=redis://redis-test:6379
+      - ETHEREUM_RPC_URL=${ETHEREUM_RPC_URL:-https://mainnet.infura.io/v3/test}
+      - POLYGON_RPC_URL=${POLYGON_RPC_URL:-https://polygon-mainnet.infura.io/v3/test}
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+
+  # Frontend for E2E tests
+  frontend-test:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: agentic-browser-frontend-test
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8080
+    depends_on:
+      - api-gateway-test
+
+volumes:
+  postgres_test_data:
+  redis_test_data:
+
+networks:
+  default:
+    name: agentic-browser-test-network

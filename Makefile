@@ -2,10 +2,14 @@
 
 .PHONY: help build test clean dev docker-up docker-down deps lint format
 
+# Default environment for infrastructure
+ENV ?= dev
+
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  help         - Show this help message"
+	@echo ""
+	@echo "Development:"
 	@echo "  deps         - Download Go dependencies"
 	@echo "  build        - Build all services"
 	@echo "  test         - Run all tests"
@@ -15,6 +19,15 @@ help:
 	@echo "  docker-up    - Start all services with Docker"
 	@echo "  docker-down  - Stop all Docker services"
 	@echo "  clean        - Clean build artifacts"
+	@echo ""
+	@echo "Infrastructure:"
+	@echo "  setup        - Set up development environment"
+	@echo "  validate     - Validate infrastructure configuration"
+	@echo "  deploy       - Deploy infrastructure and application"
+	@echo "  destroy      - Destroy infrastructure"
+	@echo "  status       - Show deployment status"
+	@echo "  logs         - View application logs"
+	@echo "  scale        - Scale services (SERVICE=name REPLICAS=n)"
 
 # Go variables
 GO_VERSION := 1.22
@@ -245,3 +258,62 @@ prod-deploy:
 	@echo "Deploying to production..."
 	@echo "This would deploy to your production environment"
 	@echo "Implement your deployment strategy here"
+
+# Infrastructure Management
+setup: ## Set up development environment
+	@echo "Setting up development environment..."
+	@chmod +x scripts/*.sh
+	@./scripts/setup.sh
+
+validate: ## Validate infrastructure configuration
+	@echo "Validating configuration..."
+	@./scripts/validate.sh
+
+deploy: ## Deploy infrastructure and application
+	@echo "Deploying to $(ENV) environment..."
+	@./scripts/deploy.sh $(ENV)
+
+destroy: ## Destroy infrastructure
+	@echo "Destroying $(ENV) environment..."
+	@read -p "Are you sure you want to destroy the $(ENV) environment? [y/N] " confirm && \
+	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
+		kubectl delete -k k8s/overlays/$(ENV) || true; \
+		cd terraform/environments/$(ENV) && terraform destroy; \
+	else \
+		echo "Cancelled."; \
+	fi
+
+# Kubernetes operations
+status: ## Show deployment status
+	@echo "Deployment Status:"
+	@kubectl get all -n ai-crypto-browser
+
+logs: ## View application logs
+	@echo "Application Logs:"
+	@kubectl logs -f -l app.kubernetes.io/part-of=ai-crypto-browser -n ai-crypto-browser --tail=100
+
+scale: ## Scale services (usage: make scale SERVICE=api-gateway REPLICAS=3)
+	@if [ -z "$(SERVICE)" ] || [ -z "$(REPLICAS)" ]; then \
+		echo "Usage: make scale SERVICE=<service-name> REPLICAS=<number>"; \
+		echo "Available services: api-gateway, auth-service, browser-service, web3-service, frontend"; \
+	else \
+		echo "Scaling $(SERVICE) to $(REPLICAS) replicas..."; \
+		kubectl scale deployment/$(SERVICE) --replicas=$(REPLICAS) -n ai-crypto-browser; \
+	fi
+
+restart: ## Restart a service (usage: make restart SERVICE=api-gateway)
+	@if [ -z "$(SERVICE)" ]; then \
+		echo "Usage: make restart SERVICE=<service-name>"; \
+		echo "Available services: api-gateway, auth-service, browser-service, web3-service, frontend"; \
+	else \
+		echo "Restarting $(SERVICE)..."; \
+		kubectl rollout restart deployment/$(SERVICE) -n ai-crypto-browser; \
+	fi
+
+# Quick commands
+quick-deploy: validate deploy ## Quick deploy after validation
+
+quick-status: ## Quick status check
+	@kubectl get pods -n ai-crypto-browser
+	@echo ""
+	@kubectl get services -n ai-crypto-browser

@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-crypto-browser-config
+  namespace: ai-crypto-browser
+  labels:
+    app.kubernetes.io/name: ai-crypto-browser
+    app.kubernetes.io/component: config
+data:
+  # Application Configuration
+  APP_ENV: "development"
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+  
+  # Server Configuration
+  API_GATEWAY_PORT: "8080"
+  AUTH_SERVICE_PORT: "8081"
+  BROWSER_SERVICE_PORT: "8082"
+  WEB3_SERVICE_PORT: "8083"
+  FRONTEND_PORT: "3000"
+  
+  # Service Discovery
+  AUTH_SERVICE_URL: "http://auth-service:8081"
+  BROWSER_SERVICE_URL: "http://browser-service:8082"
+  WEB3_SERVICE_URL: "http://web3-service:8083"
+  
+  # Database Configuration (non-sensitive)
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "ai_crypto_browser"
+  DB_SSL_MODE: "require"
+  DB_MAX_CONNECTIONS: "25"
+  DB_MAX_IDLE_CONNECTIONS: "5"
+  DB_CONNECTION_MAX_LIFETIME: "300s"
+  
+  # Redis Configuration (non-sensitive)
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  REDIS_MAX_RETRIES: "3"
+  REDIS_POOL_SIZE: "10"
+  
+  # AI Configuration
+  OLLAMA_HOST: "http://ollama-service:11434"
+  OLLAMA_MODEL: "qwen3"
+  OLLAMA_TIMEOUT: "300s"
+  OLLAMA_MAX_RETRIES: "3"
+  
+  # Browser Configuration
+  BROWSER_HEADLESS: "true"
+  BROWSER_TIMEOUT: "30s"
+  BROWSER_MAX_PAGES: "10"
+  BROWSER_USER_AGENT: "AI-Crypto-Browser/1.0"
+  
+  # Web3 Configuration
+  WEB3_TIMEOUT: "30s"
+  WEB3_MAX_RETRIES: "3"
+  WEB3_RATE_LIMIT: "100"
+  
+  # Security Configuration
+  CORS_ALLOWED_ORIGINS: "*"
+  CORS_ALLOWED_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
+  CORS_ALLOWED_HEADERS: "Content-Type,Authorization"
+  
+  # Monitoring Configuration
+  METRICS_ENABLED: "true"
+  METRICS_PORT: "9090"
+  HEALTH_CHECK_INTERVAL: "30s"
+  
+  # Rate Limiting
+  RATE_LIMIT_REQUESTS: "100"
+  RATE_LIMIT_WINDOW: "60s"
+  
+  # Session Configuration
+  SESSION_TIMEOUT: "24h"
+  SESSION_CLEANUP_INTERVAL: "1h"

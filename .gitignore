@@ -1,4 +1,6 @@
-.env
+web/package-lock.json
 web/node_modules
 web/.next
+.env
 .claude
+.augment

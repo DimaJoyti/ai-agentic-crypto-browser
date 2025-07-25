@@ -1,0 +1,190 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web3-service
+  namespace: ai-crypto-browser
+  labels:
+    app.kubernetes.io/name: web3-service
+    app.kubernetes.io/component: web3
+    app.kubernetes.io/part-of: ai-crypto-browser
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web3-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: web3-service
+        app.kubernetes.io/component: web3
+        app.kubernetes.io/part-of: ai-crypto-browser
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: web3-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+      containers:
+      - name: web3-service
+        image: ai-crypto-browser/web3-service:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8083
+          protocol: TCP
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+        env:
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: ai-crypto-browser-config
+              key: WEB3_SERVICE_PORT
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: ai-crypto-browser-config
+              key: LOG_LEVEL
+        - name: LOG_FORMAT
+          valueFrom:
+            configMapKeyRef:
+              name: ai-crypto-browser-config
+              key: LOG_FORMAT
+        - name: REDIS_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: REDIS_AUTH_TOKEN
+        - name: REDIS_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: REDIS_ENDPOINT
+        - name: ETHEREUM_RPC_URL
+          valueFrom:
+            secretKeyRef:
+              name: api-keys-secret
+              key: ETHEREUM_RPC_URL
+        - name: POLYGON_RPC_URL
+          valueFrom:
+            secretKeyRef:
+              name: api-keys-secret
+              key: POLYGON_RPC_URL
+        - name: BSC_RPC_URL
+          valueFrom:
+            secretKeyRef:
+              name: api-keys-secret
+              key: BSC_RPC_URL
+        - name: COINGECKO_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys-secret
+              key: COINGECKO_API_KEY
+        - name: COINMARKETCAP_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys-secret
+              key: COINMARKETCAP_API_KEY
+        envFrom:
+        - configMapRef:
+            name: ai-crypto-browser-config
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "300m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web3-service
+  namespace: ai-crypto-browser
+  labels:
+    app.kubernetes.io/name: web3-service
+    app.kubernetes.io/component: web3
+    app.kubernetes.io/part-of: ai-crypto-browser
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8083
+    targetPort: http
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: web3-service
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: web3-service
+  namespace: ai-crypto-browser
+  labels:
+    app.kubernetes.io/name: web3-service
+    app.kubernetes.io/component: web3
+    app.kubernetes.io/part-of: ai-crypto-browser
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web3-service
+  namespace: ai-crypto-browser
+  labels:
+    app.kubernetes.io/name: web3-service
+    app.kubernetes.io/component: web3
+    app.kubernetes.io/part-of: ai-crypto-browser
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web3-service
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

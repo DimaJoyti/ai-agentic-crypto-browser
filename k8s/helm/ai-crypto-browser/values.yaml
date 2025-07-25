@@ -1,0 +1,307 @@
+# Default values for ai-crypto-browser
+# This is a YAML-formatted file.
+
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# Application configuration
+app:
+  name: ai-crypto-browser
+  version: "1.0.0"
+  environment: development
+
+# Namespace configuration
+namespace:
+  create: true
+  name: ai-crypto-browser
+
+# Image configuration
+images:
+  apiGateway:
+    repository: ai-crypto-browser/api-gateway
+    tag: latest
+    pullPolicy: Always
+  authService:
+    repository: ai-crypto-browser/auth-service
+    tag: latest
+    pullPolicy: Always
+  browserService:
+    repository: ai-crypto-browser/browser-service
+    tag: latest
+    pullPolicy: Always
+  web3Service:
+    repository: ai-crypto-browser/web3-service
+    tag: latest
+    pullPolicy: Always
+  frontend:
+    repository: ai-crypto-browser/frontend
+    tag: latest
+    pullPolicy: Always
+
+# Service configuration
+services:
+  apiGateway:
+    enabled: true
+    type: LoadBalancer
+    port: 80
+    targetPort: 8080
+    replicas: 2
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "200m"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  authService:
+    enabled: true
+    type: ClusterIP
+    port: 8081
+    targetPort: 8081
+    replicas: 2
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "200m"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  browserService:
+    enabled: true
+    type: ClusterIP
+    port: 8082
+    targetPort: 8082
+    replicas: 2
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "200m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  web3Service:
+    enabled: true
+    type: ClusterIP
+    port: 8083
+    targetPort: 8083
+    replicas: 2
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "300m"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  frontend:
+    enabled: true
+    type: LoadBalancer
+    port: 80
+    targetPort: 3000
+    replicas: 2
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "200m"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+# Configuration
+config:
+  # Application settings
+  appEnv: development
+  logLevel: info
+  logFormat: json
+  
+  # Service ports
+  apiGatewayPort: "8080"
+  authServicePort: "8081"
+  browserServicePort: "8082"
+  web3ServicePort: "8083"
+  frontendPort: "3000"
+  
+  # Service URLs
+  authServiceUrl: "http://auth-service:8081"
+  browserServiceUrl: "http://browser-service:8082"
+  web3ServiceUrl: "http://web3-service:8083"
+  
+  # Database settings
+  dbHost: "postgres-service"
+  dbPort: "5432"
+  dbName: "ai_crypto_browser"
+  dbSslMode: "require"
+  dbMaxConnections: "25"
+  dbMaxIdleConnections: "5"
+  dbConnectionMaxLifetime: "300s"
+  
+  # Redis settings
+  redisHost: "redis-service"
+  redisPort: "6379"
+  redisDb: "0"
+  redisMaxRetries: "3"
+  redisPoolSize: "10"
+  
+  # AI settings
+  ollamaHost: "http://ollama-service:11434"
+  ollamaModel: "qwen3"
+  ollamaTimeout: "300s"
+  ollamaMaxRetries: "3"
+  
+  # Browser settings
+  browserHeadless: "true"
+  browserTimeout: "30s"
+  browserMaxPages: "10"
+  browserUserAgent: "AI-Crypto-Browser/1.0"
+  
+  # Web3 settings
+  web3Timeout: "30s"
+  web3MaxRetries: "3"
+  web3RateLimit: "100"
+  
+  # Security settings
+  corsAllowedOrigins: "*"
+  corsAllowedMethods: "GET,POST,PUT,DELETE,OPTIONS"
+  corsAllowedHeaders: "Content-Type,Authorization"
+  
+  # Monitoring settings
+  metricsEnabled: "true"
+  metricsPort: "9090"
+  healthCheckInterval: "30s"
+  
+  # Rate limiting
+  rateLimitRequests: "100"
+  rateLimitWindow: "60s"
+  
+  # Session settings
+  sessionTimeout: "24h"
+  sessionCleanupInterval: "1h"
+
+# Secrets configuration
+secrets:
+  # External secrets from AWS Secrets Manager
+  externalSecrets:
+    enabled: true
+    secretStore:
+      name: aws-secrets-manager
+      region: us-east-1
+    
+    database:
+      secretName: database-secret
+      remoteSecretName: ai-crypto-browser/rds/postgres/password
+    
+    redis:
+      secretName: redis-secret
+      remoteSecretName: ai-crypto-browser/elasticache/redis/auth-token
+  
+  # Manual secrets (base64 encoded)
+  jwt:
+    secret: "YWktY3J5cHRvLWJyb3dzZXItand0LXNlY3JldC1rZXktY2hhbmdlLWluLXByb2R1Y3Rpb24="
+    expiry: "MjRo" # 24h
+  
+  apiKeys:
+    ethereumRpcUrl: "aHR0cHM6Ly9tYWlubmV0LmluZnVyYS5pby92My9ZT1VSX0lORlVSQV9LRVk="
+    polygonRpcUrl: "aHR0cHM6Ly9wb2x5Z29uLW1haW5uZXQuaW5mdXJhLmlvL3YzL1lPVVJfSU5GVVJBX0tFWQ=="
+    bscRpcUrl: "aHR0cHM6Ly9ic2MtZGF0YXNlZWQuYmluYW5jZS5vcmcv"
+    coingeckoApiKey: "WU9VUl9DT0lOR0VDS09fQVBJX0tFWQ=="
+    coinmarketcapApiKey: "WU9VUl9DT0lOTUFSS0VUQ0FQX0FQSV9LRVk="
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+
+# Pod security context
+podSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: ai-crypto-browser.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Persistence
+persistence:
+  enabled: false
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 8Gi
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Network policies
+networkPolicy:
+  enabled: false
+
+# Monitoring
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+    namespace: monitoring
+    interval: 30s
+    scrapeTimeout: 10s

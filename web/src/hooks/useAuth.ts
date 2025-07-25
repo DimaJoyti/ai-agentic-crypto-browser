@@ -7,6 +7,7 @@ interface User {
   firstName: string
   lastName: string
   createdAt: string
+  mfa_enabled?: boolean
 }
 
 interface AuthContextType {

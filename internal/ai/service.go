@@ -20,6 +20,7 @@ type Service struct {
 	aiProvider     AIProvider
 	browserService *browser.Service
 	logger         *observability.Logger
+	healthMonitor  *HealthMonitor
 }
 
 // NewService creates a new AI service
@@ -30,19 +31,60 @@ func NewService(db *database.DB, redis *database.RedisClient, cfg config.AIConfi
 	case "openai":
 		aiProvider = NewOpenAIProvider(cfg.OpenAIKey, cfg.ModelName, logger)
 	case "anthropic":
-		// TODO: Implement Anthropic provider
-		aiProvider = NewOpenAIProvider(cfg.OpenAIKey, cfg.ModelName, logger)
+		aiProvider = NewAnthropicProvider(cfg.AnthropicKey, cfg.ModelName, logger)
+	case "ollama":
+		ollamaConfig := OllamaConfig{
+			BaseURL:     cfg.OllamaConfig.BaseURL,
+			Model:       cfg.OllamaConfig.Model,
+			Temperature: cfg.OllamaConfig.Temperature,
+			TopP:        cfg.OllamaConfig.TopP,
+			TopK:        cfg.OllamaConfig.TopK,
+			NumCtx:      cfg.OllamaConfig.NumCtx,
+			Timeout:     cfg.OllamaConfig.Timeout,
+			MaxRetries:  cfg.OllamaConfig.MaxRetries,
+			RetryDelay:  cfg.OllamaConfig.RetryDelay,
+		}
+		aiProvider = NewOllamaProvider(ollamaConfig, logger)
+	case "lmstudio":
+		lmStudioConfig := LMStudioConfig{
+			BaseURL:     cfg.LMStudioConfig.BaseURL,
+			Model:       cfg.LMStudioConfig.Model,
+			Temperature: cfg.LMStudioConfig.Temperature,
+			MaxTokens:   cfg.LMStudioConfig.MaxTokens,
+			TopP:        cfg.LMStudioConfig.TopP,
+			Timeout:     cfg.LMStudioConfig.Timeout,
+			MaxRetries:  cfg.LMStudioConfig.MaxRetries,
+			RetryDelay:  cfg.LMStudioConfig.RetryDelay,
+		}
+		aiProvider = NewLMStudioProvider(lmStudioConfig, logger)
 	default:
+		logger.Warn(context.Background(), "Unknown AI provider, falling back to OpenAI", map[string]interface{}{
+			"provider": cfg.Provider,
+		})
 		aiProvider = NewOpenAIProvider(cfg.OpenAIKey, cfg.ModelName, logger)
 	}
 
-	return &Service{
+	// Initialize health monitor
+	healthMonitor := NewHealthMonitor(logger, cfg.OllamaConfig.HealthCheckInterval)
+
+	// Register providers for health monitoring
+	if healthChecker, ok := aiProvider.(HealthChecker); ok {
+		healthMonitor.RegisterProvider(cfg.Provider, healthChecker)
+	}
+
+	service := &Service{
 		db:             db,
 		redis:          redis,
 		aiProvider:     aiProvider,
 		browserService: browserService,
 		logger:         logger,
+		healthMonitor:  healthMonitor,
 	}
+
+	// Start health monitoring in background
+	go healthMonitor.Start(context.Background())
+
+	return service
 }
 
 // Chat handles chat messages and generates responses
@@ -490,6 +532,40 @@ func (s *Service) executeAnalyzeTask(ctx context.Context, task *Task) (map[strin
 		"content_length": len(content),
 		"criteria":       input.Criteria,
 	}, nil
+}
+
+// Health check methods
+
+// GetHealthStatus returns the health status of all AI providers
+func (s *Service) GetHealthStatus() *HealthCheckResponse {
+	return s.healthMonitor.GetHealthCheckResponse()
+}
+
+// GetProviderHealth returns the health status of a specific provider
+func (s *Service) GetProviderHealth(provider string) (*HealthStatus, bool) {
+	return s.healthMonitor.GetStatus(provider)
+}
+
+// CheckProviderHealth performs an immediate health check on a provider
+func (s *Service) CheckProviderHealth(ctx context.Context, provider string) error {
+	return s.healthMonitor.CheckProviderNow(ctx, provider)
+}
+
+// IsProviderHealthy checks if a provider is currently healthy
+func (s *Service) IsProviderHealthy(provider string) bool {
+	return s.healthMonitor.IsProviderHealthy(provider)
+}
+
+// GetProviderModels returns available models for a provider
+func (s *Service) GetProviderModels(provider string) ([]string, error) {
+	return s.healthMonitor.GetProviderModels(provider)
+}
+
+// StopHealthMonitoring stops the health monitoring
+func (s *Service) StopHealthMonitoring() {
+	if s.healthMonitor != nil {
+		s.healthMonitor.Stop()
+	}
 }
 
 // Helper methods
