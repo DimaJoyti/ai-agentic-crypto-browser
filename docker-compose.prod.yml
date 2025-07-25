@@ -1,0 +1,400 @@
+version: '3.8'
+
+services:
+  # Production Database with optimized settings
+  postgres:
+    image: postgres:15-alpine
+    container_name: ai-agentic-browser-postgres-prod
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-agentic_browser}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deployments/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./deployments/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    networks:
+      - ai-agentic-browser
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-agentic_browser}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  # Production Redis with persistence
+  redis:
+    image: redis:7-alpine
+    container_name: ai-agentic-browser-redis-prod
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server /etc/redis/redis.conf
+    volumes:
+      - redis_data:/data
+      - ./deployments/redis/redis.conf:/etc/redis/redis.conf:ro
+    networks:
+      - ai-agentic-browser
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  # API Gateway with production optimizations
+  api-gateway:
+    image: ai-agentic-browser/api-gateway:${VERSION:-latest}
+    container_name: ai-agentic-browser-api-gateway-prod
+    restart: always
+    ports:
+      - "8080:8080"
+      - "9090:9090" # Metrics port
+    environment:
+      - GIN_MODE=release
+      - PORT=8080
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-agentic_browser}?sslmode=require
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - JWT_SECRET=${JWT_SECRET}
+      - AI_AGENT_URL=http://ai-agent:8082
+      - BROWSER_SERVICE_URL=http://browser-service:8083
+      - WEB3_SERVICE_URL=http://web3-service:8084
+      - AUTH_SERVICE_URL=http://auth-service:8085
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - PROMETHEUS_METRICS_PORT=9090
+      - RATE_LIMIT_REQUESTS_PER_MINUTE=1000
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://yourdomain.com}
+    volumes:
+      - ./logs:/app/logs
+      - ./configs:/app/configs:ro
+      - ./ssl:/app/ssl:ro
+    networks:
+      - ai-agentic-browser
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  # AI Agent Service
+  ai-agent:
+    image: ai-agentic-browser/ai-agent:${VERSION:-latest}
+    container_name: ai-agentic-browser-ai-agent-prod
+    restart: always
+    ports:
+      - "8082:8082"
+      - "9092:9090" # Metrics port
+    environment:
+      - PORT=8082
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-agentic_browser}?sslmode=require
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - PROMETHEUS_METRICS_PORT=9090
+      - MAX_CONCURRENT_REQUESTS=100
+      - REQUEST_TIMEOUT=300s
+    volumes:
+      - ./logs:/app/logs
+      - ./configs:/app/configs:ro
+    networks:
+      - ai-agentic-browser
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  # Browser Service with Chrome
+  browser-service:
+    image: ai-agentic-browser/browser-service:${VERSION:-latest}
+    container_name: ai-agentic-browser-browser-service-prod
+    restart: always
+    ports:
+      - "8083:8083"
+      - "9093:9090" # Metrics port
+    environment:
+      - PORT=8083
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-agentic_browser}?sslmode=require
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - CHROME_EXECUTABLE_PATH=/usr/bin/chromium-browser
+      - MAX_BROWSER_INSTANCES=${MAX_BROWSER_INSTANCES:-20}
+      - BROWSER_TIMEOUT=300
+      - BROWSER_POOL_SIZE=5
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - PROMETHEUS_METRICS_PORT=9090
+    volumes:
+      - ./logs:/app/logs
+      - ./configs:/app/configs:ro
+      - /dev/shm:/dev/shm
+    networks:
+      - ai-agentic-browser
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp:unconfined
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+
+  # Web3 Service
+  web3-service:
+    image: ai-agentic-browser/web3-service:${VERSION:-latest}
+    container_name: ai-agentic-browser-web3-service-prod
+    restart: always
+    ports:
+      - "8084:8084"
+      - "9094:9090" # Metrics port
+    environment:
+      - PORT=8084
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-agentic_browser}?sslmode=require
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - ETHEREUM_RPC_URL=${ETHEREUM_RPC_URL}
+      - POLYGON_RPC_URL=${POLYGON_RPC_URL}
+      - BSC_RPC_URL=${BSC_RPC_URL}
+      - ARBITRUM_RPC_URL=${ARBITRUM_RPC_URL}
+      - OPTIMISM_RPC_URL=${OPTIMISM_RPC_URL}
+      - PRIVATE_KEY=${WEB3_PRIVATE_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - PROMETHEUS_METRICS_PORT=9090
+    volumes:
+      - ./logs:/app/logs
+      - ./configs:/app/configs:ro
+    networks:
+      - ai-agentic-browser
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Auth Service
+  auth-service:
+    image: ai-agentic-browser/auth-service:${VERSION:-latest}
+    container_name: ai-agentic-browser-auth-service-prod
+    restart: always
+    ports:
+      - "8085:8085"
+      - "9095:9090" # Metrics port
+    environment:
+      - PORT=8085
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-agentic_browser}?sslmode=require
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRY=24h
+      - REFRESH_TOKEN_EXPIRY=168h
+      - MFA_ISSUER=AI-Agentic-Browser
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - PROMETHEUS_METRICS_PORT=9090
+    volumes:
+      - ./logs:/app/logs
+      - ./configs:/app/configs:ro
+    networks:
+      - ai-agentic-browser
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Frontend (Next.js)
+  frontend:
+    image: ai-agentic-browser/frontend:${VERSION:-latest}
+    container_name: ai-agentic-browser-frontend-prod
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://api.yourdomain.com}
+      - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-wss://api.yourdomain.com}
+      - NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
+      - NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=${NEXT_PUBLIC_GOOGLE_ANALYTICS_ID}
+    networks:
+      - ai-agentic-browser
+    depends_on:
+      - api-gateway
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: ai-agentic-browser-nginx-prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployments/nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./deployments/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./deployments/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    networks:
+      - ai-agentic-browser
+    depends_on:
+      - api-gateway
+      - frontend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/postgres
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/redis
+
+networks:
+  ai-agentic-browser:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

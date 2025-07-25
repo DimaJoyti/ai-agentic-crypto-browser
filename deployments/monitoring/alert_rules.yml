@@ -1,0 +1,323 @@
+# Alert Rules for AI Agentic Browser Platform
+groups:
+  - name: service_availability
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} has been down for more than 1 minute."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/service-down"
+
+      - alert: ServiceHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (job) /
+            sum(rate(http_requests_total[5m])) by (job)
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: reliability
+        annotations:
+          summary: "High error rate on {{ $labels.job }}"
+          description: "Service {{ $labels.job }} has error rate of {{ $value }}% for more than 5 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/high-error-rate"
+
+      - alert: ServiceVeryHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (job) /
+            sum(rate(http_requests_total[5m])) by (job)
+          ) * 100 > 15
+        for: 2m
+        labels:
+          severity: critical
+          category: reliability
+        annotations:
+          summary: "Very high error rate on {{ $labels.job }}"
+          description: "Service {{ $labels.job }} has error rate of {{ $value }}% for more than 2 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/very-high-error-rate"
+
+  - name: performance
+    rules:
+      - alert: HighResponseTime
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, job)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High response time on {{ $labels.job }}"
+          description: "95th percentile response time for {{ $labels.job }} is {{ $value }}s for more than 10 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/high-response-time"
+
+      - alert: VeryHighResponseTime
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, job)
+          ) > 5
+        for: 5m
+        labels:
+          severity: critical
+          category: performance
+        annotations:
+          summary: "Very high response time on {{ $labels.job }}"
+          description: "95th percentile response time for {{ $labels.job }} is {{ $value }}s for more than 5 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/very-high-response-time"
+
+      - alert: LowRequestRate
+        expr: sum(rate(http_requests_total[5m])) by (job) < 0.1
+        for: 15m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Low request rate on {{ $labels.job }}"
+          description: "Request rate for {{ $labels.job }} is {{ $value }} requests/sec for more than 15 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/low-request-rate"
+
+  - name: workflow_monitoring
+    rules:
+      - alert: WorkflowHighFailureRate
+        expr: |
+          (
+            sum(rate(workflow_executions_total{status="failed"}[5m])) /
+            sum(rate(workflow_executions_total[5m]))
+          ) * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "High workflow failure rate"
+          description: "Workflow failure rate is {{ $value }}% for more than 5 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/workflow-failures"
+
+      - alert: WorkflowVeryHighFailureRate
+        expr: |
+          (
+            sum(rate(workflow_executions_total{status="failed"}[5m])) /
+            sum(rate(workflow_executions_total[5m]))
+          ) * 100 > 25
+        for: 2m
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: "Very high workflow failure rate"
+          description: "Workflow failure rate is {{ $value }}% for more than 2 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/workflow-failures"
+
+      - alert: WorkflowLongDuration
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(workflow_execution_duration_seconds_bucket[5m])) by (le)
+          ) > 300
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Workflows taking too long to complete"
+          description: "95th percentile workflow duration is {{ $value }}s for more than 10 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/slow-workflows"
+
+  - name: ai_monitoring
+    rules:
+      - alert: AIHighErrorRate
+        expr: |
+          (
+            sum(rate(ai_requests_total{status="error"}[5m])) by (provider) /
+            sum(rate(ai_requests_total[5m])) by (provider)
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: ai
+        annotations:
+          summary: "High AI error rate for {{ $labels.provider }}"
+          description: "AI provider {{ $labels.provider }} has error rate of {{ $value }}% for more than 5 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/ai-errors"
+
+      - alert: AISlowResponse
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(ai_request_duration_seconds_bucket[5m])) by (le, provider)
+          ) > 30
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Slow AI responses from {{ $labels.provider }}"
+          description: "95th percentile AI response time for {{ $labels.provider }} is {{ $value }}s for more than 10 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/slow-ai"
+
+  - name: infrastructure
+    rules:
+      - alert: HighMemoryUsage
+        expr: system_resource_usage{resource="memory"} > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High memory usage on {{ $labels.job }}"
+          description: "Memory usage on {{ $labels.job }} is {{ $value }}% for more than 5 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/high-memory"
+
+      - alert: VeryHighMemoryUsage
+        expr: system_resource_usage{resource="memory"} > 95
+        for: 2m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Very high memory usage on {{ $labels.job }}"
+          description: "Memory usage on {{ $labels.job }} is {{ $value }}% for more than 2 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/very-high-memory"
+
+      - alert: HighCPUUsage
+        expr: system_resource_usage{resource="cpu"} > 80
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High CPU usage on {{ $labels.job }}"
+          description: "CPU usage on {{ $labels.job }} is {{ $value }}% for more than 10 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/high-cpu"
+
+      - alert: VeryHighCPUUsage
+        expr: system_resource_usage{resource="cpu"} > 95
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Very high CPU usage on {{ $labels.job }}"
+          description: "CPU usage on {{ $labels.job }} is {{ $value }}% for more than 5 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/very-high-cpu"
+
+  - name: database
+    rules:
+      - alert: DatabaseConnectionsHigh
+        expr: pg_stat_database_numbackends > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "High database connections"
+          description: "Database {{ $labels.datname }} has {{ $value }} active connections for more than 5 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/high-db-connections"
+
+      - alert: DatabaseConnectionsVeryHigh
+        expr: pg_stat_database_numbackends > 95
+        for: 2m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "Very high database connections"
+          description: "Database {{ $labels.datname }} has {{ $value }} active connections for more than 2 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/very-high-db-connections"
+
+      - alert: DatabaseSlowQueries
+        expr: pg_stat_statements_mean_time_ms > 1000
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "Average query time is {{ $value }}ms for more than 5 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/slow-queries"
+
+  - name: redis
+    rules:
+      - alert: RedisHighMemoryUsage
+        expr: (redis_memory_used_bytes / redis_memory_max_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: cache
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is {{ $value }}% for more than 5 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/high-redis-memory"
+
+      - alert: RedisConnectionsHigh
+        expr: redis_connected_clients > 100
+        for: 5m
+        labels:
+          severity: warning
+          category: cache
+        annotations:
+          summary: "High Redis connections"
+          description: "Redis has {{ $value }} connected clients for more than 5 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/high-redis-connections"
+
+  - name: security
+    rules:
+      - alert: HighFailedAuthRate
+        expr: |
+          (
+            sum(rate(http_requests_total{path=~"/api/auth/.*", status=~"4.."}[5m])) /
+            sum(rate(http_requests_total{path=~"/api/auth/.*"}[5m]))
+          ) * 100 > 20
+        for: 5m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Authentication failure rate is {{ $value }}% for more than 5 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/auth-failures"
+
+      - alert: VeryHighFailedAuthRate
+        expr: |
+          (
+            sum(rate(http_requests_total{path=~"/api/auth/.*", status=~"4.."}[5m])) /
+            sum(rate(http_requests_total{path=~"/api/auth/.*"}[5m]))
+          ) * 100 > 50
+        for: 2m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Very high authentication failure rate"
+          description: "Authentication failure rate is {{ $value }}% for more than 2 minutes. Possible attack in progress."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/auth-attack"
+
+  - name: business_metrics
+    rules:
+      - alert: LowUserActivity
+        expr: sum(rate(workflow_executions_total[1h])) < 10
+        for: 30m
+        labels:
+          severity: info
+          category: business
+        annotations:
+          summary: "Low user activity detected"
+          description: "Workflow execution rate is {{ $value }} per hour for more than 30 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/low-activity"
+
+      - alert: HighBrowserSessionUsage
+        expr: browser_sessions_active > 50
+        for: 10m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: "High browser session usage"
+          description: "{{ $value }} browser sessions are currently active for more than 10 minutes."
+          runbook_url: "https://docs.ai-agentic-browser.com/runbooks/high-browser-usage"

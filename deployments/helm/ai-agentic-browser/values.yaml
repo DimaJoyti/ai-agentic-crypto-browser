@@ -1,0 +1,363 @@
+# Default values for ai-agentic-browser
+# This is a YAML-formatted file.
+
+# Global configuration
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+  postgresql:
+    auth:
+      postgresPassword: ""
+      username: "agentic_user"
+      password: ""
+      database: "agentic_browser"
+  redis:
+    auth:
+      enabled: true
+      password: ""
+
+# Image configuration
+image:
+  registry: docker.io
+  repository: ai-agentic-browser
+  tag: "latest"
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+# Namespace configuration
+namespace:
+  create: true
+  name: agentic-browser
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Pod Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+
+# Security Context
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+    - ALL
+
+# API Gateway configuration
+apiGateway:
+  enabled: true
+  replicaCount: 3
+  image:
+    repository: ai-agentic-browser/api-gateway
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  env:
+    LOG_LEVEL: "info"
+    GIN_MODE: "release"
+    RATE_LIMIT_REQUESTS: "1000"
+    RATE_LIMIT_WINDOW: "1m"
+
+# AI Agent configuration
+aiAgent:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ai-agentic-browser/ai-agent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8082
+    targetPort: 8082
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "2"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  env:
+    MAX_CONCURRENT_REQUESTS: "100"
+    REQUEST_TIMEOUT: "300s"
+
+# Browser Service configuration
+browserService:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ai-agentic-browser/browser-service
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8083
+    targetPort: 8083
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "1"
+    limits:
+      memory: "4Gi"
+      cpu: "2"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  env:
+    MAX_BROWSER_INSTANCES: "20"
+    BROWSER_TIMEOUT: "300"
+    BROWSER_POOL_SIZE: "5"
+
+# Web3 Service configuration
+web3Service:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ai-agentic-browser/web3-service
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8084
+    targetPort: 8084
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+# Auth Service configuration
+authService:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ai-agentic-browser/auth-service
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8085
+    targetPort: 8085
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "125m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  env:
+    JWT_EXPIRY: "24h"
+    REFRESH_TOKEN_EXPIRY: "168h"
+    MFA_ISSUER: "AI-Agentic-Browser"
+
+# Frontend configuration
+frontend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ai-agentic-browser/frontend
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 3000
+    targetPort: 3000
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  env:
+    NODE_ENV: "production"
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "postgres-password"
+    username: "agentic_user"
+    password: "user-password"
+    database: "agentic_browser"
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: ""
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "1"
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# Redis configuration
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: "redis-password"
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+      storageClass: ""
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: ai-agentic-browser.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: frontend-service
+            port: 3000
+        - path: /api
+          pathType: Prefix
+          service:
+            name: api-gateway-service
+            port: 8080
+  tls:
+    - secretName: ai-agentic-browser-tls
+      hosts:
+        - ai-agentic-browser.example.com
+
+# Monitoring configuration
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+  grafana:
+    enabled: true
+    adminPassword: "admin-password"
+    dashboards:
+      enabled: true
+  alerts:
+    enabled: true
+
+# Tracing configuration
+tracing:
+  enabled: true
+  jaeger:
+    enabled: true
+    collector:
+      service:
+        type: ClusterIP
+    query:
+      service:
+        type: ClusterIP
+
+# Logging configuration
+logging:
+  enabled: true
+  level: "info"
+  format: "json"
+
+# Backup configuration
+backup:
+  enabled: false
+  schedule: "0 2 * * *"
+  retention: "30d"
+  storage:
+    type: "s3"
+    bucket: ""
+    region: ""
+
+# Network Policies
+networkPolicies:
+  enabled: true
+
+# Pod Disruption Budgets
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Node affinity and tolerations
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Extra environment variables
+extraEnvVars: []
+
+# Extra volumes
+extraVolumes: []
+
+# Extra volume mounts
+extraVolumeMounts: []

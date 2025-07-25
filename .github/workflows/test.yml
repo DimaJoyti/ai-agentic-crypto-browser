@@ -1,0 +1,445 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  GO_VERSION: '1.21'
+  NODE_VERSION: '18'
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  # Code quality checks
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Format check
+        run: |
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "Code is not formatted. Please run 'make test-fmt'"
+            gofmt -s -l .
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
+
+      - name: Lint
+        run: golangci-lint run --timeout=5m ./...
+
+      - name: Install gosec
+        run: go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+
+      - name: Security scan
+        run: gosec -quiet ./...
+
+  # Unit tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.20', '1.21']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ matrix.go-version }}-
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run unit tests
+        env:
+          TEST_ENVIRONMENT: ci
+          TEST_USE_CONTAINERS: false
+          TEST_LOG_LEVEL: error
+        run: |
+          go test -v -race -timeout=300s -parallel=4 \
+            -tags=unit \
+            -coverprofile=coverage.out \
+            -covermode=atomic \
+            ./internal/... ./pkg/...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.out
+          flags: unit
+          name: unit-tests-go${{ matrix.go-version }}
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Coverage: ${COVERAGE}%"
+          if (( $(echo "${COVERAGE} < 80" | bc -l) )); then
+            echo "Coverage ${COVERAGE}% is below threshold 80%"
+            exit 1
+          fi
+
+  # Integration tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Wait for services
+        run: |
+          timeout 60 bash -c 'until pg_isready -h localhost -p 5432 -U test_user; do sleep 1; done'
+          timeout 60 bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db?sslmode=disable
+        run: |
+          # Run migrations if migration tool is available
+          # migrate -path migrations -database $DATABASE_URL up
+
+      - name: Run integration tests
+        env:
+          TEST_ENVIRONMENT: ci
+          TEST_USE_CONTAINERS: false
+          TEST_DB_HOST: localhost
+          TEST_DB_PORT: 5432
+          TEST_DB_NAME: test_db
+          TEST_DB_USER: test_user
+          TEST_DB_PASSWORD: test_password
+          TEST_REDIS_HOST: localhost
+          TEST_REDIS_PORT: 6379
+          TEST_LOG_LEVEL: error
+        run: |
+          go test -v -timeout=600s -parallel=2 \
+            -tags=integration \
+            ./test/integration/...
+
+  # E2E tests
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule' # Skip E2E tests on scheduled runs
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./web
+        run: npm run build
+
+      - name: Start application stack
+        run: |
+          docker-compose -f docker-compose.test.yml up -d
+          sleep 60 # Wait for all services to be ready
+
+      - name: Wait for services to be healthy
+        run: |
+          timeout 300 bash -c 'until curl -f http://localhost:8080/health; do sleep 5; done'
+          timeout 300 bash -c 'until curl -f http://localhost:3000; do sleep 5; done'
+
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@latest
+
+      - name: Run E2E tests
+        env:
+          TEST_ENVIRONMENT: ci
+          TEST_E2E_BASE_URL: http://localhost:3000
+          TEST_BROWSER_HEADLESS: true
+          TEST_LOG_LEVEL: error
+        run: |
+          go test -v -timeout=900s -parallel=1 \
+            -tags=e2e \
+            ./test/e2e/...
+
+      - name: Upload E2E test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: e2e-artifacts
+          path: |
+            test-reports/
+            screenshots/
+            videos/
+
+      - name: Stop application stack
+        if: always()
+        run: docker-compose -f docker-compose.test.yml down -v
+
+  # Load tests (only on main branch and scheduled runs)
+  load-tests:
+    name: Load Tests
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Start application stack
+        run: |
+          docker-compose -f docker-compose.test.yml up -d
+          sleep 60 # Wait for all services to be ready
+
+      - name: Wait for services to be healthy
+        run: |
+          timeout 300 bash -c 'until curl -f http://localhost:8080/health; do sleep 5; done'
+
+      - name: Run load tests
+        env:
+          TEST_ENVIRONMENT: ci
+          TEST_LOAD_ENABLED: true
+          TEST_LOAD_CONCURRENT_USERS: 10
+          TEST_LOAD_DURATION: 60s
+          TEST_LOAD_RPS: 20
+          TEST_LOG_LEVEL: error
+        run: |
+          go test -v -timeout=900s \
+            -tags=load \
+            ./test/performance/...
+
+      - name: Upload load test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: load-test-results
+          path: test-reports/
+
+      - name: Stop application stack
+        if: always()
+        run: docker-compose -f docker-compose.test.yml down -v
+
+  # Security tests
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run OWASP ZAP security scan
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker run -v $(pwd):/zap/wrk/:rw \
+            -t owasp/zap2docker-stable zap-baseline.py \
+            -t http://localhost:8080 \
+            -J zap-report.json || true
+
+      - name: Upload ZAP scan results
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-security-scan
+          path: zap-report.json
+
+  # Test summary and reporting
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [code-quality, unit-tests, integration-tests]
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download test artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Generate test summary
+        run: |
+          echo "# Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Code Quality: ${{ needs.code-quality.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.e2e-tests.result }}" != "skipped" ]; then
+            echo "- E2E Tests: ${{ needs.e2e-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.load-tests.result }}" != "skipped" ]; then
+            echo "- Load Tests: ${{ needs.load-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "Coverage reports are available in the Codecov integration." >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment PR with test results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('Test Results')
+            );
+            
+            const body = `## Test Results
+            
+            | Test Suite | Status |
+            |------------|--------|
+            | Code Quality | ${{ needs.code-quality.result }} |
+            | Unit Tests | ${{ needs.unit-tests.result }} |
+            | Integration Tests | ${{ needs.integration-tests.result }} |
+            
+            ${context.payload.pull_request.head.sha}`;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+  # Notify on failure
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [code-quality, unit-tests, integration-tests, e2e-tests, load-tests]
+    if: failure() && github.ref == 'refs/heads/main'
+    steps:
+      - name: Notify Slack on failure
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#ci-cd'
+          text: 'Test suite failed on main branch'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
