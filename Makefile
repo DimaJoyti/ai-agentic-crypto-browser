@@ -12,7 +12,7 @@ help:
 	@echo "  lint         - Run linters"
 	@echo "  format       - Format code"
 	@echo "  dev          - Start development environment"
-	@echo "  docker-up    - Start all services with Docker Compose"
+	@echo "  docker-up    - Start all services with Docker"
 	@echo "  docker-down  - Stop all Docker services"
 	@echo "  clean        - Clean build artifacts"
 
@@ -63,11 +63,11 @@ format:
 # Development environment
 dev-infra:
 	@echo "Starting infrastructure services..."
-	docker-compose up -d postgres redis jaeger prometheus grafana
+	./scripts/docker-setup.sh
 
 dev-stop-infra:
 	@echo "Stopping infrastructure services..."
-	docker-compose stop postgres redis jaeger prometheus grafana
+	./scripts/docker-cleanup.sh
 
 dev: dev-infra
 	@echo "Starting development environment..."
@@ -80,20 +80,30 @@ dev: dev-infra
 
 # Docker operations
 docker-up:
-	@echo "Starting all services with Docker Compose..."
-	docker-compose up -d
+	@echo "Starting all services with Docker..."
+	./scripts/docker-setup.sh
 
 docker-down:
 	@echo "Stopping all Docker services..."
-	docker-compose down
+	./scripts/docker-cleanup.sh
 
 docker-logs:
 	@echo "Showing Docker logs..."
-	docker-compose logs -f
+	docker logs -f postgres &
+	docker logs -f redis &
+	docker logs -f jaeger &
+	docker logs -f prometheus &
+	docker logs -f grafana &
+	wait
 
 docker-build:
 	@echo "Building Docker images..."
-	docker-compose build
+	docker build -t ai-browser/auth-service -f cmd/auth-service/Dockerfile .
+	docker build -t ai-browser/ai-agent -f cmd/ai-agent/Dockerfile .
+	docker build -t ai-browser/browser-service -f cmd/browser-service/Dockerfile .
+	docker build -t ai-browser/web3-service -f cmd/web3-service/Dockerfile .
+	docker build -t ai-browser/api-gateway -f cmd/api-gateway/Dockerfile .
+	docker build -t ai-browser/web -f web/Dockerfile ./web
 
 # Database operations
 db-migrate:
@@ -102,9 +112,17 @@ db-migrate:
 
 db-reset:
 	@echo "Resetting database..."
-	docker-compose down postgres
-	docker volume rm ai-agentic-browser_postgres_data || true
-	docker-compose up -d postgres
+	docker stop postgres || true
+	docker rm postgres || true
+	docker volume rm postgres_data || true
+	docker run -d --name postgres \
+		--network ai-browser-network \
+		-e POSTGRES_DB=ai_agentic_browser \
+		-e POSTGRES_USER=postgres \
+		-e POSTGRES_PASSWORD=postgres \
+		-p 5432:5432 \
+		-v postgres_data:/var/lib/postgresql/data \
+		postgres:16
 
 # Frontend operations
 frontend-install:
@@ -216,7 +234,12 @@ setup: install-tools deps
 # Production
 prod-build:
 	@echo "Building for production..."
-	docker-compose -f docker-compose.prod.yml build
+	docker build -t ai-browser/auth-service:prod -f cmd/auth-service/Dockerfile .
+	docker build -t ai-browser/ai-agent:prod -f cmd/ai-agent/Dockerfile .
+	docker build -t ai-browser/browser-service:prod -f cmd/browser-service/Dockerfile .
+	docker build -t ai-browser/web3-service:prod -f cmd/web3-service/Dockerfile .
+	docker build -t ai-browser/api-gateway:prod -f cmd/api-gateway/Dockerfile .
+	docker build -t ai-browser/web:prod -f web/Dockerfile ./web
 
 prod-deploy:
 	@echo "Deploying to production..."

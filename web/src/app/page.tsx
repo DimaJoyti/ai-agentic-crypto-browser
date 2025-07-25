@@ -84,7 +84,7 @@ export default function HomePage() {
               🚀 Now in Beta
             </Badge>
             <h1 className="text-4xl lg:text-6xl font-bold mb-6 gradient-text">
-              AI-Powered Agentic Browser
+              AI-Powered Agentic Crypto Browser
             </h1>
             <p className="text-xl lg:text-2xl text-muted-foreground mb-8 leading-relaxed">
               The future of web interaction is here. Combine the power of AI agents with 

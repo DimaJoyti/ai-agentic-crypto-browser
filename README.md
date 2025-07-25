@@ -1,4 +1,4 @@
-# AI-Powered Agentic Browser
+# AI-Powered Agentic Crypto Browser
 
 An intelligent web browser that uses AI agents to autonomously navigate, interact with, and extract information from websites, with integrated cryptocurrency and Web3 functionality.
 
@@ -43,7 +43,7 @@ An intelligent web browser that uses AI agents to autonomously navigate, interac
 ### Infrastructure
 - **Database**: PostgreSQL for structured data, Redis for caching
 - **Observability**: OpenTelemetry, Prometheus, Grafana, Jaeger
-- **Containerization**: Docker and Docker Compose
+- **Containerization**: Docker containers with custom networking
 - **Security**: JWT authentication, rate limiting, input validation
 
 ## 🛠️ Quick Start
@@ -84,7 +84,43 @@ An intelligent web browser that uses AI agents to autonomously navigate, interac
 
 1. **Start infrastructure services**
    ```bash
-   docker-compose up -d postgres redis jaeger prometheus grafana
+   # Create a Docker network
+   docker network create ai-browser-network
+
+   # Start PostgreSQL
+   docker run -d --name postgres \
+     --network ai-browser-network \
+     -e POSTGRES_DB=ai_agentic_browser \
+     -e POSTGRES_USER=postgres \
+     -e POSTGRES_PASSWORD=postgres \
+     -p 5432:5432 \
+     postgres:16
+
+   # Start Redis
+   docker run -d --name redis \
+     --network ai-browser-network \
+     -p 6379:6379 \
+     redis:7-alpine
+
+   # Start Jaeger (optional - for tracing)
+   docker run -d --name jaeger \
+     --network ai-browser-network \
+     -p 16686:16686 \
+     -p 14268:14268 \
+     jaegertracing/all-in-one:latest
+
+   # Start Prometheus (optional - for metrics)
+   docker run -d --name prometheus \
+     --network ai-browser-network \
+     -p 9090:9090 \
+     prom/prometheus:latest
+
+   # Start Grafana (optional - for dashboards)
+   docker run -d --name grafana \
+     --network ai-browser-network \
+     -p 3001:3000 \
+     -e GF_SECURITY_ADMIN_PASSWORD=admin \
+     grafana/grafana:latest
    ```
 
 2. **Initialize Go modules**
@@ -95,7 +131,7 @@ An intelligent web browser that uses AI agents to autonomously navigate, interac
 3. **Run database migrations**
    ```bash
    # Database will be initialized automatically via Docker
-   # Check logs: docker-compose logs postgres
+   # Check logs: docker logs postgres
    ```
 
 4. **Start backend services**
@@ -123,19 +159,23 @@ An intelligent web browser that uses AI agents to autonomously navigate, interac
    npm run dev
    ```
 
-### Using Docker Compose
+### Using Docker for Complete Setup
 
-For a complete setup with all services:
+For a complete setup with all services using Docker:
 
 ```bash
-# Start all services
-docker-compose up -d
+# Build and run all services
+./scripts/docker-setup.sh
 
-# View logs
-docker-compose logs -f
+# View logs for specific service
+docker logs -f postgres
+docker logs -f redis
+docker logs -f api-gateway
 
 # Stop all services
-docker-compose down
+docker stop postgres redis jaeger prometheus grafana
+docker rm postgres redis jaeger prometheus grafana
+docker network rm ai-browser-network
 ```
 
 ## 📊 Monitoring and Observability
@@ -172,11 +212,24 @@ go test ./internal/auth/...
 
 ### Integration Tests
 ```bash
-# Start test environment
-docker-compose -f docker-compose.test.yml up -d
+# Start test environment (PostgreSQL and Redis)
+docker run -d --name test-postgres \
+  -e POSTGRES_DB=ai_agentic_browser_test \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -p 5433:5432 \
+  postgres:16
+
+docker run -d --name test-redis \
+  -p 6380:6379 \
+  redis:7-alpine
 
 # Run integration tests
 go test -tags=integration ./test/...
+
+# Cleanup test environment
+docker stop test-postgres test-redis
+docker rm test-postgres test-redis
 ```
 
 ## 🔧 Development
@@ -213,7 +266,13 @@ ai-agentic-browser/
 
 1. **Build Docker images**
    ```bash
-   docker-compose -f docker-compose.prod.yml build
+   # Build individual service images
+   docker build -t ai-browser/auth-service -f cmd/auth-service/Dockerfile .
+   docker build -t ai-browser/ai-agent -f cmd/ai-agent/Dockerfile .
+   docker build -t ai-browser/browser-service -f cmd/browser-service/Dockerfile .
+   docker build -t ai-browser/web3-service -f cmd/web3-service/Dockerfile .
+   docker build -t ai-browser/api-gateway -f cmd/api-gateway/Dockerfile .
+   docker build -t ai-browser/web -f web/Dockerfile ./web
    ```
 
 2. **Deploy to Kubernetes**

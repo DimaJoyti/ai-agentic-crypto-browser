@@ -294,7 +294,7 @@ func handleAPIDocs() http.HandlerFunc {
 		docs := map[string]interface{}{
 			"title":       "AI Agentic Browser API",
 			"version":     "1.0.0",
-			"description": "API documentation for the AI-powered agentic browser",
+			"description": "API documentation for the AI-Powered Agentic Crypto Browser",
 			"endpoints": map[string]interface{}{
 				"authentication": map[string]interface{}{
 					"base_url": "/auth",

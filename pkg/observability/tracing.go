@@ -31,10 +31,9 @@ func NewTracingProvider(cfg config.ObservabilityConfig) (*TracingProvider, error
 	}
 
 	// Create resource with service information
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
+	res, err := resource.New(
+		context.Background(),
+		resource.WithAttributes(
 			semconv.ServiceNameKey.String(cfg.ServiceName),
 			semconv.ServiceVersionKey.String("1.0.0"),
 		),
