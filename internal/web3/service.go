@@ -11,6 +11,7 @@ import (
 	"github.com/ai-agentic-browser/pkg/database"
 	"github.com/ai-agentic-browser/pkg/observability"
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 // Service provides Web3 and cryptocurrency functionality
@@ -70,7 +71,7 @@ func (s *Service) ConnectWallet(ctx context.Context, userID uuid.UUID, req Walle
 	existingWallet, err := s.getWalletByAddress(ctx, userID, req.Address, req.ChainID)
 	if err == nil && existingWallet != nil {
 		return &WalletConnectResponse{
-			Wallet:  *existingWallet,
+			Wallet:  existingWallet,
 			Message: "Wallet already connected",
 		}, nil
 	}
@@ -110,7 +111,7 @@ func (s *Service) ConnectWallet(ctx context.Context, userID uuid.UUID, req Walle
 	})
 
 	return &WalletConnectResponse{
-		Wallet:  *wallet,
+		Wallet:  wallet,
 		Message: "Wallet connected successfully",
 	}, nil
 }
@@ -124,8 +125,8 @@ func (s *Service) GetBalance(ctx context.Context, userID uuid.UUID, req BalanceR
 	var chainID int
 
 	// Determine address and chain ID
-	if req.WalletID != nil {
-		wallet, err := s.getWalletByID(ctx, *req.WalletID)
+	if req.WalletID != uuid.Nil {
+		wallet, err := s.getWalletByID(ctx, req.WalletID)
 		if err != nil {
 			return nil, fmt.Errorf("wallet not found: %w", err)
 		}
@@ -134,9 +135,9 @@ func (s *Service) GetBalance(ctx context.Context, userID uuid.UUID, req BalanceR
 		}
 		address = wallet.Address
 		chainID = wallet.ChainID
-	} else if req.Address != nil && req.ChainID != nil {
-		address = *req.Address
-		chainID = *req.ChainID
+	} else if req.Address != "" && req.ChainID != 0 {
+		address = req.Address
+		chainID = req.ChainID
 	} else {
 		return nil, fmt.Errorf("either wallet_id or address+chain_id must be provided")
 	}
@@ -178,7 +179,7 @@ func (s *Service) GetBalance(ctx context.Context, userID uuid.UUID, req BalanceR
 		TotalUSDValue: 3500.0, // Mock total value
 		Metadata: map[string]interface{}{
 			"provider":   provider.RpcURL,
-			"chain_name": SupportedChains[chainID].Name,
+			"chain_name": SupportedChains[chainID],
 			"timestamp":  time.Now(),
 		},
 	}
@@ -219,7 +220,7 @@ func (s *Service) CreateTransaction(ctx context.Context, userID uuid.UUID, req T
 		TxHash:          fmt.Sprintf("0x%x", time.Now().UnixNano()), // Mock hash
 		ChainID:         wallet.ChainID,
 		FromAddress:     wallet.Address,
-		ToAddress:       &req.ToAddress,
+		ToAddress:       req.ToAddress,
 		Value:           req.Value,
 		Status:          TxStatusPending,
 		TransactionType: "transfer",
@@ -239,7 +240,7 @@ func (s *Service) CreateTransaction(ctx context.Context, userID uuid.UUID, req T
 	go s.simulateTransactionConfirmation(context.Background(), transaction)
 
 	response := &TransactionResponse{
-		Transaction: *transaction,
+		Transaction: transaction,
 		TxHash:      transaction.TxHash,
 		Status:      string(transaction.Status),
 	}
@@ -451,14 +452,14 @@ func (s *Service) simulateTransactionConfirmation(ctx context.Context, tx *Trans
 
 	// Update transaction status
 	tx.Status = TxStatusConfirmed
-	tx.BlockNumber = big.NewInt(18500000) // Mock block number
-	tx.GasUsed = big.NewInt(21000)        // Mock gas used
+	tx.BlockNumber = 18500000 // Mock block number
+	tx.GasUsed = 21000        // Mock gas used
 	tx.UpdatedAt = time.Now()
 
 	// In a real implementation, this would update the database
 	s.logger.Info(ctx, "Transaction confirmed", map[string]interface{}{
 		"tx_hash":      tx.TxHash,
-		"block_number": tx.BlockNumber.String(),
+		"block_number": fmt.Sprintf("%d", tx.BlockNumber),
 	})
 }
 
@@ -472,10 +473,10 @@ func (s *Service) simulateUniswapInteraction(ctx context.Context, wallet *Wallet
 		WalletID:     wallet.ID,
 		ProtocolName: "uniswap",
 		PositionType: "liquidity_pool",
-		TokenSymbol:  &[]string{"ETH-USDC"}[0],
+		TokenSymbol:  "ETH-USDC",
 		Amount:       req.Amount,
-		USDValue:     &[]float64{5000.0}[0],
-		APY:          &[]float64{12.5}[0],
+		USDValue:     decimal.NewFromFloat(5000.0),
+		APY:          decimal.NewFromFloat(12.5),
 		IsActive:     true,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
@@ -493,10 +494,10 @@ func (s *Service) simulateAaveInteraction(ctx context.Context, wallet *Wallet, r
 		WalletID:     wallet.ID,
 		ProtocolName: "aave",
 		PositionType: "lending",
-		TokenSymbol:  &[]string{"USDC"}[0],
+		TokenSymbol:  "USDC",
 		Amount:       req.Amount,
-		USDValue:     &[]float64{10000.0}[0],
-		APY:          &[]float64{4.2}[0],
+		USDValue:     decimal.NewFromFloat(10000.0),
+		APY:          decimal.NewFromFloat(4.2),
 		IsActive:     true,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
@@ -514,10 +515,10 @@ func (s *Service) simulateCompoundInteraction(ctx context.Context, wallet *Walle
 		WalletID:     wallet.ID,
 		ProtocolName: "compound",
 		PositionType: "lending",
-		TokenSymbol:  &[]string{"DAI"}[0],
+		TokenSymbol:  "DAI",
 		Amount:       req.Amount,
-		USDValue:     &[]float64{7500.0}[0],
-		APY:          &[]float64{3.8}[0],
+		USDValue:     decimal.NewFromFloat(7500.0),
+		APY:          decimal.NewFromFloat(3.8),
 		IsActive:     true,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),

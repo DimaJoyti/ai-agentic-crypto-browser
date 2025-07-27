@@ -4,3 +4,4 @@ web/.next
 .env
 .claude
 .augment
+bin

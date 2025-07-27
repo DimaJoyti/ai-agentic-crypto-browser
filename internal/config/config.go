@@ -83,10 +83,22 @@ type LMStudioConfig struct {
 }
 
 type Web3Config struct {
-	EthereumRPC string
-	PolygonRPC  string
-	ArbitrumRPC string
-	OptimismRPC string
+	EthereumRPC        string
+	PolygonRPC         string
+	ArbitrumRPC        string
+	OptimismRPC        string
+	BSCMainnetRPC      string
+	BSCTestnetRPC      string
+	SepoliaRPC         string
+	IPFSNodeURL        string
+	IPFSGateway        string
+	IPFSMaxFileSize    int64
+	GasOptimization    bool
+	HardwareWallets    bool
+	ENSResolution      bool
+	TransactionTimeout time.Duration
+	MaxRetries         int
+	RetryDelay         time.Duration
 }
 
 type BrowserConfig struct {
@@ -169,10 +181,22 @@ func Load() (*Config, error) {
 			},
 		},
 		Web3: Web3Config{
-			EthereumRPC: getEnv("ETHEREUM_RPC_URL", ""),
-			PolygonRPC:  getEnv("POLYGON_RPC_URL", ""),
-			ArbitrumRPC: getEnv("ARBITRUM_RPC_URL", ""),
-			OptimismRPC: getEnv("OPTIMISM_RPC_URL", ""),
+			EthereumRPC:        getEnv("ETHEREUM_RPC_URL", ""),
+			PolygonRPC:         getEnv("POLYGON_RPC_URL", ""),
+			ArbitrumRPC:        getEnv("ARBITRUM_RPC_URL", ""),
+			OptimismRPC:        getEnv("OPTIMISM_RPC_URL", ""),
+			BSCMainnetRPC:      getEnv("BSC_MAINNET_RPC_URL", ""),
+			BSCTestnetRPC:      getEnv("BSC_TESTNET_RPC_URL", ""),
+			SepoliaRPC:         getEnv("SEPOLIA_RPC_URL", ""),
+			IPFSNodeURL:        getEnv("IPFS_NODE_URL", "http://localhost:5001"),
+			IPFSGateway:        getEnv("IPFS_GATEWAY", "https://ipfs.io"),
+			IPFSMaxFileSize:    int64(getIntEnv("IPFS_MAX_FILE_SIZE", 10*1024*1024)), // 10MB default
+			GasOptimization:    getBoolEnv("WEB3_GAS_OPTIMIZATION", true),
+			HardwareWallets:    getBoolEnv("WEB3_HARDWARE_WALLETS", true),
+			ENSResolution:      getBoolEnv("WEB3_ENS_RESOLUTION", true),
+			TransactionTimeout: getDurationEnv("WEB3_TRANSACTION_TIMEOUT", 5*time.Minute),
+			MaxRetries:         getIntEnv("WEB3_MAX_RETRIES", 3),
+			RetryDelay:         getDurationEnv("WEB3_RETRY_DELAY", 2*time.Second),
 		},
 		Browser: BrowserConfig{
 			Headless:   getBoolEnv("CHROME_HEADLESS", true),
