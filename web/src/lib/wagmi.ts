@@ -1,14 +1,31 @@
 import { createConfig, http } from 'wagmi'
-import { mainnet, polygon, arbitrum, optimism, sepolia } from 'wagmi/chains'
+import { mainnet, polygon, arbitrum, optimism, sepolia, base, avalanche, bsc, fantom, gnosis } from 'wagmi/chains'
 import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors'
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || ''
 
+// Define supported chains as a tuple to satisfy Wagmi's type requirements
+const chains = [mainnet, polygon, arbitrum, optimism, base, avalanche, bsc, fantom, gnosis, sepolia] as const
+
+// Create transports for all supported chains
+const transports = {
+  [mainnet.id]: http(),
+  [polygon.id]: http(),
+  [arbitrum.id]: http(),
+  [optimism.id]: http(),
+  [base.id]: http(),
+  [avalanche.id]: http(),
+  [bsc.id]: http(),
+  [fantom.id]: http(),
+  [gnosis.id]: http(),
+  [sepolia.id]: http(),
+}
+
 export const config = createConfig({
-  chains: [mainnet, polygon, arbitrum, optimism, sepolia],
+  chains,
   connectors: [
     injected(),
-    walletConnect({ 
+    walletConnect({
       projectId,
       metadata: {
         name: 'AI Agentic Browser',
@@ -22,11 +39,5 @@ export const config = createConfig({
       appLogoUrl: 'https://ai-agentic-browser.com/icon.png'
     }),
   ],
-  transports: {
-    [mainnet.id]: http(),
-    [polygon.id]: http(),
-    [arbitrum.id]: http(),
-    [optimism.id]: http(),
-    [sepolia.id]: http(),
-  },
+  transports,
 })

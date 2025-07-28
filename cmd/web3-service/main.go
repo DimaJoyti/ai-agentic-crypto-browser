@@ -124,6 +124,20 @@ func main() {
 	}
 	alertService := alerts.NewAlertService(logger, alertConfig)
 
+	// Initialize hardware wallet service
+	hwService := web3.NewHardwareWalletService(logger)
+
+	// Initialize integration status checker
+	integrationChecker := web3.NewIntegrationChecker(
+		logger,
+		web3Service,
+		enhancedService,
+		hwService,
+		tradingEngine,
+		defiManager,
+		portfolioRebalancer,
+	)
+
 	// Start all services
 	go func() {
 		if err := tradingEngine.Start(context.Background()); err != nil {
@@ -155,7 +169,7 @@ func main() {
 	// Create HTTP server
 	server := &http.Server{
 		Addr:         fmt.Sprintf("%s:%s", cfg.Server.Host, "8084"), // Web3 service port
-		Handler:      setupRoutes(web3Service, enhancedService, tradingEngine, defiManager, portfolioRebalancer, voiceInterface, conversationalAI, marketDataService, portfolioAnalytics, systemMonitor, alertService, cfg, logger, db),
+		Handler:      setupRoutes(web3Service, enhancedService, tradingEngine, defiManager, portfolioRebalancer, voiceInterface, conversationalAI, marketDataService, portfolioAnalytics, systemMonitor, alertService, hwService, integrationChecker, cfg, logger, db),
 		ReadTimeout:  cfg.Server.ReadTimeout,
 		WriteTimeout: cfg.Server.WriteTimeout,
 		IdleTimeout:  cfg.Server.IdleTimeout,
@@ -201,6 +215,8 @@ func setupRoutes(
 	portfolioAnalytics *analytics.PortfolioAnalytics,
 	systemMonitor *monitoring.SystemMonitor,
 	alertService *alerts.AlertService,
+	hwService *web3.HardwareWalletService,
+	integrationChecker *web3.IntegrationChecker,
 	cfg *config.Config,
 	logger *observability.Logger,
 	db *database.DB,
@@ -294,6 +310,20 @@ func setupRoutes(
 	protectedMux.HandleFunc("GET /web3/alerts/active", handleGetActiveAlerts(alertService, logger))
 	protectedMux.HandleFunc("POST /web3/alerts/{alert_id}/resolve", handleResolveAlert(alertService, logger))
 	protectedMux.HandleFunc("GET /web3/alerts/subscribe/{topic}", handleAlertSubscribe(alertService, logger))
+
+	// Hardware Wallet endpoints
+	protectedMux.HandleFunc("GET /web3/hardware/devices", handleGetDevices(hwService, logger))
+	protectedMux.HandleFunc("POST /web3/hardware/devices/discover", handleDiscoverDevices(hwService, logger))
+	protectedMux.HandleFunc("POST /web3/hardware/devices/{device_id}/connect", handleConnectDevice(hwService, logger))
+	protectedMux.HandleFunc("POST /web3/hardware/devices/{device_id}/disconnect", handleDisconnectDevice(hwService, logger))
+	protectedMux.HandleFunc("GET /web3/hardware/devices/{device_id}/addresses", handleGetAddresses(hwService, logger))
+	protectedMux.HandleFunc("POST /web3/hardware/devices/{device_id}/sign", handleSignTransaction(hwService, logger))
+	protectedMux.HandleFunc("POST /web3/hardware/devices/{device_id}/sign-message", handleSignMessage(hwService, logger))
+	protectedMux.HandleFunc("GET /web3/hardware/devices/{device_id}/status", handleGetDeviceStatus(hwService, logger))
+
+	// Integration Status endpoints
+	protectedMux.HandleFunc("GET /web3/integration/status", handleIntegrationStatus(integrationChecker, logger))
+	protectedMux.HandleFunc("GET /web3/integration/summary", handleIntegrationSummary(integrationChecker, logger))
 
 	// Apply JWT middleware to protected routes
 	mux.Handle("/web3/", middleware.JWT(cfg.JWT.Secret)(protectedMux))

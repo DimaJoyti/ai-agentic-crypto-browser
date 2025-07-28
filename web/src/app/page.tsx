@@ -92,13 +92,13 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="text-lg px-8">
-                <Link href="/auth/login">
-                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                <Link href="/web3">
+                  Try Web3 Features <Wallet className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button variant="outline" size="lg" className="text-lg px-8">
-                <Link href="/demo">
-                  View Demo
+                <Link href="/dashboard">
+                  Dashboard <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
             </div>
