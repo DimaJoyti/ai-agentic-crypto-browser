@@ -6,3 +6,4 @@ web/.next
 .augment
 bin
 .vscode
+logs
