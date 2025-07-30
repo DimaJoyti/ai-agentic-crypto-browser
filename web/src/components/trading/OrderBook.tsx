@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { 
-  Settings, 
-  TrendingUp, 
+import { useBinanceOrderBook, useBinanceTicker } from '@/hooks/useBinanceMarketData';
+import {
+  Settings,
+  TrendingUp,
   TrendingDown,
   Volume2,
   ArrowUpDown,
-  Zap
+  Zap,
+  Wifi,
+  WifiOff,
+  Loader2
 } from 'lucide-react';
 
 interface OrderBookEntry {
@@ -22,31 +25,107 @@ interface OrderBookEntry {
 interface OrderBookProps {
   symbol: string;
   className?: string;
+  limit?: number;
 }
 
-export const OrderBook: React.FC<OrderBookProps> = ({ symbol, className }) => {
+export const OrderBook: React.FC<OrderBookProps> = ({ symbol, className, limit = 20 }) => {
   const [precision, setPrecision] = useState(2);
-  const [grouping, setGrouping] = useState(0.01);
+  const { orderBook, isLoading, error, isConnected } = useBinanceOrderBook(symbol, limit);
+  const { ticker } = useBinanceTicker(symbol);
 
-  // Mock order book data
-  const mockAsks: OrderBookEntry[] = [
-    { price: '43,254.00', size: '0.5678', total: '24,550.00', percentage: 15 },
-    { price: '43,253.25', size: '1.8765', total: '81,200.00', percentage: 45 },
-    { price: '43,252.50', size: '0.9876', total: '42,700.00', percentage: 25 },
-    { price: '43,251.75', size: '1.5432', total: '66,700.00', percentage: 35 },
-    { price: '43,251.00', size: '0.4321', total: '18,700.00', percentage: 12 },
-  ];
+  // Process order book data for display
+  const processedOrderBook = useMemo(() => {
+    if (!orderBook) return { asks: [], bids: [], spread: 0, spreadPercent: 0 };
 
-  const mockBids: OrderBookEntry[] = [
-    { price: '43,250.50', size: '0.5432', total: '23,500.00', percentage: 18 },
-    { price: '43,249.75', size: '1.2345', total: '53,400.00', percentage: 38 },
-    { price: '43,249.00', size: '0.8765', total: '37,900.00', percentage: 28 },
-    { price: '43,248.25', size: '2.1234', total: '91,800.00', percentage: 55 },
-    { price: '43,247.50', size: '0.6789', total: '29,350.00', percentage: 22 },
-  ];
+    // Calculate totals and percentages
+    let bidTotal = 0;
+    let askTotal = 0;
 
-  const spread = 0.50;
-  const spreadPercent = 0.001;
+    const processedBids = orderBook.bids.map((bid, index) => {
+      bidTotal += parseFloat(bid.quantity);
+      return {
+        price: parseFloat(bid.price).toFixed(precision),
+        size: parseFloat(bid.quantity).toFixed(4),
+        total: (parseFloat(bid.price) * parseFloat(bid.quantity)).toFixed(2),
+        percentage: 0 // Will be calculated after
+      };
+    });
+
+    const processedAsks = orderBook.asks.map((ask, index) => {
+      askTotal += parseFloat(ask.quantity);
+      return {
+        price: parseFloat(ask.price).toFixed(precision),
+        size: parseFloat(ask.quantity).toFixed(4),
+        total: (parseFloat(ask.price) * parseFloat(ask.quantity)).toFixed(2),
+        percentage: 0 // Will be calculated after
+      };
+    });
+
+    // Calculate percentages based on max volume
+    const maxVolume = Math.max(bidTotal, askTotal);
+
+    processedBids.forEach((bid, index) => {
+      const cumulative = processedBids.slice(0, index + 1).reduce((sum, b) => sum + parseFloat(b.size), 0);
+      bid.percentage = (cumulative / maxVolume) * 100;
+    });
+
+    processedAsks.forEach((ask, index) => {
+      const cumulative = processedAsks.slice(0, index + 1).reduce((sum, a) => sum + parseFloat(a.size), 0);
+      ask.percentage = (cumulative / maxVolume) * 100;
+    });
+
+    // Calculate spread
+    const bestBid = orderBook.bids[0] ? parseFloat(orderBook.bids[0].price) : 0;
+    const bestAsk = orderBook.asks[0] ? parseFloat(orderBook.asks[0].price) : 0;
+    const spread = bestAsk - bestBid;
+    const spreadPercent = bestBid > 0 ? (spread / bestBid) * 100 : 0;
+
+    return {
+      asks: processedAsks,
+      bids: processedBids,
+      spread,
+      spreadPercent
+    };
+  }, [orderBook, precision]);
+
+  if (isLoading) {
+    return (
+      <Card className={`bg-gray-900/50 border-gray-800 ${className}`}>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm text-white flex items-center">
+            <Loader2 className="w-4 h-4 mr-2 text-blue-400 animate-spin" />
+            Loading Order Book
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <div className="animate-pulse space-y-2">
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="h-4 bg-gray-700 rounded"></div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className={`bg-gray-900/50 border-gray-800 ${className}`}>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm text-white flex items-center">
+            <WifiOff className="w-4 h-4 mr-2 text-red-400" />
+            Order Book Error
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <div className="text-center text-red-400">
+            <p className="text-sm">Failed to load order book</p>
+            <p className="text-xs text-gray-500 mt-1">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className={`bg-gray-900/50 border-gray-800 ${className}`}>
@@ -77,47 +156,47 @@ export const OrderBook: React.FC<OrderBookProps> = ({ symbol, className }) => {
 
         {/* Asks (Sell Orders) */}
         <div className="space-y-1">
-          {mockAsks.reverse().map((ask, index) => (
-            <div 
-              key={index} 
+          {processedOrderBook.asks.slice().reverse().map((ask, index) => (
+            <div
+              key={`ask-${index}`}
               className="relative flex justify-between text-xs py-1.5 px-1 hover:bg-red-900/20 rounded cursor-pointer transition-colors"
             >
               {/* Background bar */}
-              <div 
+              <div
                 className="absolute right-0 top-0 h-full bg-red-500/10 rounded"
                 style={{ width: `${ask.percentage}%` }}
               />
-              
+
               <span className="text-red-400 font-mono relative z-10">{ask.price}</span>
               <span className="text-gray-300 font-mono relative z-10">{ask.size}</span>
               <span className="text-gray-500 font-mono relative z-10">{ask.total}</span>
             </div>
           ))}
         </div>
-        
+
         {/* Spread */}
         <div className="flex justify-center py-3 border-y border-gray-700 my-2">
           <div className="text-center">
             <div className="text-xs text-gray-400">Spread</div>
             <div className="text-sm font-mono text-white">
-              ${spread.toFixed(2)} ({(spreadPercent * 100).toFixed(3)}%)
+              ${processedOrderBook.spread.toFixed(2)} ({processedOrderBook.spreadPercent.toFixed(3)}%)
             </div>
           </div>
         </div>
-        
+
         {/* Bids (Buy Orders) */}
         <div className="space-y-1">
-          {mockBids.map((bid, index) => (
-            <div 
-              key={index} 
+          {processedOrderBook.bids.map((bid, index) => (
+            <div
+              key={`bid-${index}`}
               className="relative flex justify-between text-xs py-1.5 px-1 hover:bg-green-900/20 rounded cursor-pointer transition-colors"
             >
               {/* Background bar */}
-              <div 
+              <div
                 className="absolute right-0 top-0 h-full bg-green-500/10 rounded"
                 style={{ width: `${bid.percentage}%` }}
               />
-              
+
               <span className="text-green-400 font-mono relative z-10">{bid.price}</span>
               <span className="text-gray-300 font-mono relative z-10">{bid.size}</span>
               <span className="text-gray-500 font-mono relative z-10">{bid.total}</span>
@@ -126,26 +205,36 @@ export const OrderBook: React.FC<OrderBookProps> = ({ symbol, className }) => {
         </div>
 
         {/* Market Summary */}
-        <div className="mt-4 pt-3 border-t border-gray-700">
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">24h Volume</span>
-              <span className="text-white font-mono">1,234.56</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">24h High</span>
-              <span className="text-green-400 font-mono">44,125.00</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">24h Low</span>
-              <span className="text-red-400 font-mono">42,850.00</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">24h Change</span>
-              <span className="text-green-400 font-mono">+2.34%</span>
+        {ticker && (
+          <div className="mt-4 pt-3 border-t border-gray-700">
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">24h Volume</span>
+                <span className="text-white font-mono">
+                  {parseFloat(ticker.volume).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">24h High</span>
+                <span className="text-green-400 font-mono">
+                  {parseFloat(ticker.highPrice).toFixed(precision)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">24h Low</span>
+                <span className="text-red-400 font-mono">
+                  {parseFloat(ticker.lowPrice).toFixed(precision)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">24h Change</span>
+                <span className={`font-mono ${parseFloat(ticker.priceChangePercent) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {parseFloat(ticker.priceChangePercent) >= 0 ? '+' : ''}{parseFloat(ticker.priceChangePercent).toFixed(2)}%
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Quick Actions */}
         <div className="mt-4 pt-3 border-t border-gray-700">

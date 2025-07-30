@@ -68,7 +68,11 @@ import { StrategyPanel } from './StrategyPanel';
 import { RiskManagementPanel } from './RiskManagementPanel';
 import { PerformancePanel } from './PerformancePanel';
 import { TradingViewChart } from './TradingViewChart';
+import { MarketTicker } from './MarketTicker';
+import { OrderBook } from './OrderBook';
 import { useTradingDashboard } from '@/hooks/useTradingDashboard';
+import { useBinanceTicker, useBinanceMultipleTickers } from '@/hooks/useBinanceMarketData';
+import { binanceMarketService } from '@/services/binance/BinanceMarketService';
 
 interface TradingDashboardProps {
   className?: string;
@@ -206,25 +210,10 @@ export const TradingDashboard: React.FC<TradingDashboardProps> = ({ className })
     emergencyStop,
   } = useTradingDashboard();
 
-  // Mock data for demonstration
-  const mockOrderBook: OrderBook = {
-    symbol: selectedSymbol,
-    bids: [
-      { price: '43250.50', size: '0.5432', total: '23,500.00' },
-      { price: '43249.75', size: '1.2345', total: '53,400.00' },
-      { price: '43249.00', size: '0.8765', total: '37,900.00' },
-      { price: '43248.25', size: '2.1234', total: '91,800.00' },
-      { price: '43247.50', size: '0.6789', total: '29,350.00' },
-    ],
-    asks: [
-      { price: '43251.00', size: '0.4321', total: '18,700.00' },
-      { price: '43251.75', size: '1.5432', total: '66,700.00' },
-      { price: '43252.50', size: '0.9876', total: '42,700.00' },
-      { price: '43253.25', size: '1.8765', total: '81,200.00' },
-      { price: '43254.00', size: '0.5678', total: '24,550.00' },
-    ],
-    lastUpdate: new Date().toISOString(),
-  };
+  // Get real market data
+  const { ticker: currentTicker } = useBinanceTicker(selectedSymbol);
+  const popularSymbols = binanceMarketService.getPopularPairs();
+  const { tickers: allTickers } = useBinanceMultipleTickers(popularSymbols);
 
   const mockPositions: Position[] = [
     {
@@ -687,79 +676,11 @@ export const TradingDashboard: React.FC<TradingDashboardProps> = ({ className })
 
         {/* Right Sidebar - Order Book & Market Data */}
         <div className="w-80 border-l border-gray-800 bg-gray-900/30 p-4 space-y-4">
-          {/* Market Ticker */}
-          <Card className="bg-gray-900/50 border-gray-800">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-white flex items-center">
-                <Activity className="w-4 h-4 mr-2 text-green-400" />
-                {selectedSymbol}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-white">$43,251.50</span>
-                <Badge className="bg-green-600 text-white">+2.34%</Badge>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-xs">
-                <div>
-                  <div className="text-gray-400">24h High</div>
-                  <div className="text-white">$44,125.00</div>
-                </div>
-                <div>
-                  <div className="text-gray-400">24h Low</div>
-                  <div className="text-white">$42,850.00</div>
-                </div>
-                <div>
-                  <div className="text-gray-400">24h Volume</div>
-                  <div className="text-white">1,234.56 BTC</div>
-                </div>
-                <div>
-                  <div className="text-gray-400">24h Change</div>
-                  <div className="text-green-400">+$987.50</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Real Market Ticker */}
+          <MarketTicker symbol={selectedSymbol} />
 
-          {/* Order Book */}
-          <Card className="bg-gray-900/50 border-gray-800 flex-1">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm text-white">Order Book</CardTitle>
-                <Button variant="ghost" size="sm" className="text-gray-400">
-                  <Settings className="w-3 h-3" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              {/* Asks */}
-              <div className="space-y-1">
-                {mockOrderBook.asks.reverse().map((ask, index) => (
-                  <div key={index} className="flex justify-between text-xs py-1 hover:bg-red-900/20 rounded">
-                    <span className="text-red-400">{ask.price}</span>
-                    <span className="text-gray-400">{ask.size}</span>
-                    <span className="text-gray-500">{ask.total}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Spread */}
-              <div className="flex justify-center py-2 border-y border-gray-700">
-                <span className="text-xs text-gray-400">Spread: $0.50</span>
-              </div>
-
-              {/* Bids */}
-              <div className="space-y-1">
-                {mockOrderBook.bids.map((bid, index) => (
-                  <div key={index} className="flex justify-between text-xs py-1 hover:bg-green-900/20 rounded">
-                    <span className="text-green-400">{bid.price}</span>
-                    <span className="text-gray-400">{bid.size}</span>
-                    <span className="text-gray-500">{bid.total}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Real Order Book */}
+          <OrderBook symbol={selectedSymbol} limit={15} className="flex-1" />
 
           {/* System Status */}
           <Card className="bg-gray-900/50 border-gray-800">
