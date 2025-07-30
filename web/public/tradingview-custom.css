@@ -1,0 +1,249 @@
+/* TradingView Custom Styles for Dark Theme */
+
+/* Main chart container */
+.tv-lightweight-charts {
+  background-color: #1a1a1a !important;
+}
+
+/* Chart background */
+.chart-container {
+  background-color: #1a1a1a !important;
+}
+
+/* Toolbar styling */
+.tv-header {
+  background-color: #1a1a1a !important;
+  border-bottom: 1px solid #2a2a2a !important;
+}
+
+/* Symbol search */
+.tv-symbol-search {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+}
+
+/* Timeframe buttons */
+.tv-timeframe-picker {
+  background-color: #2a2a2a !important;
+}
+
+.tv-timeframe-picker__item {
+  color: #b0b0b0 !important;
+}
+
+.tv-timeframe-picker__item--active {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+/* Price scale */
+.tv-price-axis {
+  background-color: #1a1a1a !important;
+  color: #b0b0b0 !important;
+}
+
+/* Time scale */
+.tv-time-axis {
+  background-color: #1a1a1a !important;
+  color: #b0b0b0 !important;
+}
+
+/* Grid lines */
+.tv-grid-row {
+  border-color: #2a2a2a !important;
+}
+
+/* Crosshair */
+.tv-crosshair-label {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border: 1px solid #3a3a3a !important;
+}
+
+/* Volume bars */
+.tv-volume-pane {
+  background-color: #1a1a1a !important;
+}
+
+/* Studies/Indicators */
+.tv-study-legend {
+  background-color: rgba(26, 26, 26, 0.9) !important;
+  color: #b0b0b0 !important;
+}
+
+/* Tooltip */
+.tv-tooltip {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border: 1px solid #3a3a3a !important;
+  border-radius: 4px !important;
+}
+
+/* Loading screen */
+.tv-loading-screen {
+  background-color: #1a1a1a !important;
+  color: #3b82f6 !important;
+}
+
+/* Scrollbars */
+.tv-scrollbar {
+  background-color: #2a2a2a !important;
+}
+
+.tv-scrollbar-thumb {
+  background-color: #4a4a4a !important;
+}
+
+.tv-scrollbar-thumb:hover {
+  background-color: #5a5a5a !important;
+}
+
+/* Context menu */
+.tv-context-menu {
+  background-color: #2a2a2a !important;
+  border: 1px solid #3a3a3a !important;
+  color: #ffffff !important;
+}
+
+.tv-context-menu__item:hover {
+  background-color: #3a3a3a !important;
+}
+
+/* Drawing tools */
+.tv-drawing-toolbar {
+  background-color: #2a2a2a !important;
+  border: 1px solid #3a3a3a !important;
+}
+
+/* Symbol info */
+.tv-symbol-info {
+  color: #ffffff !important;
+}
+
+/* OHLC values */
+.tv-symbol-info__ohlc {
+  color: #b0b0b0 !important;
+}
+
+/* Green/Red colors for candles */
+.tv-candle-up {
+  color: #10b981 !important;
+}
+
+.tv-candle-down {
+  color: #ef4444 !important;
+}
+
+/* Volume colors */
+.tv-volume-up {
+  color: #10b981 !important;
+}
+
+.tv-volume-down {
+  color: #ef4444 !important;
+}
+
+/* Custom button styles */
+.tv-button {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border: 1px solid #3a3a3a !important;
+}
+
+.tv-button:hover {
+  background-color: #3a3a3a !important;
+}
+
+.tv-button--active {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+/* Input fields */
+.tv-input {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border: 1px solid #3a3a3a !important;
+}
+
+.tv-input:focus {
+  border-color: #3b82f6 !important;
+}
+
+/* Dropdown menus */
+.tv-dropdown {
+  background-color: #2a2a2a !important;
+  border: 1px solid #3a3a3a !important;
+}
+
+.tv-dropdown__item {
+  color: #ffffff !important;
+}
+
+.tv-dropdown__item:hover {
+  background-color: #3a3a3a !important;
+}
+
+/* Chart title */
+.tv-chart-title {
+  color: #ffffff !important;
+  font-weight: bold !important;
+}
+
+/* Watermark */
+.tv-watermark {
+  color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Hide unwanted elements */
+.tv-footer,
+.tv-attribution,
+.tv-logo {
+  display: none !important;
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2a2a2a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5a5a5a;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .tv-header {
+    padding: 8px !important;
+  }
+  
+  .tv-timeframe-picker {
+    font-size: 12px !important;
+  }
+  
+  .tv-symbol-info {
+    font-size: 14px !important;
+  }
+}
+
+/* Animation for smooth transitions */
+.tv-chart-container {
+  transition: all 0.3s ease !important;
+}
+
+/* Focus states for accessibility */
+.tv-button:focus,
+.tv-input:focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+}
