@@ -11,7 +11,11 @@ export const metadata: Metadata = {
   description: 'An intelligent web browser powered by AI agents with Web3 integration',
   keywords: ['AI', 'browser', 'automation', 'Web3', 'cryptocurrency', 'DeFi'],
   authors: [{ name: 'AI Agentic Browser Team' }],
-  viewport: 'width=device-width, initial-scale=1',
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#000000' },

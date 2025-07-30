@@ -17,11 +17,11 @@ type HealthChecker interface {
 
 // HealthStatus represents the health status of an AI provider
 type HealthStatus struct {
-	Provider    string    `json:"provider"`
-	Healthy     bool      `json:"healthy"`
-	LastChecked time.Time `json:"last_checked"`
-	Error       string    `json:"error,omitempty"`
-	Models      []string  `json:"models,omitempty"`
+	Provider     string        `json:"provider"`
+	Healthy      bool          `json:"healthy"`
+	LastChecked  time.Time     `json:"last_checked"`
+	Error        string        `json:"error,omitempty"`
+	Models       []string      `json:"models,omitempty"`
 	ResponseTime time.Duration `json:"response_time"`
 }
 
@@ -147,7 +147,7 @@ func (hm *HealthMonitor) checkAllProviders(ctx context.Context) {
 // checkProvider performs a health check on a single provider
 func (hm *HealthMonitor) checkProvider(ctx context.Context, name string, provider HealthChecker) {
 	start := time.Now()
-	
+
 	// Create a timeout context for the health check
 	checkCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -212,7 +212,7 @@ type HealthSummary struct {
 // GetHealthCheckResponse returns a comprehensive health check response
 func (hm *HealthMonitor) GetHealthCheckResponse() *HealthCheckResponse {
 	statuses := hm.GetAllStatuses()
-	
+
 	summary := HealthSummary{
 		Total: len(statuses),
 	}

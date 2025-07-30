@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	_ "github.com/lib/pq"
 	"github.com/ai-agentic-browser/internal/config"
+	_ "github.com/lib/pq"
 )
 
 // DB wraps sql.DB with additional functionality

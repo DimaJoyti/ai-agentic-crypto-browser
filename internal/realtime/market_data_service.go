@@ -62,19 +62,19 @@ type ExchangeConnection struct {
 
 // MarketUpdate represents a real-time market data update
 type MarketUpdate struct {
-	Exchange    string          `json:"exchange"`
-	Symbol      string          `json:"symbol"`
-	Type        UpdateType      `json:"type"`
-	Price       decimal.Decimal `json:"price"`
-	Volume      decimal.Decimal `json:"volume"`
-	Bid         decimal.Decimal `json:"bid,omitempty"`
-	Ask         decimal.Decimal `json:"ask,omitempty"`
-	High24h     decimal.Decimal `json:"high_24h,omitempty"`
-	Low24h      decimal.Decimal `json:"low_24h,omitempty"`
-	Change24h   decimal.Decimal `json:"change_24h,omitempty"`
-	Timestamp   time.Time       `json:"timestamp"`
-	Sequence    int64           `json:"sequence,omitempty"`
-	Metadata    json.RawMessage `json:"metadata,omitempty"`
+	Exchange  string          `json:"exchange"`
+	Symbol    string          `json:"symbol"`
+	Type      UpdateType      `json:"type"`
+	Price     decimal.Decimal `json:"price"`
+	Volume    decimal.Decimal `json:"volume"`
+	Bid       decimal.Decimal `json:"bid,omitempty"`
+	Ask       decimal.Decimal `json:"ask,omitempty"`
+	High24h   decimal.Decimal `json:"high_24h,omitempty"`
+	Low24h    decimal.Decimal `json:"low_24h,omitempty"`
+	Change24h decimal.Decimal `json:"change_24h,omitempty"`
+	Timestamp time.Time       `json:"timestamp"`
+	Sequence  int64           `json:"sequence,omitempty"`
+	Metadata  json.RawMessage `json:"metadata,omitempty"`
 }
 
 // UpdateType represents the type of market data update
@@ -91,7 +91,7 @@ const (
 // NewMarketDataService creates a new market data service
 func NewMarketDataService(logger *observability.Logger, config MarketDataConfig) *MarketDataService {
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	return &MarketDataService{
 		logger:      logger,
 		connections: make(map[string]*ExchangeConnection),
@@ -132,12 +132,12 @@ func (m *MarketDataService) Start() error {
 // Stop stops the market data service
 func (m *MarketDataService) Stop() error {
 	m.logger.Info(m.ctx, "Stopping market data service")
-	
+
 	m.cancel()
-	
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	// Close all connections
 	for name, conn := range m.connections {
 		if conn.Conn != nil {
@@ -147,7 +147,7 @@ func (m *MarketDataService) Stop() error {
 			"exchange": name,
 		})
 	}
-	
+
 	// Close all subscriber channels
 	for symbol, channels := range m.subscribers {
 		for _, ch := range channels {
@@ -158,7 +158,7 @@ func (m *MarketDataService) Stop() error {
 			"count":  len(channels),
 		})
 	}
-	
+
 	return nil
 }
 
@@ -166,20 +166,20 @@ func (m *MarketDataService) Stop() error {
 func (m *MarketDataService) Subscribe(symbol string) <-chan MarketUpdate {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	ch := make(chan MarketUpdate, m.config.BufferSize)
-	
+
 	if m.subscribers[symbol] == nil {
 		m.subscribers[symbol] = make([]chan MarketUpdate, 0)
 	}
-	
+
 	m.subscribers[symbol] = append(m.subscribers[symbol], ch)
-	
+
 	m.logger.Info(m.ctx, "New subscriber added", map[string]interface{}{
 		"symbol":      symbol,
 		"subscribers": len(m.subscribers[symbol]),
 	})
-	
+
 	return ch
 }
 
@@ -187,7 +187,7 @@ func (m *MarketDataService) Subscribe(symbol string) <-chan MarketUpdate {
 func (m *MarketDataService) Unsubscribe(symbol string, ch <-chan MarketUpdate) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if channels, exists := m.subscribers[symbol]; exists {
 		for i, subscriber := range channels {
 			if subscriber == ch {
@@ -197,7 +197,7 @@ func (m *MarketDataService) Unsubscribe(symbol string, ch <-chan MarketUpdate) {
 				break
 			}
 		}
-		
+
 		// Clean up empty subscriber lists
 		if len(m.subscribers[symbol]) == 0 {
 			delete(m.subscribers, symbol)
@@ -209,9 +209,9 @@ func (m *MarketDataService) Unsubscribe(symbol string, ch <-chan MarketUpdate) {
 func (m *MarketDataService) GetConnectionStatus() map[string]ConnectionStatus {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	status := make(map[string]ConnectionStatus)
-	
+
 	for name, conn := range m.connections {
 		conn.mu.RLock()
 		status[name] = ConnectionStatus{
@@ -225,7 +225,7 @@ func (m *MarketDataService) GetConnectionStatus() map[string]ConnectionStatus {
 		}
 		conn.mu.RUnlock()
 	}
-	
+
 	return status
 }
 
@@ -256,7 +256,7 @@ func (m *MarketDataService) connectToExchange(config ExchangeConfig) error {
 	// Create WebSocket connection
 	dialer := websocket.DefaultDialer
 	dialer.HandshakeTimeout = 10 * time.Second
-	
+
 	conn, _, err := dialer.Dial(u.String(), headers)
 	if err != nil {
 		return fmt.Errorf("failed to connect to %s: %w", config.Name, err)
@@ -305,13 +305,13 @@ func (m *MarketDataService) subscribeToChannels(conn *ExchangeConnection) error 
 				"params": []string{fmt.Sprintf("%s@%s", symbol, channel)},
 				"id":     time.Now().Unix(),
 			}
-			
+
 			if err := conn.Conn.WriteJSON(subscribeMsg); err != nil {
 				return fmt.Errorf("failed to subscribe to %s@%s: %w", symbol, channel, err)
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -321,11 +321,11 @@ func (m *MarketDataService) handleMessages(conn *ExchangeConnection) {
 		conn.mu.Lock()
 		conn.IsConnected = false
 		conn.mu.Unlock()
-		
+
 		if conn.Conn != nil {
 			conn.Conn.Close()
 		}
-		
+
 		// Attempt reconnection if not cancelled
 		if m.ctx.Err() == nil && conn.Reconnects < m.config.MaxReconnects {
 			time.Sleep(m.config.ReconnectDelay)
@@ -343,7 +343,7 @@ func (m *MarketDataService) handleMessages(conn *ExchangeConnection) {
 				conn.mu.Lock()
 				conn.ErrorCount++
 				conn.mu.Unlock()
-				
+
 				m.logger.Error(m.ctx, "WebSocket read error", err, map[string]interface{}{
 					"exchange": conn.Name,
 				})

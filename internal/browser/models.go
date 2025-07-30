@@ -39,14 +39,14 @@ type NavigateRequest struct {
 
 // NavigateResponse represents a navigation response
 type NavigateResponse struct {
-	Success     bool              `json:"success"`
-	URL         string            `json:"url"`
-	Title       string            `json:"title"`
-	StatusCode  int               `json:"status_code,omitempty"`
-	LoadTime    time.Duration     `json:"load_time"`
-	Screenshot  string            `json:"screenshot,omitempty"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-	Error       string            `json:"error,omitempty"`
+	Success    bool                   `json:"success"`
+	URL        string                 `json:"url"`
+	Title      string                 `json:"title"`
+	StatusCode int                    `json:"status_code,omitempty"`
+	LoadTime   time.Duration          `json:"load_time"`
+	Screenshot string                 `json:"screenshot,omitempty"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	Error      string                 `json:"error,omitempty"`
 }
 
 // InteractRequest represents a page interaction request
@@ -68,19 +68,19 @@ type Action struct {
 type ActionType string
 
 const (
-	ActionTypeClick       ActionType = "click"
-	ActionTypeType        ActionType = "type"
-	ActionTypeSelect      ActionType = "select"
-	ActionTypeScroll      ActionType = "scroll"
-	ActionTypeWait        ActionType = "wait"
-	ActionTypeHover       ActionType = "hover"
-	ActionTypeScreenshot  ActionType = "screenshot"
-	ActionTypeKeyPress    ActionType = "key_press"
-	ActionTypeClear       ActionType = "clear"
-	ActionTypeSubmit      ActionType = "submit"
-	ActionTypeRefresh     ActionType = "refresh"
-	ActionTypeGoBack      ActionType = "go_back"
-	ActionTypeGoForward   ActionType = "go_forward"
+	ActionTypeClick      ActionType = "click"
+	ActionTypeType       ActionType = "type"
+	ActionTypeSelect     ActionType = "select"
+	ActionTypeScroll     ActionType = "scroll"
+	ActionTypeWait       ActionType = "wait"
+	ActionTypeHover      ActionType = "hover"
+	ActionTypeScreenshot ActionType = "screenshot"
+	ActionTypeKeyPress   ActionType = "key_press"
+	ActionTypeClear      ActionType = "clear"
+	ActionTypeSubmit     ActionType = "submit"
+	ActionTypeRefresh    ActionType = "refresh"
+	ActionTypeGoBack     ActionType = "go_back"
+	ActionTypeGoForward  ActionType = "go_forward"
 )
 
 // InteractResponse represents a page interaction response
@@ -94,18 +94,18 @@ type InteractResponse struct {
 
 // ActionResult represents the result of a single action
 type ActionResult struct {
-	Action    Action                 `json:"action"`
-	Success   bool                   `json:"success"`
-	Data      map[string]interface{} `json:"data,omitempty"`
-	Error     string                 `json:"error,omitempty"`
-	Duration  time.Duration          `json:"duration"`
+	Action   Action                 `json:"action"`
+	Success  bool                   `json:"success"`
+	Data     map[string]interface{} `json:"data,omitempty"`
+	Error    string                 `json:"error,omitempty"`
+	Duration time.Duration          `json:"duration"`
 }
 
 // ExtractRequest represents a content extraction request
 type ExtractRequest struct {
-	Selectors []string `json:"selectors,omitempty"`
-	DataType  string   `json:"data_type,omitempty"` // text, links, images, tables, forms
-	Schema    string   `json:"schema,omitempty"`    // JSON schema for structured extraction
+	Selectors []string       `json:"selectors,omitempty"`
+	DataType  string         `json:"data_type,omitempty"` // text, links, images, tables, forms
+	Schema    string         `json:"schema,omitempty"`    // JSON schema for structured extraction
 	Options   ExtractOptions `json:"options,omitempty"`
 }
 
@@ -129,23 +129,23 @@ type ExtractResponse struct {
 
 // ScreenshotRequest represents a screenshot request
 type ScreenshotRequest struct {
-	Selector   string `json:"selector,omitempty"`   // CSS selector for element screenshot
-	FullPage   bool   `json:"full_page,omitempty"`  // Take full page screenshot
-	Quality    int    `json:"quality,omitempty"`    // JPEG quality (1-100)
-	Format     string `json:"format,omitempty"`     // png, jpeg
-	Width      int    `json:"width,omitempty"`      // Viewport width
-	Height     int    `json:"height,omitempty"`     // Viewport height
+	Selector string `json:"selector,omitempty"`  // CSS selector for element screenshot
+	FullPage bool   `json:"full_page,omitempty"` // Take full page screenshot
+	Quality  int    `json:"quality,omitempty"`   // JPEG quality (1-100)
+	Format   string `json:"format,omitempty"`    // png, jpeg
+	Width    int    `json:"width,omitempty"`     // Viewport width
+	Height   int    `json:"height,omitempty"`    // Viewport height
 }
 
 // ScreenshotResponse represents a screenshot response
 type ScreenshotResponse struct {
-	Success    bool              `json:"success"`
-	Screenshot string            `json:"screenshot"` // Base64 encoded image
-	Format     string            `json:"format"`
-	Size       int               `json:"size"`
-	Dimensions map[string]int    `json:"dimensions"`
+	Success    bool                   `json:"success"`
+	Screenshot string                 `json:"screenshot"` // Base64 encoded image
+	Format     string                 `json:"format"`
+	Size       int                    `json:"size"`
+	Dimensions map[string]int         `json:"dimensions"`
 	Metadata   map[string]interface{} `json:"metadata,omitempty"`
-	Error      string            `json:"error,omitempty"`
+	Error      string                 `json:"error,omitempty"`
 }
 
 // WaitRequest represents a wait request
@@ -170,11 +170,11 @@ const (
 
 // WaitResponse represents a wait response
 type WaitResponse struct {
-	Success   bool              `json:"success"`
-	Condition string            `json:"condition"`
-	Duration  time.Duration     `json:"duration"`
+	Success   bool                   `json:"success"`
+	Condition string                 `json:"condition"`
+	Duration  time.Duration          `json:"duration"`
 	Metadata  map[string]interface{} `json:"metadata,omitempty"`
-	Error     string            `json:"error,omitempty"`
+	Error     string                 `json:"error,omitempty"`
 }
 
 // PageInfo represents information about the current page
@@ -220,11 +220,11 @@ type Form struct {
 
 // Field represents a form field
 type Field struct {
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	Value       string `json:"value,omitempty"`
-	Placeholder string `json:"placeholder,omitempty"`
-	Required    bool   `json:"required,omitempty"`
+	Name        string   `json:"name"`
+	Type        string   `json:"type"`
+	Value       string   `json:"value,omitempty"`
+	Placeholder string   `json:"placeholder,omitempty"`
+	Required    bool     `json:"required,omitempty"`
 	Options     []Option `json:"options,omitempty"` // For select fields
 }
 
@@ -237,8 +237,8 @@ type Option struct {
 
 // SessionCreateRequest represents a request to create a browser session
 type SessionCreateRequest struct {
-	SessionName string `json:"session_name,omitempty"`
-	UserAgent   string `json:"user_agent,omitempty"`
+	SessionName string   `json:"session_name,omitempty"`
+	UserAgent   string   `json:"user_agent,omitempty"`
 	Viewport    Viewport `json:"viewport,omitempty"`
 }
 
@@ -281,16 +281,16 @@ type TabCreateResponse struct {
 
 // BrowserConfig represents browser configuration
 type BrowserConfig struct {
-	Headless         bool              `json:"headless"`
-	DisableGPU       bool              `json:"disable_gpu"`
-	NoSandbox        bool              `json:"no_sandbox"`
-	DisableImages    bool              `json:"disable_images,omitempty"`
-	DisableJavaScript bool             `json:"disable_javascript,omitempty"`
-	UserAgent        string            `json:"user_agent,omitempty"`
-	Viewport         Viewport          `json:"viewport,omitempty"`
-	Timeout          time.Duration     `json:"timeout,omitempty"`
-	Headers          map[string]string `json:"headers,omitempty"`
-	Proxy            string            `json:"proxy,omitempty"`
+	Headless          bool              `json:"headless"`
+	DisableGPU        bool              `json:"disable_gpu"`
+	NoSandbox         bool              `json:"no_sandbox"`
+	DisableImages     bool              `json:"disable_images,omitempty"`
+	DisableJavaScript bool              `json:"disable_javascript,omitempty"`
+	UserAgent         string            `json:"user_agent,omitempty"`
+	Viewport          Viewport          `json:"viewport,omitempty"`
+	Timeout           time.Duration     `json:"timeout,omitempty"`
+	Headers           map[string]string `json:"headers,omitempty"`
+	Proxy             string            `json:"proxy,omitempty"`
 }
 
 // BrowserInstance represents a browser instance

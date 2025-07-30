@@ -5,17 +5,18 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Bot, 
-  Globe, 
-  Wallet, 
-  Zap, 
-  Shield, 
-  Cpu, 
+import {
+  Bot,
+  Globe,
+  Wallet,
+  Zap,
+  Shield,
+  Cpu,
   ArrowRight,
   Github,
   Twitter,
-  MessageSquare
+  MessageSquare,
+  BarChart3
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -92,8 +93,23 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="text-lg px-8">
+                <Link href="/trading">
+                  HFT Trading <Zap className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" className="text-lg px-8">
+                <Link href="/performance">
+                  Performance <BarChart3 className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" className="text-lg px-8">
+                <Link href="/compliance">
+                  Compliance <Shield className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" className="text-lg px-8">
                 <Link href="/web3">
-                  Try Web3 Features <Wallet className="ml-2 h-5 w-5" />
+                  Web3 Features <Wallet className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button variant="outline" size="lg" className="text-lg px-8">

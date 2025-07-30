@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	shell "github.com/ipfs/go-ipfs-api"
 	"github.com/ai-agentic-browser/pkg/observability"
+	shell "github.com/ipfs/go-ipfs-api"
 )
 
 // IPFSService provides decentralized storage functionality
@@ -298,7 +298,7 @@ func (s *IPFSService) isValidIPFSHash(hash string) bool {
 	if len(hash) < 46 {
 		return false
 	}
-	
+
 	// Check for common IPFS hash prefixes
 	return strings.HasPrefix(hash, "Qm") || strings.HasPrefix(hash, "bafy") || strings.HasPrefix(hash, "bafk")
 }
@@ -319,8 +319,8 @@ func (s *IPFSService) GetNodeInfo(ctx context.Context) (map[string]interface{}, 
 	}
 
 	info := map[string]interface{}{
-		"id":      id.ID,
-		"version": version,
+		"id":        id.ID,
+		"version":   version,
 		"addresses": id.Addresses,
 	}
 

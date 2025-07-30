@@ -153,12 +153,12 @@ type PriceRequest struct {
 
 // PriceResponse represents a price query response
 type PriceResponse struct {
-	Token     string                 `json:"token"`
-	ChainID   int                    `json:"chain_id"`
-	Price     decimal.Decimal        `json:"price"`
-	Currency  string                 `json:"currency"`
-	Timestamp time.Time              `json:"timestamp"`
-	Prices    map[string]TokenPrice  `json:"prices"`
+	Token     string                `json:"token"`
+	ChainID   int                   `json:"chain_id"`
+	Price     decimal.Decimal       `json:"price"`
+	Currency  string                `json:"currency"`
+	Timestamp time.Time             `json:"timestamp"`
+	Prices    map[string]TokenPrice `json:"prices"`
 }
 
 // TokenPrice represents a token price

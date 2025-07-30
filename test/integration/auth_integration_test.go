@@ -20,10 +20,10 @@ import (
 // AuthIntegrationTestSuite tests authentication endpoints
 type AuthIntegrationTestSuite struct {
 	suite.Suite
-	authService     *auth.Service
-	Router          *gin.Engine
-	HTTPServer      *httptest.Server
-	registeredUsers map[string]bool   // Mock user storage
+	authService       *auth.Service
+	Router            *gin.Engine
+	HTTPServer        *httptest.Server
+	registeredUsers   map[string]bool // Mock user storage
 	invalidatedTokens map[string]bool // Mock token blacklist
 }
 

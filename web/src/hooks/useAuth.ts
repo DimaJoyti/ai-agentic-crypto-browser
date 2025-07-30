@@ -27,7 +27,7 @@ interface RegisterData {
   lastName: string
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function useAuth() {
   const context = useContext(AuthContext)
@@ -200,3 +200,5 @@ export function useAuthState() {
     refreshToken,
   }
 }
+
+

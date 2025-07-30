@@ -24,7 +24,7 @@ func TestLearningEngine(t *testing.T) {
 		assert.NotNil(t, engine.performanceTracker)
 		assert.NotNil(t, engine.adaptiveModels)
 		assert.NotNil(t, engine.feedbackProcessor)
-		
+
 		// Check configuration
 		assert.Equal(t, 0.01, engine.config.LearningRate)
 		assert.Equal(t, 0.1, engine.config.AdaptationThreshold)
@@ -43,10 +43,10 @@ func TestLearningEngine(t *testing.T) {
 			Type:      "trade",
 			Timestamp: time.Now(),
 			Data: map[string]interface{}{
-				"symbol":      "BTC",
-				"side":        "buy",
-				"amount":      1000.0,
-				"risk_level":  0.7,
+				"symbol":     "BTC",
+				"side":       "buy",
+				"amount":     1000.0,
+				"risk_level": 0.7,
 				"decision_factors": map[string]float64{
 					"technical_analysis": 0.6,
 					"sentiment_analysis": 0.4,
@@ -193,7 +193,7 @@ func TestLearningEngine(t *testing.T) {
 	t.Run("GetNonExistentUserProfile", func(t *testing.T) {
 		nonExistentUserID := uuid.New()
 		profile, err := engine.GetUserProfile(nonExistentUserID)
-		
+
 		assert.Error(t, err)
 		assert.Nil(t, profile)
 		assert.Contains(t, err.Error(), "user profile not found")
@@ -237,14 +237,14 @@ func TestAdaptiveModelManager(t *testing.T) {
 	t.Run("ModelRegistration", func(t *testing.T) {
 		// Create a mock model
 		pricePrediction := NewPricePredictionModel(logger)
-		
+
 		err := manager.RegisterAdaptiveModel("test_model", pricePrediction)
 		require.NoError(t, err)
 
 		// Verify model was registered
 		models := manager.GetAdaptiveModels()
 		assert.Contains(t, models, "test_model")
-		
+
 		model := models["test_model"]
 		assert.Equal(t, "test_model", model.ID)
 		assert.Equal(t, "Advanced Price Prediction Model", model.Name)
@@ -344,7 +344,7 @@ func TestAdaptationStrategies(t *testing.T) {
 
 	t.Run("PerformanceBasedAdaptation", func(t *testing.T) {
 		strategy := &PerformanceBasedAdaptation{logger: logger}
-		
+
 		// Test with low performance model
 		lowPerfModel := &AdaptiveModel{
 			ID: "low_perf_model",
@@ -352,12 +352,12 @@ func TestAdaptationStrategies(t *testing.T) {
 				Accuracy: 0.7, // Below threshold
 			},
 		}
-		
+
 		request := &AdaptationRequest{Type: "performance"}
-		
+
 		canAdapt := strategy.CanAdapt(lowPerfModel, request)
 		assert.True(t, canAdapt)
-		
+
 		// Test adaptation
 		ctx := context.Background()
 		result, err := strategy.Adapt(ctx, lowPerfModel, request)
@@ -374,39 +374,39 @@ func TestAdaptationStrategies(t *testing.T) {
 				Accuracy: 0.9, // Above threshold
 			},
 		}
-		
+
 		canAdapt = strategy.CanAdapt(highPerfModel, request)
 		assert.False(t, canAdapt)
 	})
 
 	t.Run("FeedbackBasedAdaptation", func(t *testing.T) {
 		strategy := &FeedbackBasedAdaptation{logger: logger}
-		
+
 		model := &AdaptiveModel{ID: "feedback_model"}
-		
+
 		// Test without feedback data
 		requestWithoutFeedback := &AdaptationRequest{
 			Type: "feedback",
 			Data: map[string]interface{}{},
 		}
-		
+
 		canAdapt := strategy.CanAdapt(model, requestWithoutFeedback)
 		assert.False(t, canAdapt)
-		
+
 		// Test with feedback data
 		requestWithFeedback := &AdaptationRequest{
 			Type: "feedback",
 			Data: map[string]interface{}{
 				"feedback": map[string]interface{}{
-					"rating": 4,
+					"rating":   4,
 					"comments": "Good predictions",
 				},
 			},
 		}
-		
+
 		canAdapt = strategy.CanAdapt(model, requestWithFeedback)
 		assert.True(t, canAdapt)
-		
+
 		// Test adaptation
 		ctx := context.Background()
 		result, err := strategy.Adapt(ctx, model, requestWithFeedback)
@@ -422,23 +422,23 @@ func TestAdaptationStrategies(t *testing.T) {
 			logger:        logger,
 			driftDetector: driftDetector,
 		}
-		
+
 		model := &AdaptiveModel{ID: "drift_model"}
 		request := &AdaptationRequest{Type: "drift"}
-		
+
 		// Initially no drift
 		canAdapt := strategy.CanAdapt(model, request)
 		assert.False(t, canAdapt)
-		
+
 		// Simulate drift detection
 		driftDetector.driftHistory = append(driftDetector.driftHistory, DriftEvent{
 			Type:       "gradual",
 			DetectedAt: time.Now(),
 		})
-		
+
 		canAdapt = strategy.CanAdapt(model, request)
 		assert.True(t, canAdapt)
-		
+
 		// Test adaptation
 		ctx := context.Background()
 		result, err := strategy.Adapt(ctx, model, request)
@@ -499,22 +499,22 @@ func TestConceptDriftDetector(t *testing.T) {
 			{Features: map[string]float64{"price": 50000.0, "volume": 1000.0}},
 			{Features: map[string]float64{"price": 51000.0, "volume": 1100.0}},
 		}
-		
+
 		data2 := []DataPoint{
 			{Features: map[string]float64{"price": 50000.0, "volume": 1000.0}},
 			{Features: map[string]float64{"price": 51000.0, "volume": 1100.0}},
 		}
-		
+
 		// Identical data should have zero distance
 		distance := detector.calculateStatisticalDistance(data1, data2)
 		assert.Equal(t, 0.0, distance)
-		
+
 		// Different data should have non-zero distance
 		data3 := []DataPoint{
 			{Features: map[string]float64{"price": 60000.0, "volume": 2000.0}},
 			{Features: map[string]float64{"price": 61000.0, "volume": 2100.0}},
 		}
-		
+
 		distance = detector.calculateStatisticalDistance(data1, data3)
 		assert.Greater(t, distance, 0.0)
 	})
@@ -522,17 +522,17 @@ func TestConceptDriftDetector(t *testing.T) {
 	t.Run("DriftDetection", func(t *testing.T) {
 		// Initially no drift
 		assert.False(t, detector.HasDrift())
-		
+
 		// Add drift event
 		detector.driftHistory = append(detector.driftHistory, DriftEvent{
 			Type:       "sudden",
 			DetectedAt: time.Now(),
 			Severity:   0.8,
 		})
-		
+
 		// Should detect drift
 		assert.True(t, detector.HasDrift())
-		
+
 		// Old drift should not be detected
 		detector.driftHistory = []DriftEvent{
 			{
@@ -541,7 +541,7 @@ func TestConceptDriftDetector(t *testing.T) {
 				Severity:   0.8,
 			},
 		}
-		
+
 		assert.False(t, detector.HasDrift())
 	})
 }

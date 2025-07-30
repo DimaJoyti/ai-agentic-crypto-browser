@@ -26,10 +26,10 @@ func NewMomentumStrategy() *MomentumStrategy {
 		enabled:     true,
 		riskLevel:   RiskLevelMedium,
 		parameters: map[string]interface{}{
-			"rsi_oversold":    30.0,
-			"rsi_overbought":  70.0,
-			"momentum_threshold": 0.05, // 5% price change
-			"volume_multiplier": 1.5,   // 1.5x average volume
+			"rsi_oversold":         30.0,
+			"rsi_overbought":       70.0,
+			"momentum_threshold":   0.05, // 5% price change
+			"volume_multiplier":    1.5,  // 1.5x average volume
 			"confidence_threshold": 0.7,
 		},
 	}
@@ -114,10 +114,10 @@ func (m *MomentumStrategy) Analyze(ctx context.Context, market *MarketData) (*Tr
 		ValidUntil:   time.Now().Add(5 * time.Minute),
 		CreatedAt:    time.Now(),
 		Metadata: map[string]interface{}{
-			"rsi":           rsi,
-			"price_change":  priceChange,
-			"volume_ratio":  volumeRatio,
-			"market_data":   market,
+			"rsi":          rsi,
+			"price_change": priceChange,
+			"volume_ratio": volumeRatio,
+			"market_data":  market,
 		},
 	}
 
@@ -140,9 +140,9 @@ func (m *MomentumStrategy) CalculatePositionSize(ctx context.Context, signal *Tr
 	// Base position size on confidence and risk profile
 	baseSize := portfolio.RiskProfile.MaxPositionSize.Mul(portfolio.TotalValue)
 	confidenceMultiplier := decimal.NewFromFloat(signal.Confidence)
-	
+
 	positionSize := baseSize.Mul(confidenceMultiplier)
-	
+
 	// Ensure position size doesn't exceed available balance
 	if positionSize.GreaterThan(portfolio.AvailableBalance) {
 		positionSize = portfolio.AvailableBalance.Mul(decimal.NewFromFloat(0.9)) // 90% of available
@@ -168,9 +168,9 @@ func NewMeanReversionStrategy() *MeanReversionStrategy {
 		enabled:     true,
 		riskLevel:   RiskLevelLow,
 		parameters: map[string]interface{}{
-			"bollinger_threshold": 0.02, // 2% outside bands
-			"rsi_extreme_low":     20.0,
-			"rsi_extreme_high":    80.0,
+			"bollinger_threshold":  0.02, // 2% outside bands
+			"rsi_extreme_low":      20.0,
+			"rsi_extreme_high":     80.0,
 			"reversion_confidence": 0.75,
 		},
 	}
@@ -268,9 +268,9 @@ func (mr *MeanReversionStrategy) CalculatePositionSize(ctx context.Context, sign
 	// Conservative position sizing for mean reversion
 	baseSize := portfolio.RiskProfile.MaxPositionSize.Mul(decimal.NewFromFloat(0.5)).Mul(portfolio.TotalValue)
 	confidenceMultiplier := decimal.NewFromFloat(signal.Confidence)
-	
+
 	positionSize := baseSize.Mul(confidenceMultiplier)
-	
+
 	// Ensure position size doesn't exceed available balance
 	if positionSize.GreaterThan(portfolio.AvailableBalance) {
 		positionSize = portfolio.AvailableBalance.Mul(decimal.NewFromFloat(0.8)) // 80% of available
@@ -326,7 +326,7 @@ func (a *ArbitrageStrategy) GetParameters() map[string]interface{} {
 func (a *ArbitrageStrategy) Analyze(ctx context.Context, market *MarketData) (*TradingSignal, error) {
 	// This would analyze prices across multiple DEXs
 	// For now, return hold signal as this requires complex multi-DEX price comparison
-	
+
 	signal := &TradingSignal{
 		ID:           uuid.New(),
 		StrategyName: a.name,
@@ -352,7 +352,7 @@ func (a *ArbitrageStrategy) ValidateSignal(ctx context.Context, signal *TradingS
 func (a *ArbitrageStrategy) CalculatePositionSize(ctx context.Context, signal *TradingSignal, portfolio *Portfolio) (decimal.Decimal, error) {
 	// Arbitrage can use larger position sizes due to lower risk
 	baseSize := portfolio.RiskProfile.MaxPositionSize.Mul(decimal.NewFromFloat(2.0)).Mul(portfolio.TotalValue)
-	
+
 	// Ensure position size doesn't exceed available balance
 	if baseSize.GreaterThan(portfolio.AvailableBalance) {
 		baseSize = portfolio.AvailableBalance.Mul(decimal.NewFromFloat(0.95)) // 95% of available

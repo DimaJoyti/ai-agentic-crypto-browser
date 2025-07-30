@@ -16,7 +16,7 @@ func TestPredictiveEngine(t *testing.T) {
 	logger := &observability.Logger{}
 	pricePrediction := NewPricePredictionModel(logger)
 	sentimentAnalyzer := NewSentimentAnalyzer(logger)
-	
+
 	engine := NewPredictiveEngine(logger, pricePrediction, sentimentAnalyzer)
 	require.NotNil(t, engine)
 
@@ -33,18 +33,18 @@ func TestPredictiveEngine(t *testing.T) {
 
 	t.Run("TrendForecast", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		// Create sample historical data
 		historicalData := make(map[string][]ml.PriceData)
 		symbols := []string{"BTC", "ETH"}
-		
+
 		for _, symbol := range symbols {
 			data := make([]ml.PriceData, 200)
 			basePrice := decimal.NewFromFloat(50000.0)
 			if symbol == "ETH" {
 				basePrice = decimal.NewFromFloat(3000.0)
 			}
-			
+
 			for i := 0; i < 200; i++ {
 				price := basePrice.Add(decimal.NewFromFloat(float64(i) * 10))
 				data[i] = ml.PriceData{
@@ -108,20 +108,20 @@ func TestPredictiveEngine(t *testing.T) {
 
 	t.Run("VolatilityForecast", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		// Create sample data with varying volatility
 		historicalData := make(map[string][]ml.PriceData)
 		symbols := []string{"BTC"}
-		
+
 		data := make([]ml.PriceData, 100)
 		basePrice := 50000.0
-		
+
 		for i := 0; i < 100; i++ {
 			// Add some volatility to the price
 			volatility := 0.02 * (1 + 0.5*float64(i%10)/10.0)
 			priceChange := volatility * (float64(i%2)*2 - 1) // Alternating up/down
 			price := decimal.NewFromFloat(basePrice * (1 + priceChange))
-			
+
 			data[i] = ml.PriceData{
 				Symbol:    "BTC",
 				Timestamp: time.Now().Add(time.Duration(-100+i) * time.Hour),
@@ -148,7 +148,7 @@ func TestPredictiveEngine(t *testing.T) {
 
 		// Validate volatility forecast
 		assert.NotNil(t, result.VolatilityForecast)
-		
+
 		// Check volatility predictions for BTC
 		btcForecast, exists := result.VolatilityForecast.Forecasts["BTC"]
 		assert.True(t, exists)
@@ -167,28 +167,28 @@ func TestPredictiveEngine(t *testing.T) {
 
 	t.Run("CorrelationMatrix", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		// Create correlated data for BTC and ETH
 		historicalData := make(map[string][]ml.PriceData)
 		symbols := []string{"BTC", "ETH"}
-		
+
 		btcData := make([]ml.PriceData, 150)
 		ethData := make([]ml.PriceData, 150)
-		
+
 		for i := 0; i < 150; i++ {
 			// Create correlated price movements
 			btcPrice := 50000.0 + float64(i)*100
 			ethPrice := 3000.0 + float64(i)*6 // Correlated with BTC
-			
+
 			timestamp := time.Now().Add(time.Duration(-150+i) * time.Hour)
-			
+
 			btcData[i] = ml.PriceData{
 				Symbol:    "BTC",
 				Timestamp: timestamp,
 				Close:     decimal.NewFromFloat(btcPrice),
 				Volume:    decimal.NewFromFloat(1000000),
 			}
-			
+
 			ethData[i] = ml.PriceData{
 				Symbol:    "ETH",
 				Timestamp: timestamp,
@@ -196,7 +196,7 @@ func TestPredictiveEngine(t *testing.T) {
 				Volume:    decimal.NewFromFloat(500000),
 			}
 		}
-		
+
 		historicalData["BTC"] = btcData
 		historicalData["ETH"] = ethData
 
@@ -217,16 +217,16 @@ func TestPredictiveEngine(t *testing.T) {
 
 		// Validate correlation matrix
 		assert.NotNil(t, result.CorrelationMatrix)
-		
+
 		// Check matrix structure
 		matrix := result.CorrelationMatrix.Matrix
 		assert.Contains(t, matrix, "BTC")
 		assert.Contains(t, matrix, "ETH")
-		
+
 		// Check self-correlations
 		assert.Equal(t, 1.0, matrix["BTC"]["BTC"])
 		assert.Equal(t, 1.0, matrix["ETH"]["ETH"])
-		
+
 		// Check cross-correlations
 		btcEthCorr := matrix["BTC"]["ETH"]
 		ethBtcCorr := matrix["ETH"]["BTC"]
@@ -243,7 +243,7 @@ func TestPredictiveEngine(t *testing.T) {
 
 	t.Run("PortfolioOptimization", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		// Create portfolio data
 		portfolioData := &PortfolioData{
 			Holdings: []Holding{
@@ -272,14 +272,14 @@ func TestPredictiveEngine(t *testing.T) {
 		// Create historical data
 		historicalData := make(map[string][]ml.PriceData)
 		symbols := []string{"BTC", "ETH"}
-		
+
 		for _, symbol := range symbols {
 			data := make([]ml.PriceData, 120)
 			basePrice := 50000.0
 			if symbol == "ETH" {
 				basePrice = 3000.0
 			}
-			
+
 			for i := 0; i < 120; i++ {
 				price := basePrice * (1 + 0.001*float64(i)) // Slight upward trend
 				data[i] = ml.PriceData{
@@ -312,9 +312,9 @@ func TestPredictiveEngine(t *testing.T) {
 
 		// Validate portfolio optimization
 		assert.NotNil(t, result.PortfolioOptimization)
-		
+
 		opt := result.PortfolioOptimization
-		
+
 		// Check optimal weights
 		assert.NotEmpty(t, opt.OptimalWeights)
 		totalWeight := 0.0
@@ -351,24 +351,24 @@ func TestPredictiveEngine(t *testing.T) {
 
 	t.Run("RiskMetrics", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		// Create sample data
 		historicalData := make(map[string][]ml.PriceData)
 		symbols := []string{"BTC", "ETH"}
-		
+
 		for _, symbol := range symbols {
 			data := make([]ml.PriceData, 100)
 			basePrice := 50000.0
 			if symbol == "ETH" {
 				basePrice = 3000.0
 			}
-			
+
 			for i := 0; i < 100; i++ {
 				// Add some volatility
 				volatility := 0.02 * (1 + float64(i%5)/10.0)
 				priceChange := volatility * (float64(i%3) - 1) // Some randomness
 				price := basePrice * (1 + priceChange)
-				
+
 				data[i] = ml.PriceData{
 					Symbol:    symbol,
 					Timestamp: time.Now().Add(time.Duration(-100+i) * time.Hour),
@@ -396,9 +396,9 @@ func TestPredictiveEngine(t *testing.T) {
 
 		// Validate risk metrics
 		assert.NotNil(t, result.RiskMetrics)
-		
+
 		risk := result.RiskMetrics
-		
+
 		// Check portfolio risk
 		assert.NotNil(t, risk.PortfolioRisk)
 		assert.Greater(t, risk.PortfolioRisk.TotalRisk, 0.0)
@@ -442,11 +442,11 @@ func TestPredictiveEngine(t *testing.T) {
 
 	t.Run("ScenarioAnalysis", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		// Create sample data
 		historicalData := make(map[string][]ml.PriceData)
 		symbols := []string{"BTC"}
-		
+
 		data := make([]ml.PriceData, 100)
 		for i := 0; i < 100; i++ {
 			price := 50000.0 + float64(i)*100
@@ -476,9 +476,9 @@ func TestPredictiveEngine(t *testing.T) {
 
 		// Validate scenario analysis
 		assert.NotNil(t, result.ScenarioAnalysis)
-		
+
 		scenario := result.ScenarioAnalysis
-		
+
 		// Check scenarios
 		assert.NotEmpty(t, scenario.Scenarios)
 		for _, s := range scenario.Scenarios {
@@ -524,11 +524,11 @@ func TestPredictiveEngine(t *testing.T) {
 
 	t.Run("MarketRegime", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		// Create sample data
 		historicalData := make(map[string][]ml.PriceData)
 		symbols := []string{"BTC"}
-		
+
 		data := make([]ml.PriceData, 100)
 		for i := 0; i < 100; i++ {
 			price := 50000.0 + float64(i)*100
@@ -564,9 +564,9 @@ func TestPredictiveEngine(t *testing.T) {
 
 		// Validate market regime
 		assert.NotNil(t, result.MarketRegime)
-		
+
 		regime := result.MarketRegime
-		
+
 		// Check current regime
 		assert.Contains(t, []string{"bull", "bear", "sideways", "volatile"}, regime.CurrentRegime)
 		assert.GreaterOrEqual(t, regime.RegimeProbability, 0.0)
@@ -614,11 +614,11 @@ func TestPredictiveEngine(t *testing.T) {
 
 	t.Run("CacheValidation", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		// Create simple request
 		historicalData := make(map[string][]ml.PriceData)
 		symbols := []string{"BTC"}
-		
+
 		data := make([]ml.PriceData, 100)
 		for i := 0; i < 100; i++ {
 			price := 50000.0 + float64(i)*10

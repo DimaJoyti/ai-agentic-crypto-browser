@@ -213,14 +213,18 @@ export const useHistoricalData = (
     limit?: number
   ): HistoricalCandle[] => {
     const endTime = Date.now()
-    const startTime = limit 
+    const startTime = limit
       ? endTime - limit * getTimeframeMs(timeframe)
       : endTime - 365 * 24 * 60 * 60 * 1000 // 1 year default
 
-    const result = await historicalDataManager.getHistoricalData(symbol, timeframe, startTime, endTime)
-    return Array.isArray(result) ? result : []
-      .then(candles => limit ? candles.slice(-limit) : candles)
-      .catch(() => [])
+    try {
+      const result = historicalDataManager.getHistoricalData(symbol, timeframe, startTime, endTime)
+      const candles = Array.isArray(result) ? result : []
+      return limit ? candles.slice(-limit) : candles
+    } catch (error) {
+      console.error('Error getting candles:', error)
+      return []
+    }
   }, [])
 
   // Get available symbols

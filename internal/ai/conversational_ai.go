@@ -36,13 +36,13 @@ type ConversationalConfig struct {
 
 // Conversation represents an ongoing conversation with a user
 type Conversation struct {
-	ID          uuid.UUID              `json:"id"`
-	UserID      uuid.UUID              `json:"user_id"`
-	Messages    []ConversationMessage  `json:"messages"`
-	Context     ConversationContext    `json:"context"`
-	StartedAt   time.Time              `json:"started_at"`
-	LastActive  time.Time              `json:"last_active"`
-	Metadata    map[string]interface{} `json:"metadata"`
+	ID         uuid.UUID              `json:"id"`
+	UserID     uuid.UUID              `json:"user_id"`
+	Messages   []ConversationMessage  `json:"messages"`
+	Context    ConversationContext    `json:"context"`
+	StartedAt  time.Time              `json:"started_at"`
+	LastActive time.Time              `json:"last_active"`
+	Metadata   map[string]interface{} `json:"metadata"`
 }
 
 // ConversationMessage represents a message in a conversation
@@ -65,40 +65,40 @@ const (
 
 // ConversationContext holds context for the conversation
 type ConversationContext struct {
-	UserPreferences UserPreferences            `json:"user_preferences"`
-	CurrentPortfolio *web3.Portfolio           `json:"current_portfolio,omitempty"`
-	MarketContext   MarketContext              `json:"market_context"`
-	RecentActions   []string                   `json:"recent_actions"`
-	Topics          []string                   `json:"topics"`
-	Metadata        map[string]interface{}     `json:"metadata"`
+	UserPreferences  UserPreferences        `json:"user_preferences"`
+	CurrentPortfolio *web3.Portfolio        `json:"current_portfolio,omitempty"`
+	MarketContext    MarketContext          `json:"market_context"`
+	RecentActions    []string               `json:"recent_actions"`
+	Topics           []string               `json:"topics"`
+	Metadata         map[string]interface{} `json:"metadata"`
 }
 
 // UserPreferences represents user preferences for AI interactions
 type UserPreferences struct {
-	RiskTolerance    string   `json:"risk_tolerance"`
-	InvestmentGoals  []string `json:"investment_goals"`
-	PreferredTokens  []string `json:"preferred_tokens"`
-	TradingStyle     string   `json:"trading_style"`
-	NotificationLevel string  `json:"notification_level"`
+	RiskTolerance     string   `json:"risk_tolerance"`
+	InvestmentGoals   []string `json:"investment_goals"`
+	PreferredTokens   []string `json:"preferred_tokens"`
+	TradingStyle      string   `json:"trading_style"`
+	NotificationLevel string   `json:"notification_level"`
 }
 
 // MarketContext represents current market conditions
 type MarketContext struct {
-	MarketTrend     string                 `json:"market_trend"`
-	Volatility      string                 `json:"volatility"`
-	TopMovers       []TokenMovement        `json:"top_movers"`
-	MarketSentiment string                 `json:"market_sentiment"`
-	KeyEvents       []MarketEvent          `json:"key_events"`
-	LastUpdated     time.Time              `json:"last_updated"`
+	MarketTrend     string          `json:"market_trend"`
+	Volatility      string          `json:"volatility"`
+	TopMovers       []TokenMovement `json:"top_movers"`
+	MarketSentiment string          `json:"market_sentiment"`
+	KeyEvents       []MarketEvent   `json:"key_events"`
+	LastUpdated     time.Time       `json:"last_updated"`
 }
 
 // TokenMovement represents price movement data
 type TokenMovement struct {
-	Symbol      string          `json:"symbol"`
-	Price       decimal.Decimal `json:"price"`
-	Change24h   decimal.Decimal `json:"change_24h"`
-	ChangePerc  decimal.Decimal `json:"change_perc"`
-	Volume24h   decimal.Decimal `json:"volume_24h"`
+	Symbol     string          `json:"symbol"`
+	Price      decimal.Decimal `json:"price"`
+	Change24h  decimal.Decimal `json:"change_24h"`
+	ChangePerc decimal.Decimal `json:"change_perc"`
+	Volume24h  decimal.Decimal `json:"volume_24h"`
 }
 
 // MarketEvent represents a significant market event
@@ -237,7 +237,7 @@ func (c *ConversationalAI) ProcessMessage(ctx context.Context, userID uuid.UUID,
 func (c *ConversationalAI) generateResponse(ctx context.Context, conversation *Conversation, message string) (*ConversationalResponse, error) {
 	// Analyze the message intent and context
 	intent := c.analyzeIntent(message)
-	
+
 	// Get market context
 	marketContext, err := c.marketAnalyzer.GetMarketContext(ctx)
 	if err != nil {
@@ -400,7 +400,7 @@ func (c *ConversationalAI) getOpportunitySectors(trend string) string {
 // Placeholder methods for complex analysis
 func (c *ConversationalAI) analyzeIntent(message string) string {
 	message = strings.ToLower(message)
-	
+
 	if strings.Contains(message, "market") || strings.Contains(message, "price") || strings.Contains(message, "trend") {
 		return "market_analysis"
 	}
@@ -413,7 +413,7 @@ func (c *ConversationalAI) analyzeIntent(message string) string {
 	if strings.Contains(message, "yield") || strings.Contains(message, "apy") || strings.Contains(message, "defi") {
 		return "yield_opportunities"
 	}
-	
+
 	return "general_question"
 }
 
@@ -426,10 +426,10 @@ func (c *ConversationalAI) initializeContext(ctx context.Context, userID uuid.UU
 			TradingStyle:      "balanced",
 			NotificationLevel: "normal",
 		},
-		MarketContext:   MarketContext{LastUpdated: time.Now()},
-		RecentActions:   make([]string, 0),
-		Topics:          make([]string, 0),
-		Metadata:        make(map[string]interface{}),
+		MarketContext: MarketContext{LastUpdated: time.Now()},
+		RecentActions: make([]string, 0),
+		Topics:        make([]string, 0),
+		Metadata:      make(map[string]interface{}),
 	}
 }
 
@@ -452,9 +452,9 @@ func (c *ConversationalAI) addMessage(conversation *Conversation, role MessageRo
 		Content:   content,
 		Timestamp: time.Now(),
 	}
-	
+
 	conversation.Messages = append(conversation.Messages, message)
-	
+
 	// Keep conversation history within limits
 	if len(conversation.Messages) > c.config.MaxConversationHistory {
 		conversation.Messages = conversation.Messages[1:]

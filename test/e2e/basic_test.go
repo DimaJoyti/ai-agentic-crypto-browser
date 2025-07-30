@@ -59,7 +59,7 @@ func TestBasicPageLoad(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.NotEmpty(t, title, "Page should have a title")
-	
+
 	t.Logf("Page title: %s", title)
 }
 
@@ -131,10 +131,10 @@ func TestNavigationFlow(t *testing.T) {
 		// Navigate to home page
 		chromedp.Navigate(baseURL),
 		chromedp.WaitVisible("body", chromedp.ByQuery),
-		
+
 		// Wait a bit for the page to fully load
 		chromedp.Sleep(2*time.Second),
-		
+
 		// Take a screenshot for debugging if needed
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			if os.Getenv("TEST_TAKE_SCREENSHOTS") == "true" {

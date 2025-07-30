@@ -355,7 +355,7 @@ type PersonalizedRecommendation struct {
 	ActionRequired  bool                   `json:"action_required"`
 	Deadline        *time.Time             `json:"deadline,omitempty"`
 	Parameters      map[string]interface{} `json:"parameters"`
-	ExpectedOutcome *UserExpectedOutcome       `json:"expected_outcome"`
+	ExpectedOutcome *UserExpectedOutcome   `json:"expected_outcome"`
 	RiskAssessment  *RecommendationRisk    `json:"risk_assessment"`
 	Personalization *PersonalizationInfo   `json:"personalization"`
 	CreatedAt       time.Time              `json:"created_at"`

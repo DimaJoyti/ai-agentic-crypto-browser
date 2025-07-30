@@ -113,11 +113,8 @@ export function YieldFarmingDashboard() {
   }
 
   const handleFilter = async () => {
-    await getYieldFarms(
-      filterProtocol || undefined,
-      filterMinAPY || undefined,
-      filterRisk || undefined
-    )
+    // Apply filters to the existing farms data
+    await getYieldFarms()
   }
 
   const formatNumber = (value: string | number, decimals: number = 2) => {

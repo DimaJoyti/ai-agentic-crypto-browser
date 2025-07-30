@@ -36,17 +36,17 @@ type TrainingScheduler struct {
 
 // TrainingJob represents a scheduled training job
 type TrainingJob struct {
-	ID          string        `json:"id"`
-	ModelID     string        `json:"model_id"`
-	Schedule    string        `json:"schedule"` // cron format
-	LastRun     time.Time     `json:"last_run"`
-	NextRun     time.Time     `json:"next_run"`
-	Status      string        `json:"status"`
-	Config      *ModelConfig  `json:"config"`
-	DataSource  string        `json:"data_source"`
-	Enabled     bool          `json:"enabled"`
-	CreatedAt   time.Time     `json:"created_at"`
-	UpdatedAt   time.Time     `json:"updated_at"`
+	ID         string       `json:"id"`
+	ModelID    string       `json:"model_id"`
+	Schedule   string       `json:"schedule"` // cron format
+	LastRun    time.Time    `json:"last_run"`
+	NextRun    time.Time    `json:"next_run"`
+	Status     string       `json:"status"`
+	Config     *ModelConfig `json:"config"`
+	DataSource string       `json:"data_source"`
+	Enabled    bool         `json:"enabled"`
+	CreatedAt  time.Time    `json:"created_at"`
+	UpdatedAt  time.Time    `json:"updated_at"`
 }
 
 // NewModelManager creates a new model manager
@@ -153,7 +153,7 @@ func (m *ModelManager) TrainModel(ctx context.Context, modelID string, data Trai
 	}
 
 	m.logger.Info(ctx, "Starting model training", map[string]interface{}{
-		"model_id":     modelID,
+		"model_id":      modelID,
 		"training_size": len(data.Features),
 	})
 
@@ -225,10 +225,10 @@ func (m *ModelManager) ScheduleTraining(modelID, schedule, dataSource string, co
 	m.scheduler.addJob(job)
 
 	m.logger.Info(context.Background(), "Training scheduled", map[string]interface{}{
-		"job_id":    job.ID,
-		"model_id":  modelID,
-		"schedule":  schedule,
-		"next_run":  nextRun,
+		"job_id":   job.ID,
+		"model_id": modelID,
+		"schedule": schedule,
+		"next_run": nextRun,
 	})
 
 	return nil
@@ -276,7 +276,7 @@ func (r *ModelRegistry) update(id string, info *ModelInfo) {
 func (r *ModelRegistry) list() map[string]*ModelInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	result := make(map[string]*ModelInfo)
 	for id, info := range r.models {
 		result[id] = info
@@ -369,6 +369,6 @@ func (m *ModelManager) Stop() {
 	if m.scheduler.ticker != nil {
 		m.scheduler.ticker.Stop()
 	}
-	
+
 	m.logger.Info(context.Background(), "Model manager stopped", nil)
 }

@@ -420,55 +420,65 @@ export class NFTPortfolioEngine {
       portfolios: [
         {
           id: 'default',
+          ownerAddress: '0x0000000000000000000000000000000000000001',
+          userAddress: '0x0000000000000000000000000000000000000001',
           name: 'Main Portfolio',
           description: 'Primary NFT collection',
-          userAddress: '0x0000000000000000000000000000000000000001',
-          collections: this.generateMockCollections(),
           totalValue: 125000,
-          totalItems: 15,
+          totalValueUSD: 125000,
+          totalAssets: 15,
+          collections: this.generateMockCollections(),
+          assets: [],
+          performance: this.generateMockPerformance(),
+          analytics: this.generateMockAnalytics(),
+          diversification: this.generateMockDiversification(),
+          riskMetrics: this.generateMockRiskMetrics(),
+          allocation: this.generateMockAllocation(),
+          lastUpdated: new Date().toISOString(),
           createdAt: '2023-01-01T00:00:00Z',
-          updatedAt: new Date().toISOString(),
           isDefault: true,
           tags: ['main', 'diversified'],
-          performance: this.generateMockPerformance(),
-          allocation: this.generateMockAllocation(),
           riskScore: 65
         }
       ],
+      collections: [],
+      assets: [],
+      analytics: this.generateMockAnalytics(),
+      diversification: this.generateMockDiversification(),
+      riskMetrics: this.generateMockRiskMetrics(),
       totalValue: 125000,
       totalItems: 15,
       totalCollections: 3,
       performance: this.generateMockPerformance(),
       allocation: this.generateMockAllocation(),
-      riskMetrics: this.generateMockRiskMetrics(),
       recommendations: this.generateMockRecommendations(),
-      lastUpdate: Date.now()
+      lastUpdate: Date.now(),
+      lastUpdated: Date.now()
     }
 
-    this.portfolios.set(mockPortfolio.portfolio.ownerAddress.toLowerCase(), mockPortfolio)
+    this.portfolios.set(mockPortfolio.userAddress?.toLowerCase() || 'default', mockPortfolio)
   }
 
   /**
    * Generate mock collections
    */
-  private generateMockCollections(): PortfolioCollection[] {
+  private generateMockCollections(): NFTCollectionHolding[] {
     return [
       {
         contractAddress: '0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D',
-        name: 'Bored Ape Yacht Club',
-        symbol: 'BAYC',
-        imageUrl: '/nft/bayc.jpg',
         chainId: 1,
-        items: this.generateMockNFTs('BAYC', 3),
-        totalItems: 3,
-        totalValue: 85000,
-        totalCost: 65000,
-        unrealizedPnL: 20000,
-        unrealizedPnLPercentage: 30.8,
+        name: 'Bored Ape Yacht Club',
+        slug: 'bored-ape-yacht-club',
+        imageUrl: '/nft/bayc.jpg',
+        verified: true,
+        totalOwned: 3,
         floorPrice: 15.5,
-        averageBuyPrice: 12.0,
+        totalValue: 85000,
+        totalValueUSD: 85000,
+        averageCostBasis: 21666.67,
+        unrealizedPnL: 20000,
+        unrealizedPnLPercent: 30.8,
         allocation: 68,
-        riskScore: 45,
         performance: {
           return: 20000,
           returnPercentage: 30.8,
@@ -484,24 +494,23 @@ export class NFTPortfolioEngine {
           uniqueTraits: 150,
           rarityScore: 85
         },
-        lastUpdated: Date.now()
+        assets: []
       },
       {
         contractAddress: '0xED5AF388653567Af2F388E6224dC7C4b3241C544',
-        name: 'Azuki',
-        symbol: 'AZUKI',
-        imageUrl: '/nft/azuki.jpg',
         chainId: 1,
-        items: this.generateMockNFTs('AZUKI', 5),
-        totalItems: 5,
-        totalValue: 30000,
-        totalCost: 28000,
-        unrealizedPnL: 2000,
-        unrealizedPnLPercentage: 7.1,
+        name: 'Azuki',
+        slug: 'azuki',
+        imageUrl: '/nft/azuki.jpg',
+        verified: true,
+        totalOwned: 5,
         floorPrice: 8.2,
-        averageBuyPrice: 7.8,
+        totalValue: 30000,
+        totalValueUSD: 30000,
+        averageCostBasis: 5600,
+        unrealizedPnL: 2000,
+        unrealizedPnLPercent: 7.1,
         allocation: 24,
-        riskScore: 55,
         performance: {
           return: 2000,
           returnPercentage: 7.1,
@@ -517,24 +526,23 @@ export class NFTPortfolioEngine {
           uniqueTraits: 200,
           rarityScore: 75
         },
-        lastUpdated: Date.now()
+        assets: []
       },
       {
         contractAddress: '0x60E4d786628Fea6478F785A6d7e704777c86a7c6',
-        name: 'Mutant Ape Yacht Club',
-        symbol: 'MAYC',
-        imageUrl: '/nft/mayc.jpg',
         chainId: 1,
-        items: this.generateMockNFTs('MAYC', 7),
-        totalItems: 7,
-        totalValue: 10000,
-        totalCost: 12000,
-        unrealizedPnL: -2000,
-        unrealizedPnLPercentage: -16.7,
+        name: 'Mutant Ape Yacht Club',
+        slug: 'mutant-ape-yacht-club',
+        imageUrl: '/nft/mayc.jpg',
+        verified: true,
+        totalOwned: 7,
         floorPrice: 2.8,
-        averageBuyPrice: 3.2,
+        totalValue: 10000,
+        totalValueUSD: 10000,
+        averageCostBasis: 1714.29,
+        unrealizedPnL: -2000,
+        unrealizedPnLPercent: -16.7,
         allocation: 8,
-        riskScore: 70,
         performance: {
           return: -2000,
           returnPercentage: -16.7,
@@ -550,7 +558,7 @@ export class NFTPortfolioEngine {
           uniqueTraits: 120,
           rarityScore: 65
         },
-        lastUpdated: Date.now()
+        assets: []
       }
     ]
   }
@@ -716,18 +724,7 @@ export class NFTPortfolioEngine {
     }
   }
 
-  /**
-   * Generate mock risk metrics
-   */
-  private generateMockRiskMetrics(): PortfolioRiskMetrics {
-    return {
-      volatilityScore: 65,
-      liquidityRisk: 45,
-      concentrationRisk: 75,
-      marketRisk: 60,
-      overallRiskScore: 65
-    }
-  }
+
 
   /**
    * Generate mock recommendations
@@ -769,14 +766,20 @@ export class NFTPortfolioEngine {
   ): Promise<NFTPortfolio> {
     const portfolio: NFTPortfolio = {
       id: `portfolio_${Date.now()}`,
+      ownerAddress: userAddress,
+      userAddress,
       name,
       description,
-      userAddress,
-      collections: [],
       totalValue: 0,
-      totalItems: 0,
+      totalValueUSD: 0,
+      totalAssets: 0,
+      collections: [],
+      assets: [],
+      analytics: this.generateMockAnalytics(),
+      diversification: this.generateMockDiversification(),
+      riskMetrics: this.generateMockRiskMetrics(),
+      lastUpdated: new Date().toISOString(),
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
       isDefault: false,
       tags: [],
       performance: {
@@ -811,19 +814,24 @@ export class NFTPortfolioEngine {
       portfolioManager = {
         userAddress,
         portfolios: [],
+        collections: [],
+        assets: [],
+        analytics: this.generateMockAnalytics(),
+        diversification: this.generateMockDiversification(),
+        riskMetrics: this.generateMockRiskMetrics(),
         totalValue: 0,
         totalItems: 0,
         totalCollections: 0,
         performance: portfolio.performance,
         allocation: portfolio.allocation,
-        riskMetrics: this.generateMockRiskMetrics(),
         recommendations: [],
-        lastUpdate: Date.now()
+        lastUpdate: Date.now(),
+        lastUpdated: Date.now()
       }
       this.portfolios.set(userAddress.toLowerCase(), portfolioManager)
     }
 
-    portfolioManager.portfolios.push(portfolio)
+    portfolioManager.portfolios?.push(portfolio)
 
     // Emit event
     this.emitEvent({
@@ -903,6 +911,51 @@ export class NFTPortfolioEngine {
    */
   clear(): void {
     this.portfolios.clear()
+  }
+
+  /**
+   * Generate mock analytics
+   */
+  private generateMockAnalytics(): PortfolioAnalytics {
+    return {
+      totalValue: 125000,
+      totalItems: 15,
+      averageHoldingPeriod: 45,
+      profitLoss: 20000,
+      profitLossPercentage: 19.05,
+      topPerformers: ['BAYC #1234', 'Azuki #5678'],
+      worstPerformers: ['MAYC #9012']
+    }
+  }
+
+  /**
+   * Generate mock diversification metrics
+   */
+  private generateMockDiversification(): DiversificationMetrics {
+    return {
+      collectionCount: 3,
+      averageItemsPerCollection: 5,
+      concentrationRisk: 0.68,
+      diversificationScore: 75,
+      categoryDistribution: {
+        'Art': 0.4,
+        'Gaming': 0.3,
+        'Utility': 0.3
+      }
+    }
+  }
+
+  /**
+   * Generate mock risk metrics
+   */
+  private generateMockRiskMetrics(): PortfolioRiskMetrics {
+    return {
+      volatilityScore: 55,
+      liquidityRisk: 35,
+      concentrationRisk: 68,
+      marketRisk: 45,
+      overallRiskScore: 49
+    }
   }
 
   /**

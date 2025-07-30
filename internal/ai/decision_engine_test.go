@@ -55,9 +55,9 @@ func TestDecisionEngine(t *testing.T) {
 				Urgency:          "medium",
 				TriggerEvent:     "price_breakout",
 				TechnicalIndicators: map[string]float64{
-					"rsi":           30.0, // Oversold
-					"macd_signal":   1.0,  // Bullish
-					"volume_ratio":  1.5,  // High volume
+					"rsi":          30.0, // Oversold
+					"macd_signal":  1.0,  // Bullish
+					"volume_ratio": 1.5,  // High volume
 				},
 			},
 			Constraints: &DecisionConstraints{
@@ -214,13 +214,13 @@ func TestDecisionEngine(t *testing.T) {
 	t.Run("ComplexDecisionDetection", func(t *testing.T) {
 		// Test complex decision types
 		complexTypes := []string{"portfolio_rebalance", "risk_management", "multi_asset_strategy"}
-		
+
 		for _, decisionType := range complexTypes {
 			req := &DecisionRequest{
 				DecisionType: decisionType,
 				Options:      DecisionOptions{},
 			}
-			
+
 			isComplex := engine.isComplexDecision(req)
 			assert.True(t, isComplex, "Decision type %s should be complex", decisionType)
 		}
@@ -230,7 +230,7 @@ func TestDecisionEngine(t *testing.T) {
 			DecisionType: "trade",
 			Options:      DecisionOptions{},
 		}
-		
+
 		isComplex := engine.isComplexDecision(req)
 		assert.False(t, isComplex, "Decision type 'trade' should be simple")
 
@@ -241,7 +241,7 @@ func TestDecisionEngine(t *testing.T) {
 				EnableBacktesting: true,
 			},
 		}
-		
+
 		isComplex = engine.isComplexDecision(req)
 		assert.True(t, isComplex, "Backtesting should make decision complex")
 
@@ -252,7 +252,7 @@ func TestDecisionEngine(t *testing.T) {
 				IncludeAlternatives: true,
 			},
 		}
-		
+
 		isComplex = engine.isComplexDecision(req)
 		assert.True(t, isComplex, "Including alternatives should make decision complex")
 	})
@@ -277,7 +277,7 @@ func TestDecisionEngine(t *testing.T) {
 		}
 
 		confidence := engine.calculateConfidence(marketAnalysis, riskAssessment, recommendations)
-		
+
 		assert.GreaterOrEqual(t, confidence, 0.0)
 		assert.LessOrEqual(t, confidence, 1.0)
 		assert.Greater(t, confidence, 0.7) // Should be high due to bullish trend and low risk
@@ -529,7 +529,7 @@ func TestDecisionPerformanceTracker(t *testing.T) {
 
 	t.Run("RecordDecision", func(t *testing.T) {
 		userID := uuid.New()
-		
+
 		record := DecisionRecord{
 			DecisionID:   uuid.New().String(),
 			UserID:       userID,

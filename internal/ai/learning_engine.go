@@ -137,12 +137,12 @@ type LearningUserPreferences struct {
 
 // AutoTradingSettings represents auto-trading preferences
 type AutoTradingSettings struct {
-	Enabled             bool               `json:"enabled"`
-	MaxPositionSize     float64            `json:"max_position_size"`
-	AllowedAssets       []string           `json:"allowed_assets"`
-	TradingHours        *TradingHours      `json:"trading_hours"`
-	RiskLimits          *LearningRiskLimits        `json:"risk_limits"`
-	StrategyPreferences map[string]float64 `json:"strategy_preferences"`
+	Enabled             bool                `json:"enabled"`
+	MaxPositionSize     float64             `json:"max_position_size"`
+	AllowedAssets       []string            `json:"allowed_assets"`
+	TradingHours        *TradingHours       `json:"trading_hours"`
+	RiskLimits          *LearningRiskLimits `json:"risk_limits"`
+	StrategyPreferences map[string]float64  `json:"strategy_preferences"`
 }
 
 // TradingHours represents preferred trading hours
@@ -341,15 +341,15 @@ type PredictionFeedback struct {
 
 // StrategyPerformance represents strategy performance tracking
 type StrategyPerformance struct {
-	StrategyID       string               `json:"strategy_id"`
-	Name             string               `json:"name"`
-	Type             string               `json:"type"`
+	StrategyID       string                       `json:"strategy_id"`
+	Name             string                       `json:"name"`
+	Type             string                       `json:"type"`
 	Performance      *LearningPerformanceMetrics  `json:"performance"`
-	Trades           []TradeRecord        `json:"trades"`
+	Trades           []TradeRecord                `json:"trades"`
 	Adaptations      []LearningStrategyAdaptation `json:"adaptations"`
-	MarketConditions map[string]float64   `json:"market_conditions"`
-	LastUpdated      time.Time            `json:"last_updated"`
-	Status           string               `json:"status"` // active, paused, deprecated
+	MarketConditions map[string]float64           `json:"market_conditions"`
+	LastUpdated      time.Time                    `json:"last_updated"`
+	Status           string                       `json:"status"` // active, paused, deprecated
 }
 
 // PerformanceMetrics represents performance metrics
@@ -452,10 +452,10 @@ type AdaptationEvent struct {
 
 // Benchmark represents a performance benchmark
 type Benchmark struct {
-	Name        string              `json:"name"`
-	Type        string              `json:"type"` // market, strategy, model
+	Name        string                      `json:"name"`
+	Type        string                      `json:"type"` // market, strategy, model
 	Performance *LearningPerformanceMetrics `json:"performance"`
-	LastUpdated time.Time           `json:"last_updated"`
+	LastUpdated time.Time                   `json:"last_updated"`
 }
 
 // AdaptiveModel represents an adaptive model

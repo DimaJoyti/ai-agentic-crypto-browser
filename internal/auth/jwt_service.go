@@ -25,18 +25,18 @@ type JWTService struct {
 
 // TokenClaims represents JWT token claims with enhanced security
 type TokenClaims struct {
-	UserID      uuid.UUID `json:"user_id"`
-	Email       string    `json:"email"`
-	Role        string    `json:"role"`
-	Permissions []string  `json:"permissions"`
+	UserID      uuid.UUID  `json:"user_id"`
+	Email       string     `json:"email"`
+	Role        string     `json:"role"`
+	Permissions []string   `json:"permissions"`
 	TeamID      *uuid.UUID `json:"team_id,omitempty"`
-	SessionID   string    `json:"session_id"`
-	TokenType   string    `json:"token_type"` // access, refresh, mfa
-	MFAVerified bool      `json:"mfa_verified"`
-	IPAddress   string    `json:"ip_address"`
-	UserAgent   string    `json:"user_agent"`
-	DeviceID    string    `json:"device_id"`
-	Scope       []string  `json:"scope"`
+	SessionID   string     `json:"session_id"`
+	TokenType   string     `json:"token_type"` // access, refresh, mfa
+	MFAVerified bool       `json:"mfa_verified"`
+	IPAddress   string     `json:"ip_address"`
+	UserAgent   string     `json:"user_agent"`
+	DeviceID    string     `json:"device_id"`
+	Scope       []string   `json:"scope"`
 	jwt.RegisteredClaims
 }
 
@@ -268,10 +268,10 @@ func (j *JWTService) GetPublicKeyPEM() (string, error) {
 // signToken signs a token with the private key
 func (j *JWTService) signToken(claims *TokenClaims) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	
+
 	// Add key ID to header for key rotation support
 	token.Header["kid"] = j.getKeyID()
-	
+
 	return token.SignedString(j.privateKey)
 }
 

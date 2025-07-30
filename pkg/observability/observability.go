@@ -41,7 +41,7 @@ func NewSimpleObservabilityProvider(cfg *SimpleObservabilityConfig) (*SimpleObse
 		config: cfg,
 	}
 
-	// Initialize logger  
+	// Initialize logger
 	loggerConfig := config.ObservabilityConfig{
 		ServiceName: cfg.ServiceName,
 		LogLevel:    cfg.LogLevel,

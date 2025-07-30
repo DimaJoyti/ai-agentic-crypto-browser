@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { ThemeProvider } from 'next-themes'
 import { WagmiProvider } from 'wagmi'
 import { config } from '@/lib/wagmi'
+import { AuthProvider } from '@/components/auth-provider'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -28,7 +29,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </ThemeProvider>

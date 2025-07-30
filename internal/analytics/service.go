@@ -7,9 +7,9 @@ import (
 	"math"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/ai-agentic-browser/pkg/database"
 	"github.com/ai-agentic-browser/pkg/observability"
+	"github.com/google/uuid"
 )
 
 // Service provides analytics and business intelligence capabilities
@@ -30,13 +30,13 @@ func NewService(db *database.DB, redis *database.RedisClient, logger *observabil
 
 // AnalyticsRequest represents a request for analytics data
 type AnalyticsRequest struct {
-	UserID     *uuid.UUID `json:"user_id,omitempty"`
-	TeamID     *uuid.UUID `json:"team_id,omitempty"`
-	StartDate  time.Time  `json:"start_date"`
-	EndDate    time.Time  `json:"end_date"`
-	Granularity string    `json:"granularity"` // hour, day, week, month
-	Metrics    []string   `json:"metrics"`
-	Filters    map[string]interface{} `json:"filters"`
+	UserID      *uuid.UUID             `json:"user_id,omitempty"`
+	TeamID      *uuid.UUID             `json:"team_id,omitempty"`
+	StartDate   time.Time              `json:"start_date"`
+	EndDate     time.Time              `json:"end_date"`
+	Granularity string                 `json:"granularity"` // hour, day, week, month
+	Metrics     []string               `json:"metrics"`
+	Filters     map[string]interface{} `json:"filters"`
 }
 
 // AnalyticsResponse represents analytics data response
@@ -77,7 +77,7 @@ func (s *Service) GetAnalytics(ctx context.Context, req AnalyticsRequest) (*Anal
 
 	// Generate cache key
 	cacheKey := s.generateCacheKey(req)
-	
+
 	// Try to get from cache first
 	if cached, err := s.getFromCache(ctx, cacheKey); err == nil && cached != nil {
 		return cached, nil
@@ -268,13 +268,13 @@ func (s *Service) getCostAnalysis(ctx context.Context, req AnalyticsRequest) (ma
 	// This would integrate with billing/cost tracking systems
 	// For now, return mock data
 	return map[string]interface{}{
-		"total_cost":     125.50,
-		"ai_cost":        75.30,
-		"browser_cost":   25.20,
-		"web3_cost":      15.00,
-		"storage_cost":   10.00,
+		"total_cost":         125.50,
+		"ai_cost":            75.30,
+		"browser_cost":       25.20,
+		"web3_cost":          15.00,
+		"storage_cost":       10.00,
 		"cost_per_execution": 1.25,
-		"cost_trend":     "increasing",
+		"cost_trend":         "increasing",
 	}, nil
 }
 
@@ -364,12 +364,12 @@ func (s *Service) getResourceUtilization(ctx context.Context, req AnalyticsReque
 	// This would integrate with infrastructure monitoring
 	// For now, return mock data
 	return map[string]interface{}{
-		"cpu_utilization":    65.5,
-		"memory_utilization": 72.3,
+		"cpu_utilization":     65.5,
+		"memory_utilization":  72.3,
 		"storage_utilization": 45.8,
 		"network_utilization": 23.1,
 		"concurrent_sessions": 15,
-		"peak_usage_time":    "14:30",
+		"peak_usage_time":     "14:30",
 	}, nil
 }
 
@@ -434,18 +434,18 @@ func (s *Service) getErrorAnalysis(ctx context.Context, req AnalyticsRequest) (m
 	}
 
 	return map[string]interface{}{
-		"total_errors":   totalErrors,
-		"error_rate":     errorRate,
-		"error_types":    errorTypes,
-		"mttr":          45.5, // Mean Time To Recovery (mock)
-		"error_trend":   "decreasing",
+		"total_errors": totalErrors,
+		"error_rate":   errorRate,
+		"error_types":  errorTypes,
+		"mttr":         45.5, // Mean Time To Recovery (mock)
+		"error_trend":  "decreasing",
 	}, nil
 }
 
 // generateTimeSeries generates time series data
 func (s *Service) generateTimeSeries(ctx context.Context, req AnalyticsRequest) ([]TimeSeriesPoint, error) {
 	var points []TimeSeriesPoint
-	
+
 	// Determine time intervals based on granularity
 	interval := s.getTimeInterval(req.Granularity)
 	current := req.StartDate
@@ -462,7 +462,7 @@ func (s *Service) generateTimeSeries(ctx context.Context, req AnalyticsRequest) 
 		periodReq.EndDate = next
 
 		values := make(map[string]interface{})
-		
+
 		// Calculate metrics for this period
 		if contains(req.Metrics, "total_executions") {
 			if count, err := s.getTotalExecutions(ctx, periodReq); err == nil {

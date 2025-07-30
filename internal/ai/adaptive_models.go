@@ -22,13 +22,13 @@ type AdaptiveModelManager struct {
 
 // AdaptiveModelConfig holds configuration for adaptive models
 type AdaptiveModelConfig struct {
-	AdaptationInterval    time.Duration `json:"adaptation_interval"`
-	PerformanceThreshold  float64       `json:"performance_threshold"`
-	MinAdaptationSamples  int           `json:"min_adaptation_samples"`
-	MaxAdaptationRate     float64       `json:"max_adaptation_rate"`
-	AdaptationDecay       float64       `json:"adaptation_decay"`
-	EnableAutoAdaptation  bool          `json:"enable_auto_adaptation"`
-	AdaptationStrategies  []string      `json:"adaptation_strategies"`
+	AdaptationInterval   time.Duration `json:"adaptation_interval"`
+	PerformanceThreshold float64       `json:"performance_threshold"`
+	MinAdaptationSamples int           `json:"min_adaptation_samples"`
+	MaxAdaptationRate    float64       `json:"max_adaptation_rate"`
+	AdaptationDecay      float64       `json:"adaptation_decay"`
+	EnableAutoAdaptation bool          `json:"enable_auto_adaptation"`
+	AdaptationStrategies []string      `json:"adaptation_strategies"`
 }
 
 // AdaptationRequest represents a request for model adaptation
@@ -63,12 +63,12 @@ type AdaptationResult struct {
 
 // ModelChange represents a change made to a model
 type ModelChange struct {
-	Component   string      `json:"component"` // weights, hyperparameters, architecture
-	Parameter   string      `json:"parameter"`
-	OldValue    interface{} `json:"old_value"`
-	NewValue    interface{} `json:"new_value"`
-	Impact      float64     `json:"impact"`
-	Reversible  bool        `json:"reversible"`
+	Component  string      `json:"component"` // weights, hyperparameters, architecture
+	Parameter  string      `json:"parameter"`
+	OldValue   interface{} `json:"old_value"`
+	NewValue   interface{} `json:"new_value"`
+	Impact     float64     `json:"impact"`
+	Reversible bool        `json:"reversible"`
 }
 
 // PerformanceBasedAdaptation adapts models based on performance degradation
@@ -83,18 +83,18 @@ type FeedbackBasedAdaptation struct {
 
 // DriftBasedAdaptation adapts models based on concept drift detection
 type DriftBasedAdaptation struct {
-	logger         *observability.Logger
-	driftDetector  *ConceptDriftDetector
+	logger        *observability.Logger
+	driftDetector *ConceptDriftDetector
 }
 
 // ConceptDriftDetector detects concept drift in data
 type ConceptDriftDetector struct {
-	windowSize      int
-	driftThreshold  float64
-	recentData      []DataPoint
-	referenceData   []DataPoint
-	lastCheck       time.Time
-	driftHistory    []DriftEvent
+	windowSize     int
+	driftThreshold float64
+	recentData     []DataPoint
+	referenceData  []DataPoint
+	lastCheck      time.Time
+	driftHistory   []DriftEvent
 }
 
 // DataPoint represents a data point for drift detection
@@ -126,13 +126,13 @@ type OnlineLearningAdapter struct {
 // NewAdaptiveModelManager creates a new adaptive model manager
 func NewAdaptiveModelManager(learningEngine *LearningEngine, logger *observability.Logger) *AdaptiveModelManager {
 	config := &AdaptiveModelConfig{
-		AdaptationInterval:    1 * time.Hour,
-		PerformanceThreshold:  0.05, // 5% performance drop triggers adaptation
-		MinAdaptationSamples:  100,
-		MaxAdaptationRate:     0.1,
-		AdaptationDecay:       0.95,
-		EnableAutoAdaptation:  true,
-		AdaptationStrategies:  []string{"performance", "feedback", "drift"},
+		AdaptationInterval:   1 * time.Hour,
+		PerformanceThreshold: 0.05, // 5% performance drop triggers adaptation
+		MinAdaptationSamples: 100,
+		MaxAdaptationRate:    0.1,
+		AdaptationDecay:      0.95,
+		EnableAutoAdaptation: true,
+		AdaptationStrategies: []string{"performance", "feedback", "drift"},
 	}
 
 	manager := &AdaptiveModelManager{
@@ -197,7 +197,7 @@ func (m *AdaptiveModelManager) startAdaptationLoop() {
 	for range ticker.C {
 		ctx := context.Background()
 		m.processAdaptationQueue(ctx)
-		
+
 		if m.config.EnableAutoAdaptation {
 			m.checkForAutoAdaptation(ctx)
 		}
@@ -411,11 +411,11 @@ func (p *PerformanceBasedAdaptation) Adapt(ctx context.Context, model *AdaptiveM
 
 	changes := []ModelChange{
 		{
-			Component: "hyperparameters",
-			Parameter: "learning_rate",
-			OldValue:  model.LearningRate,
-			NewValue:  model.LearningRate * 1.1, // Increase learning rate
-			Impact:    0.05,
+			Component:  "hyperparameters",
+			Parameter:  "learning_rate",
+			OldValue:   model.LearningRate,
+			NewValue:   model.LearningRate * 1.1, // Increase learning rate
+			Impact:     0.05,
 			Reversible: true,
 		},
 	}
@@ -457,11 +457,11 @@ func (f *FeedbackBasedAdaptation) Adapt(ctx context.Context, model *AdaptiveMode
 	// Simulate feedback-based adaptation
 	changes := []ModelChange{
 		{
-			Component: "weights",
-			Parameter: "output_layer",
-			OldValue:  "original_weights",
-			NewValue:  "adjusted_weights",
-			Impact:    0.03,
+			Component:  "weights",
+			Parameter:  "output_layer",
+			OldValue:   "original_weights",
+			NewValue:   "adjusted_weights",
+			Impact:     0.03,
 			Reversible: true,
 		},
 	}
@@ -498,11 +498,11 @@ func (d *DriftBasedAdaptation) Adapt(ctx context.Context, model *AdaptiveModel, 
 	// Simulate drift-based adaptation
 	changes := []ModelChange{
 		{
-			Component: "architecture",
-			Parameter: "feature_weights",
-			OldValue:  "original_features",
-			NewValue:  "drift_adjusted_features",
-			Impact:    0.08,
+			Component:  "architecture",
+			Parameter:  "feature_weights",
+			OldValue:   "original_features",
+			NewValue:   "drift_adjusted_features",
+			Impact:     0.08,
 			Reversible: false,
 		},
 	}
@@ -516,7 +516,7 @@ func (d *DriftBasedAdaptation) Adapt(ctx context.Context, model *AdaptiveModel, 
 		Changes:         changes,
 		Timestamp:       time.Now(),
 		Metadata: map[string]interface{}{
-			"strategy": "drift_compensation",
+			"strategy":   "drift_compensation",
 			"drift_type": "gradual",
 		},
 	}, nil
@@ -545,12 +545,12 @@ func (c *ConceptDriftDetector) HasDrift() bool {
 
 func (c *ConceptDriftDetector) AddDataPoint(point DataPoint) {
 	c.recentData = append(c.recentData, point)
-	
+
 	// Maintain window size
 	if len(c.recentData) > c.windowSize {
 		c.recentData = c.recentData[1:]
 	}
-	
+
 	// Check for drift periodically
 	if time.Since(c.lastCheck) > 1*time.Hour {
 		c.checkForDrift()
@@ -565,7 +565,7 @@ func (c *ConceptDriftDetector) checkForDrift() {
 
 	// Simplified drift detection using statistical distance
 	distance := c.calculateStatisticalDistance(c.recentData, c.referenceData)
-	
+
 	if distance > c.driftThreshold {
 		event := DriftEvent{
 			Type:        "gradual",
@@ -575,9 +575,9 @@ func (c *ConceptDriftDetector) checkForDrift() {
 			Description: fmt.Sprintf("Concept drift detected with distance %.3f", distance),
 			Features:    []string{"all"}, // Simplified
 		}
-		
+
 		c.driftHistory = append(c.driftHistory, event)
-		
+
 		// Update reference data
 		c.referenceData = make([]DataPoint, len(c.recentData))
 		copy(c.referenceData, c.recentData)
@@ -587,27 +587,27 @@ func (c *ConceptDriftDetector) checkForDrift() {
 func (c *ConceptDriftDetector) calculateStatisticalDistance(data1, data2 []DataPoint) float64 {
 	// Simplified statistical distance calculation
 	// In practice, would use more sophisticated methods like KL divergence, Wasserstein distance, etc.
-	
+
 	if len(data1) == 0 || len(data2) == 0 {
 		return 0.0
 	}
-	
+
 	// Calculate mean differences for each feature
 	features1 := make(map[string]float64)
 	features2 := make(map[string]float64)
-	
+
 	for _, point := range data1 {
 		for feature, value := range point.Features {
 			features1[feature] += value
 		}
 	}
-	
+
 	for _, point := range data2 {
 		for feature, value := range point.Features {
 			features2[feature] += value
 		}
 	}
-	
+
 	// Normalize by count
 	for feature := range features1 {
 		features1[feature] /= float64(len(data1))
@@ -615,7 +615,7 @@ func (c *ConceptDriftDetector) calculateStatisticalDistance(data1, data2 []DataP
 	for feature := range features2 {
 		features2[feature] /= float64(len(data2))
 	}
-	
+
 	// Calculate Euclidean distance
 	distance := 0.0
 	for feature := range features1 {
@@ -624,7 +624,7 @@ func (c *ConceptDriftDetector) calculateStatisticalDistance(data1, data2 []DataP
 			distance += diff * diff
 		}
 	}
-	
+
 	return math.Sqrt(distance)
 }
 
@@ -643,6 +643,6 @@ func (m *AdaptiveModelManager) GetAdaptationHistory(modelID string) ([]ModelAdap
 	if !exists {
 		return nil, fmt.Errorf("model %s not found", modelID)
 	}
-	
+
 	return model.Adaptations, nil
 }

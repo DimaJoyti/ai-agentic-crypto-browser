@@ -218,6 +218,16 @@ run-gateway:
 	@echo "Starting API gateway..."
 	go run cmd/api-gateway/main.go
 
+# Run the new HFT trading system
+run-hft:
+	@echo "Starting HFT Trading System..."
+	go run cmd/main.go
+
+# Build the HFT trading system
+build-hft:
+	@echo "Building HFT Trading System..."
+	go build -o bin/ai-agentic-browser cmd/main.go
+
 # Security
 security-scan:
 	@echo "Running security scan..."

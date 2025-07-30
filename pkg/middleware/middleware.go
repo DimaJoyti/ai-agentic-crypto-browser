@@ -7,21 +7,21 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ai-agentic-browser/internal/config"
+	"github.com/ai-agentic-browser/pkg/observability"
 	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/time/rate"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
-	"github.com/ai-agentic-browser/internal/config"
-	"github.com/ai-agentic-browser/pkg/observability"
+	"golang.org/x/time/rate"
 )
 
 // ContextKey is a type for context keys to avoid collisions
 type ContextKey string
 
 const (
-	UserIDKey ContextKey = "user_id"
+	UserIDKey    ContextKey = "user_id"
 	UserEmailKey ContextKey = "user_email"
 )
 
@@ -30,7 +30,7 @@ func CORS(allowedOrigins []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			origin := r.Header.Get("Origin")
-			
+
 			// Check if origin is allowed
 			allowed := false
 			for _, allowedOrigin := range allowedOrigins {
@@ -43,7 +43,7 @@ func CORS(allowedOrigins []string) func(http.Handler) http.Handler {
 			if allowed {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 			}
-			
+
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -62,7 +62,7 @@ func CORS(allowedOrigins []string) func(http.Handler) http.Handler {
 // Tracing middleware for OpenTelemetry
 func Tracing(serviceName string) func(http.Handler) http.Handler {
 	tracer := otel.Tracer(serviceName)
-	
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx, span := tracer.Start(r.Context(), fmt.Sprintf("%s %s", r.Method, r.URL.Path),
@@ -78,7 +78,7 @@ func Tracing(serviceName string) func(http.Handler) http.Handler {
 
 			// Create a response writer wrapper to capture status code
 			wrapped := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
-			
+
 			// Continue with the request
 			next.ServeHTTP(wrapped, r.WithContext(ctx))
 
@@ -111,16 +111,16 @@ func Logging(logger *observability.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
-			
+
 			// Create a response writer wrapper
 			wrapped := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
-			
+
 			// Log request
 			logger.Info(r.Context(), "HTTP request started", map[string]interface{}{
-				"method": r.Method,
-				"path":   r.URL.Path,
+				"method":      r.Method,
+				"path":        r.URL.Path,
 				"remote_addr": r.RemoteAddr,
-				"user_agent": r.UserAgent(),
+				"user_agent":  r.UserAgent(),
 			})
 
 			// Continue with the request
@@ -141,7 +141,7 @@ func Logging(logger *observability.Logger) func(http.Handler) http.Handler {
 // RateLimit middleware for rate limiting requests
 func RateLimit(cfg config.RateLimitConfig) func(http.Handler) http.Handler {
 	limiter := rate.NewLimiter(rate.Limit(cfg.RequestsPerMinute)/60, cfg.Burst)
-	
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if !limiter.Allow() {

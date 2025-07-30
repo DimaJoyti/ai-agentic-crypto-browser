@@ -25,24 +25,24 @@ type SentimentAnalyzer struct {
 
 // SentimentConfig holds configuration for sentiment analysis
 type SentimentConfig struct {
-	Languages          []string  `json:"languages"`
-	Sources            []string  `json:"sources"`
-	ConfidenceThreshold float64  `json:"confidence_threshold"`
-	EmotionDetection   bool     `json:"emotion_detection"`
-	KeywordExtraction  bool     `json:"keyword_extraction"`
-	ContextWindow      int      `json:"context_window"`
-	BatchSize          int      `json:"batch_size"`
-	CacheTimeout       time.Duration `json:"cache_timeout"`
+	Languages           []string      `json:"languages"`
+	Sources             []string      `json:"sources"`
+	ConfidenceThreshold float64       `json:"confidence_threshold"`
+	EmotionDetection    bool          `json:"emotion_detection"`
+	KeywordExtraction   bool          `json:"keyword_extraction"`
+	ContextWindow       int           `json:"context_window"`
+	BatchSize           int           `json:"batch_size"`
+	CacheTimeout        time.Duration `json:"cache_timeout"`
 }
 
 // SentimentRequest represents a sentiment analysis request
 type SentimentRequest struct {
-	Texts     []string               `json:"texts"`
-	Source    string                 `json:"source"`
-	Symbol    string                 `json:"symbol,omitempty"`
-	Language  string                 `json:"language"`
-	Context   map[string]interface{} `json:"context,omitempty"`
-	Options   SentimentOptions       `json:"options"`
+	Texts    []string               `json:"texts"`
+	Source   string                 `json:"source"`
+	Symbol   string                 `json:"symbol,omitempty"`
+	Language string                 `json:"language"`
+	Context  map[string]interface{} `json:"context,omitempty"`
+	Options  SentimentOptions       `json:"options"`
 }
 
 // SentimentOptions represents options for sentiment analysis
@@ -65,30 +65,30 @@ type SentimentResponse struct {
 
 // SentimentResult represents sentiment analysis for a single text
 type SentimentResult struct {
-	Text        string                 `json:"text"`
-	Sentiment   float64                `json:"sentiment"`   // -1.0 to 1.0
-	Confidence  float64                `json:"confidence"`  // 0.0 to 1.0
-	Label       string                 `json:"label"`       // positive, negative, neutral
-	Emotions    map[string]float64     `json:"emotions,omitempty"`
-	Keywords    []KeywordSentiment     `json:"keywords,omitempty"`
-	Entities    []EntitySentiment      `json:"entities,omitempty"`
-	Language    string                 `json:"language"`
-	Source      string                 `json:"source"`
-	IsSarcasm   bool                   `json:"is_sarcasm,omitempty"`
-	Subjectivity float64               `json:"subjectivity"` // 0.0 to 1.0
-	Metadata    map[string]interface{} `json:"metadata"`
+	Text         string                 `json:"text"`
+	Sentiment    float64                `json:"sentiment"`  // -1.0 to 1.0
+	Confidence   float64                `json:"confidence"` // 0.0 to 1.0
+	Label        string                 `json:"label"`      // positive, negative, neutral
+	Emotions     map[string]float64     `json:"emotions,omitempty"`
+	Keywords     []KeywordSentiment     `json:"keywords,omitempty"`
+	Entities     []EntitySentiment      `json:"entities,omitempty"`
+	Language     string                 `json:"language"`
+	Source       string                 `json:"source"`
+	IsSarcasm    bool                   `json:"is_sarcasm,omitempty"`
+	Subjectivity float64                `json:"subjectivity"` // 0.0 to 1.0
+	Metadata     map[string]interface{} `json:"metadata"`
 }
 
 // AggregatedSentiment represents aggregated sentiment across multiple texts
 type AggregatedSentiment struct {
-	OverallSentiment    float64                `json:"overall_sentiment"`
-	OverallConfidence   float64                `json:"overall_confidence"`
-	SentimentDistribution map[string]int       `json:"sentiment_distribution"`
-	EmotionDistribution map[string]float64     `json:"emotion_distribution,omitempty"`
-	TopKeywords         []KeywordSentiment     `json:"top_keywords,omitempty"`
-	TrendingEntities    []EntitySentiment      `json:"trending_entities,omitempty"`
-	VolumeMetrics       VolumeMetrics          `json:"volume_metrics"`
-	TimeSeriesData      []TimeSeriesSentiment  `json:"time_series_data,omitempty"`
+	OverallSentiment      float64               `json:"overall_sentiment"`
+	OverallConfidence     float64               `json:"overall_confidence"`
+	SentimentDistribution map[string]int        `json:"sentiment_distribution"`
+	EmotionDistribution   map[string]float64    `json:"emotion_distribution,omitempty"`
+	TopKeywords           []KeywordSentiment    `json:"top_keywords,omitempty"`
+	TrendingEntities      []EntitySentiment     `json:"trending_entities,omitempty"`
+	VolumeMetrics         VolumeMetrics         `json:"volume_metrics"`
+	TimeSeriesData        []TimeSeriesSentiment `json:"time_series_data,omitempty"`
 }
 
 // KeywordSentiment represents sentiment for a specific keyword
@@ -102,11 +102,11 @@ type KeywordSentiment struct {
 
 // EntitySentiment represents sentiment for a specific entity
 type EntitySentiment struct {
-	Entity     string  `json:"entity"`
-	Type       string  `json:"type"` // person, organization, cryptocurrency, etc.
-	Sentiment  float64 `json:"sentiment"`
-	Mentions   int     `json:"mentions"`
-	Confidence float64 `json:"confidence"`
+	Entity     string   `json:"entity"`
+	Type       string   `json:"type"` // person, organization, cryptocurrency, etc.
+	Sentiment  float64  `json:"sentiment"`
+	Mentions   int      `json:"mentions"`
+	Confidence float64  `json:"confidence"`
 	Context    []string `json:"context,omitempty"`
 }
 
@@ -122,10 +122,10 @@ type VolumeMetrics struct {
 
 // TimeSeriesSentiment represents sentiment over time
 type TimeSeriesSentiment struct {
-	Timestamp time.Time `json:"timestamp"`
-	Sentiment float64   `json:"sentiment"`
-	Volume    int       `json:"volume"`
-	Confidence float64  `json:"confidence"`
+	Timestamp  time.Time `json:"timestamp"`
+	Sentiment  float64   `json:"sentiment"`
+	Volume     int       `json:"volume"`
+	Confidence float64   `json:"confidence"`
 }
 
 // NewSentimentAnalyzer creates a new sentiment analyzer
@@ -293,9 +293,9 @@ func (s *SentimentAnalyzer) Evaluate(ctx context.Context, testData ml.TrainingDa
 		TestSize:    len(testData.Features),
 		EvaluatedAt: time.Now(),
 		ConfusionMatrix: [][]int{
-			{850, 75, 25},   // True Positive
-			{50, 800, 100},  // True Negative
-			{30, 80, 890},   // True Neutral
+			{850, 75, 25},  // True Positive
+			{50, 800, 100}, // True Negative
+			{30, 80, 890},  // True Neutral
 		},
 		ClassificationReport: map[string]interface{}{
 			"positive": map[string]float64{"precision": 0.89, "recall": 0.85, "f1-score": 0.87},
@@ -303,12 +303,12 @@ func (s *SentimentAnalyzer) Evaluate(ctx context.Context, testData ml.TrainingDa
 			"neutral":  map[string]float64{"precision": 0.88, "recall": 0.89, "f1-score": 0.88},
 		},
 		FeatureImportance: map[string]float64{
-			"crypto_terms":     0.25,
-			"emotion_words":    0.20,
-			"context_words":    0.18,
-			"negation_words":   0.15,
-			"intensity_words":  0.12,
-			"source_weight":    0.10,
+			"crypto_terms":    0.25,
+			"emotion_words":   0.20,
+			"context_words":   0.18,
+			"negation_words":  0.15,
+			"intensity_words": 0.12,
+			"source_weight":   0.10,
 		},
 	}
 
@@ -352,12 +352,12 @@ func (s *SentimentAnalyzer) initializeLexicons() {
 		"bullish": 0.8, "moon": 0.9, "pump": 0.7, "gains": 0.8, "profit": 0.7,
 		"buy": 0.6, "hold": 0.5, "hodl": 0.6, "diamond": 0.8, "rocket": 0.9,
 		"green": 0.6, "up": 0.5, "rise": 0.6, "surge": 0.8, "rally": 0.7,
-		
+
 		// Negative words
 		"bearish": -0.8, "dump": -0.8, "crash": -0.9, "loss": -0.7, "sell": -0.6,
 		"fear": -0.7, "panic": -0.8, "red": -0.6, "down": -0.5, "fall": -0.6,
 		"drop": -0.6, "decline": -0.6, "correction": -0.5, "dip": -0.4,
-		
+
 		// Neutral/context words
 		"stable": 0.0, "sideways": 0.0, "consolidation": 0.0, "range": 0.0,
 	}
@@ -372,13 +372,13 @@ func (s *SentimentAnalyzer) initializeLexicons() {
 
 	// Initialize emotion weights
 	s.emotionWeights = map[string]float64{
-		"joy":      0.8,
-		"trust":    0.6,
-		"fear":     -0.7,
-		"surprise": 0.2,
-		"sadness":  -0.6,
-		"disgust":  -0.8,
-		"anger":    -0.9,
+		"joy":          0.8,
+		"trust":        0.6,
+		"fear":         -0.7,
+		"surprise":     0.2,
+		"sadness":      -0.6,
+		"disgust":      -0.8,
+		"anger":        -0.9,
 		"anticipation": 0.4,
 	}
 }
@@ -391,37 +391,37 @@ func (s *SentimentAnalyzer) analyzeText(text string, req *SentimentRequest) (*Se
 
 	// Calculate base sentiment
 	sentiment := s.calculateSentiment(text)
-	
+
 	// Calculate confidence
 	confidence := s.calculateConfidence(text, sentiment)
-	
+
 	// Determine label
 	label := s.getSentimentLabel(sentiment)
-	
+
 	// Detect emotions if requested
 	var emotions map[string]float64
 	if req.Options.IncludeEmotions {
 		emotions = s.detectEmotions(text)
 	}
-	
+
 	// Extract keywords if requested
 	var keywords []KeywordSentiment
 	if req.Options.IncludeKeywords {
 		keywords = s.extractKeywords(text)
 	}
-	
+
 	// Extract entities if requested
 	var entities []EntitySentiment
 	if req.Options.IncludeEntities {
 		entities = s.extractEntities(text)
 	}
-	
+
 	// Detect sarcasm if requested
 	var isSarcasm bool
 	if req.Options.DetectSarcasm {
 		isSarcasm = s.detectSarcasm(text)
 	}
-	
+
 	// Calculate subjectivity
 	subjectivity := s.calculateSubjectivity(text)
 
@@ -492,13 +492,13 @@ func (s *SentimentAnalyzer) calculateSentiment(text string) float64 {
 
 func (s *SentimentAnalyzer) calculateConfidence(text string, sentiment float64) float64 {
 	words := strings.Fields(strings.ToLower(text))
-	
+
 	// Base confidence on text length and sentiment strength
 	lengthFactor := math.Min(1.0, float64(len(words))/20.0) // Max confidence at 20+ words
 	sentimentStrength := math.Abs(sentiment)
-	
+
 	confidence := (lengthFactor * 0.5) + (sentimentStrength * 0.5)
-	
+
 	// Boost confidence for crypto-specific terms
 	cryptoTermCount := 0
 	for _, word := range words {
@@ -506,11 +506,11 @@ func (s *SentimentAnalyzer) calculateConfidence(text string, sentiment float64) 
 			cryptoTermCount++
 		}
 	}
-	
+
 	if cryptoTermCount > 0 {
 		confidence += float64(cryptoTermCount) * 0.1
 	}
-	
+
 	return math.Min(1.0, confidence)
 }
 
@@ -526,19 +526,19 @@ func (s *SentimentAnalyzer) getSentimentLabel(sentiment float64) string {
 func (s *SentimentAnalyzer) detectEmotions(text string) map[string]float64 {
 	emotions := make(map[string]float64)
 	words := strings.Fields(strings.ToLower(text))
-	
+
 	// Simplified emotion detection based on keywords
 	emotionKeywords := map[string][]string{
-		"joy":      {"happy", "excited", "moon", "gains", "profit"},
-		"trust":    {"hodl", "diamond", "believe", "confident"},
-		"fear":     {"scared", "worried", "panic", "crash", "dump"},
-		"surprise": {"wow", "amazing", "unexpected", "sudden"},
-		"sadness":  {"sad", "disappointed", "loss", "down"},
-		"disgust":  {"hate", "terrible", "awful", "scam"},
-		"anger":    {"angry", "mad", "furious", "rage"},
+		"joy":          {"happy", "excited", "moon", "gains", "profit"},
+		"trust":        {"hodl", "diamond", "believe", "confident"},
+		"fear":         {"scared", "worried", "panic", "crash", "dump"},
+		"surprise":     {"wow", "amazing", "unexpected", "sudden"},
+		"sadness":      {"sad", "disappointed", "loss", "down"},
+		"disgust":      {"hate", "terrible", "awful", "scam"},
+		"anger":        {"angry", "mad", "furious", "rage"},
 		"anticipation": {"waiting", "expecting", "soon", "coming"},
 	}
-	
+
 	for emotion, keywords := range emotionKeywords {
 		score := 0.0
 		for _, word := range words {
@@ -550,21 +550,21 @@ func (s *SentimentAnalyzer) detectEmotions(text string) map[string]float64 {
 		}
 		emotions[emotion] = math.Min(1.0, score)
 	}
-	
+
 	return emotions
 }
 
 func (s *SentimentAnalyzer) extractKeywords(text string) []KeywordSentiment {
 	words := strings.Fields(strings.ToLower(text))
 	wordFreq := make(map[string]int)
-	
+
 	// Count word frequencies
 	for _, word := range words {
 		if len(word) > 3 { // Only consider words longer than 3 characters
 			wordFreq[word]++
 		}
 	}
-	
+
 	// Create keyword sentiments
 	var keywords []KeywordSentiment
 	for word, freq := range wordFreq {
@@ -575,7 +575,7 @@ func (s *SentimentAnalyzer) extractKeywords(text string) []KeywordSentiment {
 			} else if val, exists := s.cryptoTerms[word]; exists {
 				sentiment = val
 			}
-			
+
 			keywords = append(keywords, KeywordSentiment{
 				Keyword:    word,
 				Sentiment:  sentiment,
@@ -584,38 +584,38 @@ func (s *SentimentAnalyzer) extractKeywords(text string) []KeywordSentiment {
 			})
 		}
 	}
-	
+
 	return keywords
 }
 
 func (s *SentimentAnalyzer) extractEntities(text string) []EntitySentiment {
 	// Simplified entity extraction for crypto-related entities
 	entities := []EntitySentiment{}
-	
+
 	// Common crypto entities
 	cryptoEntities := map[string]string{
-		"bitcoin": "cryptocurrency",
-		"btc": "cryptocurrency",
+		"bitcoin":  "cryptocurrency",
+		"btc":      "cryptocurrency",
 		"ethereum": "cryptocurrency",
-		"eth": "cryptocurrency",
-		"binance": "exchange",
+		"eth":      "cryptocurrency",
+		"binance":  "exchange",
 		"coinbase": "exchange",
-		"uniswap": "protocol",
-		"aave": "protocol",
+		"uniswap":  "protocol",
+		"aave":     "protocol",
 	}
-	
+
 	text = strings.ToLower(text)
 	for entity, entityType := range cryptoEntities {
 		if strings.Contains(text, entity) {
 			// Count mentions
 			mentions := strings.Count(text, entity)
-			
+
 			// Calculate sentiment for this entity
 			sentiment := 0.0
 			if val, exists := s.cryptoTerms[entity]; exists {
 				sentiment = val
 			}
-			
+
 			entities = append(entities, EntitySentiment{
 				Entity:     entity,
 				Type:       entityType,
@@ -625,7 +625,7 @@ func (s *SentimentAnalyzer) extractEntities(text string) []EntitySentiment {
 			})
 		}
 	}
-	
+
 	return entities
 }
 
@@ -635,27 +635,27 @@ func (s *SentimentAnalyzer) detectSarcasm(text string) bool {
 		"yeah right", "sure", "totally", "obviously",
 		"great job", "brilliant", "genius",
 	}
-	
+
 	text = strings.ToLower(text)
 	for _, indicator := range sarcasmIndicators {
 		if strings.Contains(text, indicator) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
 func (s *SentimentAnalyzer) calculateSubjectivity(text string) float64 {
 	words := strings.Fields(strings.ToLower(text))
 	subjectiveWords := 0
-	
+
 	// Words that indicate subjectivity
 	subjectiveIndicators := []string{
 		"think", "believe", "feel", "opinion", "personally",
 		"amazing", "terrible", "best", "worst", "love", "hate",
 	}
-	
+
 	for _, word := range words {
 		for _, indicator := range subjectiveIndicators {
 			if strings.Contains(word, indicator) {
@@ -664,11 +664,11 @@ func (s *SentimentAnalyzer) calculateSubjectivity(text string) float64 {
 			}
 		}
 	}
-	
+
 	if len(words) == 0 {
 		return 0.0
 	}
-	
+
 	return math.Min(1.0, float64(subjectiveWords)/float64(len(words))*5.0)
 }
 
@@ -686,18 +686,18 @@ func (s *SentimentAnalyzer) normalizeText(text string) string {
 	// Remove URLs
 	urlRegex := regexp.MustCompile(`https?://[^\s]+`)
 	text = urlRegex.ReplaceAllString(text, "")
-	
+
 	// Remove mentions and hashtags (keep the text part)
 	mentionRegex := regexp.MustCompile(`@\w+`)
 	text = mentionRegex.ReplaceAllString(text, "")
-	
+
 	hashtagRegex := regexp.MustCompile(`#(\w+)`)
 	text = hashtagRegex.ReplaceAllString(text, "$1")
-	
+
 	// Remove extra whitespace
 	spaceRegex := regexp.MustCompile(`\s+`)
 	text = spaceRegex.ReplaceAllString(text, " ")
-	
+
 	return strings.TrimSpace(text)
 }
 
@@ -705,24 +705,24 @@ func (s *SentimentAnalyzer) aggregateResults(results []SentimentResult) *Aggrega
 	if len(results) == 0 {
 		return &AggregatedSentiment{}
 	}
-	
+
 	totalSentiment := 0.0
 	totalConfidence := 0.0
 	distribution := map[string]int{"positive": 0, "negative": 0, "neutral": 0}
 	emotionTotals := make(map[string]float64)
 	allKeywords := make(map[string]*KeywordSentiment)
 	allEntities := make(map[string]*EntitySentiment)
-	
+
 	for _, result := range results {
 		totalSentiment += result.Sentiment
 		totalConfidence += result.Confidence
 		distribution[result.Label]++
-		
+
 		// Aggregate emotions
 		for emotion, score := range result.Emotions {
 			emotionTotals[emotion] += score
 		}
-		
+
 		// Aggregate keywords
 		for _, keyword := range result.Keywords {
 			if existing, exists := allKeywords[keyword.Keyword]; exists {
@@ -732,7 +732,7 @@ func (s *SentimentAnalyzer) aggregateResults(results []SentimentResult) *Aggrega
 				allKeywords[keyword.Keyword] = &keyword
 			}
 		}
-		
+
 		// Aggregate entities
 		for _, entity := range result.Entities {
 			if existing, exists := allEntities[entity.Entity]; exists {
@@ -743,42 +743,42 @@ func (s *SentimentAnalyzer) aggregateResults(results []SentimentResult) *Aggrega
 			}
 		}
 	}
-	
+
 	// Calculate averages
 	avgSentiment := totalSentiment / float64(len(results))
 	avgConfidence := totalConfidence / float64(len(results))
-	
+
 	// Normalize emotions
 	emotionDistribution := make(map[string]float64)
 	for emotion, total := range emotionTotals {
 		emotionDistribution[emotion] = total / float64(len(results))
 	}
-	
+
 	// Convert maps to slices for top items
 	var topKeywords []KeywordSentiment
 	for _, keyword := range allKeywords {
 		topKeywords = append(topKeywords, *keyword)
 	}
-	
+
 	var trendingEntities []EntitySentiment
 	for _, entity := range allEntities {
 		trendingEntities = append(trendingEntities, *entity)
 	}
-	
+
 	// Calculate volume metrics
 	totalLength := 0
 	for _, result := range results {
 		totalLength += len(result.Text)
 	}
 	avgLength := float64(totalLength) / float64(len(results))
-	
+
 	// Simple engagement score based on text length and sentiment strength
 	engagementScore := 0.0
 	for _, result := range results {
 		engagementScore += math.Abs(result.Sentiment) * (float64(len(result.Text)) / 100.0)
 	}
 	engagementScore /= float64(len(results))
-	
+
 	volumeMetrics := VolumeMetrics{
 		TotalTexts:      len(results),
 		PositiveCount:   distribution["positive"],
@@ -787,7 +787,7 @@ func (s *SentimentAnalyzer) aggregateResults(results []SentimentResult) *Aggrega
 		AverageLength:   avgLength,
 		EngagementScore: engagementScore,
 	}
-	
+
 	return &AggregatedSentiment{
 		OverallSentiment:      avgSentiment,
 		OverallConfidence:     avgConfidence,

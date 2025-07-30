@@ -8,11 +8,11 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { 
-  Bot, 
-  Globe, 
-  Wallet, 
-  Activity, 
-  TrendingUp, 
+  Bot,
+  Globe,
+  Wallet,
+  Activity,
+  TrendingUp,
   Zap,
   Eye,
   MessageSquare,
@@ -20,11 +20,13 @@ import {
   BarChart3,
   DollarSign,
   Users,
-  Clock
+  Clock,
+  Shield
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { formatCurrency, formatRelativeTime } from '@/lib/utils'
+import Link from 'next/link'
 
 interface DashboardStats {
   totalSessions: number
@@ -324,6 +326,12 @@ export default function DashboardPage() {
                         <MessageSquare className="h-6 w-6" />
                         <span>New AI Chat</span>
                       </Button>
+                      <Link href="/trading">
+                        <Button variant="outline" className="h-20 flex-col gap-2 w-full">
+                          <TrendingUp className="h-6 w-6" />
+                          <span>HFT Trading</span>
+                        </Button>
+                      </Link>
                       <Button variant="outline" className="h-20 flex-col gap-2">
                         <Globe className="h-6 w-6" />
                         <span>Browser Session</span>
@@ -332,6 +340,18 @@ export default function DashboardPage() {
                         <Wallet className="h-6 w-6" />
                         <span>Connect Wallet</span>
                       </Button>
+                      <Link href="/compliance">
+                        <Button variant="outline" className="h-20 flex-col gap-2 w-full">
+                          <Shield className="h-6 w-6" />
+                          <span>Compliance</span>
+                        </Button>
+                      </Link>
+                      <Link href="/performance">
+                        <Button variant="outline" className="h-20 flex-col gap-2 w-full">
+                          <Activity className="h-6 w-6" />
+                          <span>Performance</span>
+                        </Button>
+                      </Link>
                       <Button variant="outline" className="h-20 flex-col gap-2">
                         <BarChart3 className="h-6 w-6" />
                         <span>View Analytics</span>

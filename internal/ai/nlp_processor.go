@@ -29,7 +29,7 @@ func NewNLPProcessor(logger *observability.Logger) *NLPProcessor {
 		logger:   logger,
 		patterns: make(map[CommandIntent][]IntentPattern),
 	}
-	
+
 	processor.initializePatterns()
 	return processor
 }
@@ -37,7 +37,7 @@ func NewNLPProcessor(logger *observability.Logger) *NLPProcessor {
 // ProcessText processes text and extracts intent and entities
 func (n *NLPProcessor) ProcessText(ctx context.Context, text string) (CommandIntent, map[string]interface{}, float64, error) {
 	text = strings.ToLower(strings.TrimSpace(text))
-	
+
 	var bestIntent CommandIntent = IntentUnknown
 	var bestConfidence float64 = 0.0
 	var bestEntities map[string]interface{}
@@ -68,7 +68,7 @@ func (n *NLPProcessor) ProcessText(ctx context.Context, text string) (CommandInt
 // extractEntities extracts entities from text based on pattern
 func (n *NLPProcessor) extractEntities(text string, pattern IntentPattern) map[string]interface{} {
 	entities := make(map[string]interface{})
-	
+
 	// Extract common entities
 	entities["amount"] = n.extractAmount(text)
 	entities["token"] = n.extractToken(text)
@@ -76,7 +76,7 @@ func (n *NLPProcessor) extractEntities(text string, pattern IntentPattern) map[s
 	entities["risk_level"] = n.extractRiskLevel(text)
 	entities["strategy"] = n.extractStrategy(text)
 	entities["timeframe"] = n.extractTimeframe(text)
-	
+
 	return entities
 }
 
@@ -89,7 +89,7 @@ func (n *NLPProcessor) extractAmount(text string) string {
 		`([0-9,]+(?:\.[0-9]+)?)\s*k(?:\s|$)`,
 		`([0-9,]+(?:\.[0-9]+)?)\s*(?:eth|bitcoin|btc|ether)`,
 	}
-	
+
 	for _, pattern := range patterns {
 		re := regexp.MustCompile(pattern)
 		matches := re.FindStringSubmatch(text)
@@ -104,7 +104,7 @@ func (n *NLPProcessor) extractAmount(text string) string {
 			return amount
 		}
 	}
-	
+
 	return ""
 }
 
@@ -127,13 +127,13 @@ func (n *NLPProcessor) extractToken(text string) string {
 		"uniswap":   "UNI",
 		"uni":       "UNI",
 	}
-	
+
 	for token, symbol := range tokens {
 		if strings.Contains(text, token) {
 			return symbol
 		}
 	}
-	
+
 	return ""
 }
 
@@ -145,7 +145,7 @@ func (n *NLPProcessor) extractPortfolioName(text string) string {
 		`'([^']+)'`,
 		`(?:called|named)\s+([a-zA-Z0-9\s]+?)(?:\s|$)`,
 	}
-	
+
 	for _, pattern := range patterns {
 		re := regexp.MustCompile(pattern)
 		matches := re.FindStringSubmatch(text)
@@ -153,7 +153,7 @@ func (n *NLPProcessor) extractPortfolioName(text string) string {
 			return strings.TrimSpace(matches[1])
 		}
 	}
-	
+
 	return ""
 }
 
@@ -170,13 +170,13 @@ func (n *NLPProcessor) extractRiskLevel(text string) string {
 		"high risk":    "aggressive",
 		"risky":        "aggressive",
 	}
-	
+
 	for phrase, level := range riskLevels {
 		if strings.Contains(text, phrase) {
 			return level
 		}
 	}
-	
+
 	return ""
 }
 
@@ -190,13 +190,13 @@ func (n *NLPProcessor) extractStrategy(text string) string {
 		"arbitrage":      "arbitrage",
 		"scalping":       "arbitrage",
 	}
-	
+
 	for phrase, strategy := range strategies {
 		if strings.Contains(text, phrase) {
 			return strategy
 		}
 	}
-	
+
 	return ""
 }
 
@@ -209,13 +209,13 @@ func (n *NLPProcessor) extractTimeframe(text string) string {
 		"hourly":  "1h",
 		"minute":  "1min",
 	}
-	
+
 	for phrase, timeframe := range timeframes {
 		if strings.Contains(text, phrase) {
 			return timeframe
 		}
 	}
-	
+
 	return ""
 }
 

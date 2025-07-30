@@ -17,14 +17,14 @@ type RBACService struct {
 
 // Role represents a user role with permissions
 type Role struct {
-	ID          string       `json:"id"`
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	Permissions []string     `json:"permissions"`
-	Inherits    []string     `json:"inherits"`
-	IsSystem    bool         `json:"is_system"`
-	CreatedAt   time.Time    `json:"created_at"`
-	UpdatedAt   time.Time    `json:"updated_at"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Permissions []string  `json:"permissions"`
+	Inherits    []string  `json:"inherits"`
+	IsSystem    bool      `json:"is_system"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // Permission represents a specific permission
@@ -71,24 +71,24 @@ const (
 
 // AccessRequest represents an access control request
 type AccessRequest struct {
-	UserID     uuid.UUID              `json:"user_id"`
-	Resource   string                 `json:"resource"`
-	Action     string                 `json:"action"`
-	Context    map[string]interface{} `json:"context"`
-	TeamID     *uuid.UUID             `json:"team_id,omitempty"`
-	SessionID  string                 `json:"session_id"`
-	IPAddress  string                 `json:"ip_address"`
-	UserAgent  string                 `json:"user_agent"`
-	Timestamp  time.Time              `json:"timestamp"`
+	UserID    uuid.UUID              `json:"user_id"`
+	Resource  string                 `json:"resource"`
+	Action    string                 `json:"action"`
+	Context   map[string]interface{} `json:"context"`
+	TeamID    *uuid.UUID             `json:"team_id,omitempty"`
+	SessionID string                 `json:"session_id"`
+	IPAddress string                 `json:"ip_address"`
+	UserAgent string                 `json:"user_agent"`
+	Timestamp time.Time              `json:"timestamp"`
 }
 
 // AccessDecision represents the result of an access control check
 type AccessDecision struct {
-	Allowed    bool                   `json:"allowed"`
-	Reason     string                 `json:"reason"`
-	AppliedPolicies []string          `json:"applied_policies"`
-	Context    map[string]interface{} `json:"context"`
-	TTL        time.Duration          `json:"ttl"`
+	Allowed         bool                   `json:"allowed"`
+	Reason          string                 `json:"reason"`
+	AppliedPolicies []string               `json:"applied_policies"`
+	Context         map[string]interface{} `json:"context"`
+	TTL             time.Duration          `json:"ttl"`
 }
 
 // NewRBACService creates a new RBAC service

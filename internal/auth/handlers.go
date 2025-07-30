@@ -21,7 +21,7 @@ type MFASetupRequest struct {
 	Method MFAMethod `json:"method" binding:"required"`
 }
 
-// MFAVerifyRequest represents MFA verification request  
+// MFAVerifyRequest represents MFA verification request
 type MFAVerifyRequest struct {
 	Code   string `json:"code" binding:"required"`
 	Secret string `json:"secret,omitempty"`
@@ -36,9 +36,6 @@ func NewAuthHandlers(authService *Service, jwtService *JWTService, mfaService *M
 		rbacService: rbacService,
 	}
 }
-
-
-
 
 // Register handles user registration
 func (h *AuthHandlers) Register(c *gin.Context) {

@@ -11,12 +11,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/ai-agentic-browser/internal/browser"
 	"github.com/ai-agentic-browser/internal/config"
 	"github.com/ai-agentic-browser/pkg/database"
 	"github.com/ai-agentic-browser/pkg/middleware"
 	"github.com/ai-agentic-browser/pkg/observability"
+	"github.com/google/uuid"
 )
 
 func main() {

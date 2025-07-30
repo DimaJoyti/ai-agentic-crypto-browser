@@ -22,28 +22,28 @@ type PortfolioRebalancer struct {
 // RebalancerConfig holds configuration for portfolio rebalancing
 type RebalancerConfig struct {
 	RebalanceInterval     time.Duration   `json:"rebalance_interval"`
-	DriftThreshold        decimal.Decimal `json:"drift_threshold"`        // % deviation from target
-	MinRebalanceAmount    decimal.Decimal `json:"min_rebalance_amount"`   // Minimum amount to trigger rebalance
-	MaxTransactionCost    decimal.Decimal `json:"max_transaction_cost"`   // Max cost as % of rebalance amount
-	VolatilityWindow      time.Duration   `json:"volatility_window"`      // Window for volatility calculation
-	CorrelationThreshold  decimal.Decimal `json:"correlation_threshold"`  // Asset correlation threshold
+	DriftThreshold        decimal.Decimal `json:"drift_threshold"`       // % deviation from target
+	MinRebalanceAmount    decimal.Decimal `json:"min_rebalance_amount"`  // Minimum amount to trigger rebalance
+	MaxTransactionCost    decimal.Decimal `json:"max_transaction_cost"`  // Max cost as % of rebalance amount
+	VolatilityWindow      time.Duration   `json:"volatility_window"`     // Window for volatility calculation
+	CorrelationThreshold  decimal.Decimal `json:"correlation_threshold"` // Asset correlation threshold
 	EnableTaxOptimization bool            `json:"enable_tax_optimization"`
 	TaxLossHarvestingMin  decimal.Decimal `json:"tax_loss_harvesting_min"`
 }
 
 // RebalanceStrategy defines how a portfolio should be rebalanced
 type RebalanceStrategy struct {
-	ID                uuid.UUID                      `json:"id"`
-	PortfolioID       uuid.UUID                      `json:"portfolio_id"`
-	Name              string                         `json:"name"`
-	Type              RebalanceType                  `json:"type"`
-	TargetAllocations map[string]decimal.Decimal     `json:"target_allocations"` // token -> percentage
-	Constraints       []AllocationConstraint         `json:"constraints"`
-	TriggerConditions []RebalanceTrigger             `json:"trigger_conditions"`
-	IsActive          bool                           `json:"is_active"`
-	LastRebalance     time.Time                      `json:"last_rebalance"`
-	CreatedAt         time.Time                      `json:"created_at"`
-	Metadata          map[string]interface{}         `json:"metadata"`
+	ID                uuid.UUID                  `json:"id"`
+	PortfolioID       uuid.UUID                  `json:"portfolio_id"`
+	Name              string                     `json:"name"`
+	Type              RebalanceType              `json:"type"`
+	TargetAllocations map[string]decimal.Decimal `json:"target_allocations"` // token -> percentage
+	Constraints       []AllocationConstraint     `json:"constraints"`
+	TriggerConditions []RebalanceTrigger         `json:"trigger_conditions"`
+	IsActive          bool                       `json:"is_active"`
+	LastRebalance     time.Time                  `json:"last_rebalance"`
+	CreatedAt         time.Time                  `json:"created_at"`
+	Metadata          map[string]interface{}     `json:"metadata"`
 }
 
 // RebalanceType represents different rebalancing strategies
@@ -76,12 +76,12 @@ type RebalanceTrigger struct {
 type TriggerType string
 
 const (
-	TriggerTypeDrift       TriggerType = "drift"        // Allocation drift
-	TriggerTypeVolatility  TriggerType = "volatility"   // Volatility spike
-	TriggerTypeCorrelation TriggerType = "correlation"  // Correlation change
-	TriggerTypeTime        TriggerType = "time"         // Time-based
-	TriggerTypeDrawdown    TriggerType = "drawdown"     // Portfolio drawdown
-	TriggerTypeProfit      TriggerType = "profit"       // Profit taking
+	TriggerTypeDrift       TriggerType = "drift"       // Allocation drift
+	TriggerTypeVolatility  TriggerType = "volatility"  // Volatility spike
+	TriggerTypeCorrelation TriggerType = "correlation" // Correlation change
+	TriggerTypeTime        TriggerType = "time"        // Time-based
+	TriggerTypeDrawdown    TriggerType = "drawdown"    // Portfolio drawdown
+	TriggerTypeProfit      TriggerType = "profit"      // Profit taking
 )
 
 // RebalanceAction represents an action to take during rebalancing
@@ -102,10 +102,10 @@ type RebalanceAction struct {
 type ActionType string
 
 const (
-	ActionTypeBuy    ActionType = "buy"
-	ActionTypeSell   ActionType = "sell"
-	ActionTypeSwap   ActionType = "swap"
-	ActionTypeStake  ActionType = "stake"
+	ActionTypeBuy     ActionType = "buy"
+	ActionTypeSell    ActionType = "sell"
+	ActionTypeSwap    ActionType = "swap"
+	ActionTypeStake   ActionType = "stake"
 	ActionTypeUnstake ActionType = "unstake"
 )
 
@@ -116,14 +116,14 @@ func NewPortfolioRebalancer(
 	defiManager *DeFiProtocolManager,
 ) *PortfolioRebalancer {
 	config := RebalancerConfig{
-		RebalanceInterval:     6 * time.Hour,                // Rebalance every 6 hours
-		DriftThreshold:        decimal.NewFromFloat(0.05),   // 5% drift threshold
-		MinRebalanceAmount:    decimal.NewFromInt(100),      // $100 minimum
-		MaxTransactionCost:    decimal.NewFromFloat(0.02),   // 2% max transaction cost
-		VolatilityWindow:      24 * time.Hour,               // 24-hour volatility window
-		CorrelationThreshold:  decimal.NewFromFloat(0.8),    // 80% correlation threshold
+		RebalanceInterval:     6 * time.Hour,              // Rebalance every 6 hours
+		DriftThreshold:        decimal.NewFromFloat(0.05), // 5% drift threshold
+		MinRebalanceAmount:    decimal.NewFromInt(100),    // $100 minimum
+		MaxTransactionCost:    decimal.NewFromFloat(0.02), // 2% max transaction cost
+		VolatilityWindow:      24 * time.Hour,             // 24-hour volatility window
+		CorrelationThreshold:  decimal.NewFromFloat(0.8),  // 80% correlation threshold
 		EnableTaxOptimization: true,
-		TaxLossHarvestingMin:  decimal.NewFromFloat(0.03),   // 3% minimum loss for harvesting
+		TaxLossHarvestingMin:  decimal.NewFromFloat(0.03), // 3% minimum loss for harvesting
 	}
 
 	return &PortfolioRebalancer{
@@ -143,13 +143,13 @@ func (r *PortfolioRebalancer) CreateRebalanceStrategy(
 	strategyType RebalanceType,
 	targetAllocations map[string]decimal.Decimal,
 ) (*RebalanceStrategy, error) {
-	
+
 	// Validate target allocations sum to 100%
 	totalAllocation := decimal.Zero
 	for _, allocation := range targetAllocations {
 		totalAllocation = totalAllocation.Add(allocation)
 	}
-	
+
 	if !totalAllocation.Equal(decimal.NewFromInt(1)) {
 		return nil, fmt.Errorf("target allocations must sum to 100%%, got %s", totalAllocation.Mul(decimal.NewFromInt(100)).String())
 	}
@@ -262,7 +262,7 @@ func (r *PortfolioRebalancer) RebalancePortfolio(ctx context.Context, portfolioI
 	strategy.LastRebalance = time.Now()
 
 	r.logger.Info(ctx, "Portfolio rebalance completed", map[string]interface{}{
-		"portfolio_id":    portfolioID.String(),
+		"portfolio_id":     portfolioID.String(),
 		"actions_executed": len(actions),
 	})
 

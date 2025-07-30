@@ -51,17 +51,17 @@ type PricePredictionRequest struct {
 
 // PricePredictionResponse represents a price prediction response
 type PricePredictionResponse struct {
-	Symbol           string                    `json:"symbol"`
-	CurrentPrice     decimal.Decimal           `json:"current_price"`
-	PredictedPrices  []PricePredictionPoint    `json:"predicted_prices"`
-	Confidence       float64                   `json:"confidence"`
-	TrendDirection   string                    `json:"trend_direction"` // bullish, bearish, sideways
-	TrendStrength    float64                   `json:"trend_strength"`  // 0.0 to 1.0
-	SupportLevels    []decimal.Decimal         `json:"support_levels"`
-	ResistanceLevels []decimal.Decimal         `json:"resistance_levels"`
-	RiskFactors      []string                  `json:"risk_factors"`
-	ModelMetrics     *PricePredictionMetrics   `json:"model_metrics"`
-	GeneratedAt      time.Time                 `json:"generated_at"`
+	Symbol           string                  `json:"symbol"`
+	CurrentPrice     decimal.Decimal         `json:"current_price"`
+	PredictedPrices  []PricePredictionPoint  `json:"predicted_prices"`
+	Confidence       float64                 `json:"confidence"`
+	TrendDirection   string                  `json:"trend_direction"` // bullish, bearish, sideways
+	TrendStrength    float64                 `json:"trend_strength"`  // 0.0 to 1.0
+	SupportLevels    []decimal.Decimal       `json:"support_levels"`
+	ResistanceLevels []decimal.Decimal       `json:"resistance_levels"`
+	RiskFactors      []string                `json:"risk_factors"`
+	ModelMetrics     *PricePredictionMetrics `json:"model_metrics"`
+	GeneratedAt      time.Time               `json:"generated_at"`
 }
 
 // PricePredictionPoint represents a single price prediction point
@@ -76,14 +76,14 @@ type PricePredictionPoint struct {
 
 // PricePredictionMetrics represents model performance metrics
 type PricePredictionMetrics struct {
-	MAE              float64   `json:"mae"`               // Mean Absolute Error
-	MAPE             float64   `json:"mape"`              // Mean Absolute Percentage Error
-	RMSE             float64   `json:"rmse"`              // Root Mean Square Error
-	DirectionalAccuracy float64 `json:"directional_accuracy"` // Percentage of correct direction predictions
-	Sharpe           float64   `json:"sharpe_ratio"`
-	MaxDrawdown      float64   `json:"max_drawdown"`
-	WinRate          float64   `json:"win_rate"`
-	LastUpdated      time.Time `json:"last_updated"`
+	MAE                 float64   `json:"mae"`                  // Mean Absolute Error
+	MAPE                float64   `json:"mape"`                 // Mean Absolute Percentage Error
+	RMSE                float64   `json:"rmse"`                 // Root Mean Square Error
+	DirectionalAccuracy float64   `json:"directional_accuracy"` // Percentage of correct direction predictions
+	Sharpe              float64   `json:"sharpe_ratio"`
+	MaxDrawdown         float64   `json:"max_drawdown"`
+	WinRate             float64   `json:"win_rate"`
+	LastUpdated         time.Time `json:"last_updated"`
 }
 
 // NewPricePredictionModel creates a new price prediction model
@@ -236,9 +236,9 @@ func (p *PricePredictionModel) Train(ctx context.Context, data ml.TrainingData) 
 		// Simulate training progress
 		if epoch%10 == 0 {
 			p.logger.Info(ctx, "Training progress", map[string]interface{}{
-				"epoch":     epoch,
-				"total":     epochs,
-				"progress":  float64(epoch) / float64(epochs) * 100,
+				"epoch":    epoch,
+				"total":    epochs,
+				"progress": float64(epoch) / float64(epochs) * 100,
 			})
 		}
 	}
@@ -272,16 +272,16 @@ func (p *PricePredictionModel) Evaluate(ctx context.Context, testData ml.Trainin
 		TestSize:    len(testData.Features),
 		EvaluatedAt: time.Now(),
 		FeatureImportance: map[string]float64{
-			"price":           0.25,
-			"volume":          0.15,
-			"sentiment_score": 0.12,
-			"rsi":             0.10,
-			"macd":            0.08,
-			"volatility":      0.08,
-			"market_cap":      0.07,
-			"btc_dominance":   0.06,
+			"price":            0.25,
+			"volume":           0.15,
+			"sentiment_score":  0.12,
+			"rsi":              0.10,
+			"macd":             0.08,
+			"volatility":       0.08,
+			"market_cap":       0.07,
+			"btc_dominance":    0.06,
 			"fear_greed_index": 0.05,
-			"social_volume":   0.04,
+			"social_volume":    0.04,
 		},
 	}
 
@@ -302,7 +302,7 @@ func (p *PricePredictionModel) IsReady() bool {
 func (p *PricePredictionModel) UpdateWeights(ctx context.Context, feedback *ml.PredictionFeedback) error {
 	// Implement online learning weight updates
 	// This would adjust model weights based on prediction accuracy feedback
-	
+
 	p.logger.Info(ctx, "Updating model weights based on feedback", map[string]interface{}{
 		"prediction_id": feedback.PredictionID,
 		"correct":       feedback.Correct,
@@ -383,22 +383,22 @@ func (p *PricePredictionModel) prepareFeatures(req *PricePredictionRequest) ([][
 func (p *PricePredictionModel) generatePredictions(features [][]float64, horizon int) ([]PricePredictionPoint, float64, error) {
 	predictions := make([]PricePredictionPoint, horizon)
 	baseTime := time.Now()
-	
+
 	// Get current price from last feature vector
 	currentPrice := features[len(features)-1][0]
-	
+
 	// Generate predictions using simplified LSTM-like logic
 	for i := 0; i < horizon; i++ {
 		// Simulate price prediction with trend and volatility
 		trend := p.calculateTrendFactor(features)
 		volatility := p.calculateVolatilityFactor(features)
-		
+
 		// Add some randomness to simulate market uncertainty
 		randomFactor := 0.95 + (0.1 * float64(i%10) / 10.0)
-		
+
 		predictedPrice := currentPrice * (1 + trend + (volatility * randomFactor))
-		confidence := math.Max(0.1, 0.9 - (float64(i) * 0.02)) // Confidence decreases with time
-		
+		confidence := math.Max(0.1, 0.9-(float64(i)*0.02)) // Confidence decreases with time
+
 		predictions[i] = PricePredictionPoint{
 			Timestamp:   baseTime.Add(time.Duration(i+1) * time.Hour),
 			Price:       decimal.NewFromFloat(predictedPrice),
@@ -407,7 +407,7 @@ func (p *PricePredictionModel) generatePredictions(features [][]float64, horizon
 			Confidence:  confidence,
 			Probability: confidence,
 		}
-		
+
 		currentPrice = predictedPrice // Use predicted price for next iteration
 	}
 
@@ -427,25 +427,25 @@ func (p *PricePredictionModel) calculateVolatility(data []ml.PriceData, index in
 	if index < 20 {
 		return 0.5 // Default volatility
 	}
-	
+
 	// Calculate 20-period volatility
 	prices := make([]float64, 20)
 	for i := 0; i < 20; i++ {
 		prices[i] = data[index-19+i].Close.InexactFloat64()
 	}
-	
+
 	mean := 0.0
 	for _, price := range prices {
 		mean += price
 	}
 	mean /= float64(len(prices))
-	
+
 	variance := 0.0
 	for _, price := range prices {
 		variance += math.Pow(price-mean, 2)
 	}
 	variance /= float64(len(prices))
-	
+
 	return math.Sqrt(variance) / mean // Normalized volatility
 }
 
@@ -453,11 +453,11 @@ func (p *PricePredictionModel) calculateRSI(data []ml.PriceData, index int) floa
 	if index < 14 {
 		return 50.0 // Neutral RSI
 	}
-	
+
 	// Simplified RSI calculation
 	gains := 0.0
 	losses := 0.0
-	
+
 	for i := 1; i <= 14; i++ {
 		change := data[index-14+i].Close.InexactFloat64() - data[index-14+i-1].Close.InexactFloat64()
 		if change > 0 {
@@ -466,14 +466,14 @@ func (p *PricePredictionModel) calculateRSI(data []ml.PriceData, index int) floa
 			losses += math.Abs(change)
 		}
 	}
-	
+
 	if losses == 0 {
 		return 100.0
 	}
-	
+
 	rs := gains / losses
 	rsi := 100 - (100 / (1 + rs))
-	
+
 	return rsi
 }
 
@@ -481,11 +481,11 @@ func (p *PricePredictionModel) calculateMACD(data []ml.PriceData, index int) flo
 	if index < 26 {
 		return 0.0
 	}
-	
+
 	// Simplified MACD calculation
 	ema12 := p.calculateEMA(data, index, 12)
 	ema26 := p.calculateEMA(data, index, 26)
-	
+
 	return ema12 - ema26
 }
 
@@ -493,15 +493,15 @@ func (p *PricePredictionModel) calculateEMA(data []ml.PriceData, index, period i
 	if index < period {
 		return data[index].Close.InexactFloat64()
 	}
-	
+
 	multiplier := 2.0 / (float64(period) + 1.0)
 	ema := data[index-period].Close.InexactFloat64()
-	
+
 	for i := index - period + 1; i <= index; i++ {
 		price := data[i].Close.InexactFloat64()
 		ema = (price * multiplier) + (ema * (1 - multiplier))
 	}
-	
+
 	return ema
 }
 
@@ -509,18 +509,18 @@ func (p *PricePredictionModel) getAverageSentiment(sentimentData []ml.SentimentD
 	// Get sentiment data within 1 hour of the timestamp
 	totalSentiment := 0.0
 	count := 0
-	
+
 	for _, sentiment := range sentimentData {
 		if math.Abs(sentiment.Timestamp.Sub(timestamp).Hours()) <= 1.0 {
 			totalSentiment += sentiment.Sentiment
 			count++
 		}
 	}
-	
+
 	if count == 0 {
 		return 0.0 // Neutral sentiment
 	}
-	
+
 	return totalSentiment / float64(count)
 }
 
@@ -529,25 +529,25 @@ func (p *PricePredictionModel) calculateTrendFactor(features [][]float64) float6
 	if len(features) < 10 {
 		return 0.0
 	}
-	
+
 	recentPrices := make([]float64, 10)
 	for i := 0; i < 10; i++ {
 		recentPrices[i] = features[len(features)-10+i][0]
 	}
-	
+
 	// Simple linear regression slope
 	n := float64(len(recentPrices))
 	sumX := n * (n - 1) / 2
 	sumY := 0.0
 	sumXY := 0.0
-	
+
 	for i, price := range recentPrices {
 		sumY += price
 		sumXY += float64(i) * price
 	}
-	
+
 	slope := (n*sumXY - sumX*sumY) / (n*n*(n-1)/2 - sumX*sumX)
-	
+
 	// Normalize slope to a reasonable range
 	return math.Max(-0.05, math.Min(0.05, slope/recentPrices[len(recentPrices)-1]))
 }
@@ -556,7 +556,7 @@ func (p *PricePredictionModel) calculateVolatilityFactor(features [][]float64) f
 	if len(features) < 2 {
 		return 0.01
 	}
-	
+
 	// Use volatility from features
 	return features[len(features)-1][3] * 0.1 // Scale down volatility impact
 }
@@ -565,19 +565,19 @@ func (p *PricePredictionModel) analyzeTrend(predictions []PricePredictionPoint) 
 	if len(predictions) < 2 {
 		return "sideways", 0.0
 	}
-	
+
 	firstPrice := predictions[0].Price.InexactFloat64()
 	lastPrice := predictions[len(predictions)-1].Price.InexactFloat64()
-	
+
 	change := (lastPrice - firstPrice) / firstPrice
 	strength := math.Abs(change)
-	
+
 	if change > 0.02 {
 		return "bullish", strength
 	} else if change < -0.02 {
 		return "bearish", strength
 	}
-	
+
 	return "sideways", strength
 }
 
@@ -585,30 +585,30 @@ func (p *PricePredictionModel) calculateSupportResistance(data []ml.PriceData) (
 	if len(data) < 20 {
 		return []decimal.Decimal{}, []decimal.Decimal{}
 	}
-	
+
 	// Get recent price data
 	recentData := data[len(data)-20:]
 	prices := make([]float64, len(recentData))
 	for i, d := range recentData {
 		prices[i] = d.Close.InexactFloat64()
 	}
-	
+
 	sort.Float64s(prices)
-	
+
 	// Support levels (lower quartiles)
 	support1 := decimal.NewFromFloat(prices[len(prices)/4])
 	support2 := decimal.NewFromFloat(prices[len(prices)/8])
-	
+
 	// Resistance levels (upper quartiles)
 	resistance1 := decimal.NewFromFloat(prices[3*len(prices)/4])
 	resistance2 := decimal.NewFromFloat(prices[7*len(prices)/8])
-	
+
 	return []decimal.Decimal{support2, support1}, []decimal.Decimal{resistance1, resistance2}
 }
 
 func (p *PricePredictionModel) assessRiskFactors(req *PricePredictionRequest, predictions []PricePredictionPoint) []string {
 	risks := []string{}
-	
+
 	// Check for high volatility
 	if len(req.HistoricalData) > 0 {
 		volatility := p.calculateVolatility(req.HistoricalData, len(req.HistoricalData)-1)
@@ -616,18 +616,18 @@ func (p *PricePredictionModel) assessRiskFactors(req *PricePredictionRequest, pr
 			risks = append(risks, "High volatility detected")
 		}
 	}
-	
+
 	// Check for extreme price movements in predictions
 	if len(predictions) > 1 {
 		firstPrice := predictions[0].Price.InexactFloat64()
 		lastPrice := predictions[len(predictions)-1].Price.InexactFloat64()
 		change := math.Abs((lastPrice - firstPrice) / firstPrice)
-		
+
 		if change > 0.2 {
 			risks = append(risks, "Extreme price movement predicted")
 		}
 	}
-	
+
 	// Check sentiment if available
 	if len(req.SentimentData) > 0 {
 		avgSentiment := 0.0
@@ -635,12 +635,12 @@ func (p *PricePredictionModel) assessRiskFactors(req *PricePredictionRequest, pr
 			avgSentiment += sentiment.Sentiment
 		}
 		avgSentiment /= float64(len(req.SentimentData))
-		
+
 		if avgSentiment < -0.5 {
 			risks = append(risks, "Negative market sentiment")
 		}
 	}
-	
+
 	return risks
 }
 

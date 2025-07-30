@@ -27,20 +27,20 @@ type HealthCheck func(ctx context.Context) HealthCheckResult
 
 // HealthCheckResult represents the result of a health check
 type HealthCheckResult struct {
-	Status      HealthStatus           `json:"status"`
-	Message     string                 `json:"message,omitempty"`
-	Details     map[string]interface{} `json:"details,omitempty"`
-	Duration    time.Duration          `json:"duration"`
-	Timestamp   time.Time              `json:"timestamp"`
-	Error       string                 `json:"error,omitempty"`
+	Status    HealthStatus           `json:"status"`
+	Message   string                 `json:"message,omitempty"`
+	Details   map[string]interface{} `json:"details,omitempty"`
+	Duration  time.Duration          `json:"duration"`
+	Timestamp time.Time              `json:"timestamp"`
+	Error     string                 `json:"error,omitempty"`
 }
 
 // HealthChecker manages health checks for the application
 type HealthChecker struct {
-	checks   map[string]HealthCheck
-	mu       sync.RWMutex
-	timeout  time.Duration
-	logger   *Logger
+	checks  map[string]HealthCheck
+	mu      sync.RWMutex
+	timeout time.Duration
+	logger  *Logger
 }
 
 // NewHealthChecker creates a new health checker
@@ -82,7 +82,7 @@ func (hc *HealthChecker) CheckHealth(ctx context.Context) map[string]HealthCheck
 		wg.Add(1)
 		go func(name string, check HealthCheck) {
 			defer wg.Done()
-			
+
 			ctx, cancel := context.WithTimeout(ctx, hc.timeout)
 			defer cancel()
 
@@ -150,12 +150,12 @@ func (hc *HealthChecker) GetOverallStatus(results map[string]HealthCheckResult) 
 
 // HealthResponse represents the complete health check response
 type HealthResponse struct {
-	Status    HealthStatus                   `json:"status"`
-	Timestamp time.Time                      `json:"timestamp"`
-	Duration  time.Duration                  `json:"duration"`
-	Service   ServiceInfo                    `json:"service"`
-	Checks    map[string]HealthCheckResult   `json:"checks"`
-	System    SystemInfo                     `json:"system"`
+	Status    HealthStatus                 `json:"status"`
+	Timestamp time.Time                    `json:"timestamp"`
+	Duration  time.Duration                `json:"duration"`
+	Service   ServiceInfo                  `json:"service"`
+	Checks    map[string]HealthCheckResult `json:"checks"`
+	System    SystemInfo                   `json:"system"`
 }
 
 // ServiceInfo contains service information

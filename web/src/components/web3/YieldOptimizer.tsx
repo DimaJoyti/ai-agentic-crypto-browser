@@ -29,7 +29,7 @@ interface YieldOptimizerProps {
   chainId?: number
 }
 
-export function YieldOptimizer({ userAddress, chainId }: YieldOptimizerProps) {
+export function YieldOptimizer({ userAddress: _userAddress, chainId: _chainId }: YieldOptimizerProps) {
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null)
   const [optimization, setOptimization] = useState<YieldOptimization | null>(null)
 
@@ -46,24 +46,39 @@ export function YieldOptimizer({ userAddress, chainId }: YieldOptimizerProps) {
   // Mock functions
   const getYieldOptimization = async (): Promise<YieldOptimization> => ({
     recommendation: 'stay',
-    currentPosition: {
-      id: '',
-      farmId: '',
-      stakedAmount: '0',
-      pendingRewards: '0',
-      apy: 0
+    currentFarm: {
+      id: 'farm_1',
+      name: 'ETH-USDC LP',
+      protocol: 'Uniswap V3',
+      strategy: 'LIQUIDITY_MINING' as any,
+      chainId: 1,
+      contractAddress: '0x1234567890123456789012345678901234567890' as Address,
+      apy: '12.5',
+      tvl: '1000000',
+      riskLevel: RiskLevel.MEDIUM,
+      stakingToken: {
+        address: '0x1234567890123456789012345678901234567890' as Address,
+        symbol: 'ETH-USDC-LP',
+        name: 'ETH-USDC LP Token',
+        decimals: 18,
+        price: '1.0'
+      },
+      rewardTokens: [{
+        address: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984' as Address,
+        symbol: 'UNI',
+        name: 'Uniswap',
+        decimals: 18,
+        price: '10.0'
+      }],
+      minimumStake: '0.01',
+      isActive: true,
+      features: ['Auto-compound', 'Low fees'],
+      description: 'ETH-USDC liquidity mining pool'
     },
-    suggestedActions: [],
-    projectedReturns: {
-      daily: 0,
-      weekly: 0,
-      monthly: 0,
-      yearly: 0
-    },
-    riskAssessment: {
-      level: 'low',
-      factors: []
-    }
+    suggestedFarms: [],
+    potentialGains: '0',
+    migrationCost: '0',
+    reason: 'Current position is optimal'
   })
   const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -165,7 +180,7 @@ export function YieldOptimizer({ userAddress, chainId }: YieldOptimizerProps) {
                   if (!farm) return null
 
                   const isSelected = selectedPosition === position.id
-                  const yearlyProjection = calculateYieldProjection(String(typeof farm.apy === 'number' ? farm.apy : parseFloat(String(farm.apy))), parseFloat(String(position.stakedAmount)))
+                  const yearlyProjection = calculateYieldProjection(String(typeof farm.apy === 'number' ? farm.apy : parseFloat(String(farm.apy))), String(position.stakedAmount))
 
                   return (
                     <motion.div
