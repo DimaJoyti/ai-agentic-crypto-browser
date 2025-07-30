@@ -3,5 +3,9 @@
 import { TradingDashboard } from '@/components/trading/TradingDashboard'
 
 export default function TradingPage() {
-  return <TradingDashboard />
+  return (
+    <div className="min-h-screen bg-gray-950">
+      <TradingDashboard />
+    </div>
+  )
 }
