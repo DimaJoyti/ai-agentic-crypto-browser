@@ -224,6 +224,105 @@ export function useTransactionMonitor(options: UseTransactionMonitorOptions = {}
     }
   }, [updateTransactions])
 
+  // Start real-time monitoring for a chain
+  const startRealtimeMonitoring = useCallback((chainId: number) => {
+    transactionMonitor.startRealtimeMonitoring(chainId)
+    if (showNotifications) {
+      toast.info(`Real-time monitoring started for ${getChainName(chainId)}`)
+    }
+  }, [showNotifications])
+
+  // Stop real-time monitoring for a chain
+  const stopRealtimeMonitoring = useCallback((chainId: number) => {
+    transactionMonitor.stopRealtimeMonitoring(chainId)
+    if (showNotifications) {
+      toast.info(`Real-time monitoring stopped for ${getChainName(chainId)}`)
+    }
+  }, [showNotifications])
+
+  // Get transaction statistics
+  const getStats = useCallback(() => {
+    return transactionMonitor.getTransactionStats()
+  }, [])
+
+  // Retry a failed transaction
+  const retryTransaction = useCallback(async (hash: Hash, newGasPrice?: string) => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true }))
+      const newHash = await transactionMonitor.retryTransaction(hash, newGasPrice)
+
+      if (showNotifications) {
+        toast.info('Transaction retry submitted', {
+          description: `New transaction: ${formatHash(newHash)}`
+        })
+      }
+
+      return newHash
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to retry transaction'
+      setState(prev => ({ ...prev, error: errorMessage }))
+
+      if (showNotifications) {
+        toast.error('Failed to retry transaction', { description: errorMessage })
+      }
+      throw error
+    } finally {
+      setState(prev => ({ ...prev, isLoading: false }))
+    }
+  }, [showNotifications])
+
+  // Cancel a pending transaction
+  const cancelTransaction = useCallback(async (hash: Hash) => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true }))
+      const cancelHash = await transactionMonitor.cancelTransaction(hash)
+
+      if (showNotifications) {
+        toast.info('Cancellation transaction submitted', {
+          description: `Cancel transaction: ${formatHash(cancelHash)}`
+        })
+      }
+
+      return cancelHash
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to cancel transaction'
+      setState(prev => ({ ...prev, error: errorMessage }))
+
+      if (showNotifications) {
+        toast.error('Failed to cancel transaction', { description: errorMessage })
+      }
+      throw error
+    } finally {
+      setState(prev => ({ ...prev, isLoading: false }))
+    }
+  }, [showNotifications])
+
+  // Speed up a pending transaction
+  const speedUpTransaction = useCallback(async (hash: Hash, newGasPrice: string) => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true }))
+      const speedUpHash = await transactionMonitor.speedUpTransaction(hash, newGasPrice)
+
+      if (showNotifications) {
+        toast.info('Speed up transaction submitted', {
+          description: `Speed up transaction: ${formatHash(speedUpHash)}`
+        })
+      }
+
+      return speedUpHash
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to speed up transaction'
+      setState(prev => ({ ...prev, error: errorMessage }))
+
+      if (showNotifications) {
+        toast.error('Failed to speed up transaction', { description: errorMessage })
+      }
+      throw error
+    } finally {
+      setState(prev => ({ ...prev, isLoading: false }))
+    }
+  }, [showNotifications])
+
   return {
     // State
     transactions: Array.from(state.transactions.values()),
@@ -235,11 +334,19 @@ export function useTransactionMonitor(options: UseTransactionMonitorOptions = {}
     trackTransaction,
     stopTracking,
     clearAllTransactions,
+    retryTransaction,
+    cancelTransaction,
+    speedUpTransaction,
+
+    // Real-time monitoring
+    startRealtimeMonitoring,
+    stopRealtimeMonitoring,
 
     // Getters
     getTransaction,
     getTransactionsByStatus,
     getTransactionsByChain,
+    getStats,
 
     // Computed values
     pendingTransactions: getTransactionsByStatus(TransactionStatus.PENDING),

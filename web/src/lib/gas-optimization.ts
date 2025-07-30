@@ -19,12 +19,35 @@ export interface GasEstimate {
 }
 
 export interface GasOptimizationSuggestion {
-  type: 'timing' | 'batching' | 'route' | 'token'
+  type: 'timing' | 'batching' | 'route' | 'token' | 'mev' | 'layer2'
   title: string
   description: string
   potentialSavings: string
   difficulty: 'easy' | 'medium' | 'hard'
   action?: () => void
+  priority: 'low' | 'medium' | 'high'
+  estimatedSavings: number // percentage
+}
+
+export interface MEVProtectionOptions {
+  enabled: boolean
+  flashbotsRelay?: boolean
+  privateMempool?: boolean
+  maxSlippage?: number
+  frontrunningProtection?: boolean
+}
+
+export interface GasOptimizationResult {
+  originalEstimate: GasEstimate
+  optimizedEstimate: GasEstimate
+  savings: {
+    gasAmount: bigint
+    costSavings: string
+    percentageSavings: number
+  }
+  suggestions: GasOptimizationSuggestion[]
+  mevRisk: 'low' | 'medium' | 'high'
+  confidence: number
 }
 
 export interface TransactionBatch {
@@ -313,7 +336,8 @@ export class GasOptimizer {
   generateOptimizationSuggestions(
     chainId: number,
     transactionType: string,
-    amount?: string
+    amount?: string,
+    mevProtection?: MEVProtectionOptions
   ): GasOptimizationSuggestion[] {
     const tracker = this.trackers.get(chainId)
     const suggestions: GasOptimizationSuggestion[] = []
@@ -327,7 +351,9 @@ export class GasOptimizer {
         title: 'Wait for Lower Gas Prices',
         description: 'Network congestion is high and gas prices are rising. Consider waiting 30-60 minutes.',
         potentialSavings: '20-40%',
-        difficulty: 'easy'
+        difficulty: 'easy',
+        priority: 'high',
+        estimatedSavings: 30
       })
     }
 
@@ -337,7 +363,9 @@ export class GasOptimizer {
         title: 'Good Time to Transact',
         description: 'Gas prices are falling and network congestion is moderate. Good time to proceed.',
         potentialSavings: '10-20%',
-        difficulty: 'easy'
+        difficulty: 'easy',
+        priority: 'medium',
+        estimatedSavings: 15
       })
     }
 
@@ -348,7 +376,9 @@ export class GasOptimizer {
         title: 'Batch Multiple Transactions',
         description: 'Combine multiple transactions into a single batch to save on gas costs.',
         potentialSavings: '30-50%',
-        difficulty: 'medium'
+        difficulty: 'medium',
+        priority: 'high',
+        estimatedSavings: 40
       })
     }
 
@@ -359,22 +389,176 @@ export class GasOptimizer {
         title: 'Optimize Swap Route',
         description: 'Use aggregators like 1inch or Paraswap to find the most gas-efficient route.',
         potentialSavings: '15-25%',
-        difficulty: 'easy'
+        difficulty: 'easy',
+        priority: 'medium',
+        estimatedSavings: 20
       })
     }
 
     // Layer 2 suggestions
     if (chainId === 1 && amount && parseFloat(amount) < 1000) {
       suggestions.push({
-        type: 'route',
+        type: 'layer2',
         title: 'Consider Layer 2',
         description: 'For smaller amounts, consider using Arbitrum, Optimism, or Polygon for lower fees.',
         potentialSavings: '80-95%',
-        difficulty: 'medium'
+        difficulty: 'medium',
+        priority: 'high',
+        estimatedSavings: 90
       })
     }
 
-    return suggestions
+    // MEV protection suggestions
+    if (!mevProtection?.enabled && this.assessMEVRisk(transactionType, tracker) === 'high') {
+      suggestions.push({
+        type: 'mev',
+        title: 'Enable MEV Protection',
+        description: 'High MEV risk detected. Consider using Flashbots or private mempool to prevent frontrunning.',
+        potentialSavings: '5-15%',
+        difficulty: 'medium',
+        priority: 'high',
+        estimatedSavings: 10
+      })
+    }
+
+    // Gas token suggestions for Ethereum
+    if (chainId === 1 && tracker.networkCongestion === 'high') {
+      suggestions.push({
+        type: 'token',
+        title: 'Use Gas Tokens',
+        description: 'Consider using gas tokens like CHI or GST2 to reduce gas costs during high congestion.',
+        potentialSavings: '10-30%',
+        difficulty: 'hard',
+        priority: 'medium',
+        estimatedSavings: 20
+      })
+    }
+
+    return suggestions.sort((a, b) => {
+      const priorityOrder = { high: 3, medium: 2, low: 1 }
+      return priorityOrder[b.priority] - priorityOrder[a.priority]
+    })
+  }
+
+  /**
+   * Get comprehensive gas optimization analysis
+   */
+  async getOptimizationAnalysis(
+    chainId: number,
+    gasLimit: bigint,
+    transactionType: string = 'transfer',
+    options?: {
+      amount?: string
+      deadline?: number
+      mevProtection?: MEVProtectionOptions
+    }
+  ): Promise<GasOptimizationResult> {
+    const estimates = await this.getGasEstimates(chainId, gasLimit)
+    const standardEstimate = estimates.find(e => e.priority === GasPriority.STANDARD)!
+
+    // Get optimized estimate based on network conditions
+    const optimizedEstimate = this.getOptimizedEstimate(estimates, chainId, options)
+
+    // Calculate savings
+    const savings = this.calculateSavings(standardEstimate, optimizedEstimate)
+
+    // Generate suggestions
+    const suggestions = this.generateOptimizationSuggestions(
+      chainId,
+      transactionType,
+      options?.amount,
+      options?.mevProtection
+    )
+
+    // Assess MEV risk
+    const tracker = this.trackers.get(chainId)!
+    const mevRisk = this.assessMEVRisk(transactionType, tracker)
+
+    // Calculate confidence
+    const confidence = this.calculateOptimizationConfidence(optimizedEstimate, tracker)
+
+    return {
+      originalEstimate: standardEstimate,
+      optimizedEstimate,
+      savings,
+      suggestions,
+      mevRisk,
+      confidence
+    }
+  }
+
+  private getOptimizedEstimate(
+    estimates: GasEstimate[],
+    chainId: number,
+    options?: any
+  ): GasEstimate {
+    const tracker = this.trackers.get(chainId)!
+
+    // Choose estimate based on network conditions and options
+    if (options?.deadline) {
+      const timeRemaining = options.deadline - Date.now()
+      if (timeRemaining < 60000) { // Less than 1 minute
+        return estimates.find(e => e.priority === GasPriority.INSTANT)!
+      } else if (timeRemaining < 300000) { // Less than 5 minutes
+        return estimates.find(e => e.priority === GasPriority.FAST)!
+      }
+    }
+
+    // Optimize based on network conditions
+    if (tracker.networkCongestion === 'low' && tracker.trend === 'falling') {
+      return estimates.find(e => e.priority === GasPriority.SLOW)!
+    } else if (tracker.networkCongestion === 'high' && tracker.trend === 'rising') {
+      return estimates.find(e => e.priority === GasPriority.FAST)!
+    }
+
+    return estimates.find(e => e.priority === GasPriority.STANDARD)!
+  }
+
+  private calculateSavings(original: GasEstimate, optimized: GasEstimate) {
+    const originalCost = BigInt(Math.floor(parseFloat(original.cost) * 1e18))
+    const optimizedCost = BigInt(Math.floor(parseFloat(optimized.cost) * 1e18))
+    const gasAmount = original.gasPrice - optimized.gasPrice
+    const costSavings = (Number(originalCost - optimizedCost) / 1e18).toFixed(6)
+    const percentageSavings = ((Number(originalCost - optimizedCost) / Number(originalCost)) * 100)
+
+    return {
+      gasAmount,
+      costSavings,
+      percentageSavings
+    }
+  }
+
+  private assessMEVRisk(transactionType: string, tracker: GasTracker): 'low' | 'medium' | 'high' {
+    if (transactionType === 'swap' || transactionType === 'arbitrage') {
+      if (tracker.networkCongestion === 'high') return 'high'
+      if (tracker.networkCongestion === 'medium') return 'medium'
+    }
+
+    if (transactionType === 'liquidation' || transactionType === 'nft') {
+      return 'high'
+    }
+
+    return 'low'
+  }
+
+  private calculateOptimizationConfidence(estimate: GasEstimate, tracker: GasTracker): number {
+    let confidence = estimate.confidence
+
+    // Adjust based on network conditions
+    if (tracker.networkCongestion === 'high') {
+      confidence -= 15
+    } else if (tracker.networkCongestion === 'low') {
+      confidence += 10
+    }
+
+    // Adjust based on trend
+    if (tracker.trend === 'stable') {
+      confidence += 5
+    } else if (tracker.trend === 'rising') {
+      confidence -= 10
+    }
+
+    return Math.max(0, Math.min(100, confidence))
   }
 
   destroy(): void {

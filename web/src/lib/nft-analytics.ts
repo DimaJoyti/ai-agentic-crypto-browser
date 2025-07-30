@@ -1,9 +1,56 @@
-import { createPublicClient, http, type Address } from 'viem'
+import { type Address, createPublicClient, http } from 'viem'
 import { SUPPORTED_CHAINS } from './chains'
+
+// Missing type definitions
+export interface MLModel {
+  id: string
+  name: string
+  type: string
+  accuracy: number
+  lastTrained: string
+}
+
+export interface DataSource {
+  id: string
+  name: string
+  type: string
+  endpoint: string
+  isActive: boolean
+}
+
+export interface NFTAnalyticsEngine {
+  id: string
+  name: string
+  version: string
+  capabilities: AnalyticsCapability[]
+  models: MLModel[]
+  dataSources: DataSource[]
+  lastUpdate: string
+  status: EngineStatus
+}
+
+export enum AnalyticsCapability {
+  RARITY_SCORING = 'rarity_scoring',
+  PRICE_PREDICTION = 'price_prediction',
+  MARKET_TRENDS = 'market_trends',
+  SENTIMENT_ANALYSIS = 'sentiment_analysis',
+  INVESTMENT_INSIGHTS = 'investment_insights',
+  RISK_ASSESSMENT = 'risk_assessment',
+  LIQUIDITY_ANALYSIS = 'liquidity_analysis',
+  COMPARATIVE_ANALYSIS = 'comparative_analysis'
+}
+
+export enum EngineStatus {
+  ACTIVE = 'active',
+  TRAINING = 'training',
+  UPDATING = 'updating',
+  ERROR = 'error',
+  MAINTENANCE = 'maintenance'
+}
 
 export enum RarityTier {
   COMMON = 'common',
-  UNCOMMON = 'uncommon', 
+  UNCOMMON = 'uncommon',
   RARE = 'rare',
   EPIC = 'epic',
   LEGENDARY = 'legendary',
@@ -14,6 +61,256 @@ export enum TrendDirection {
   UP = 'up',
   DOWN = 'down',
   STABLE = 'stable'
+}
+
+export interface PriceAnalytics {
+  floorPrice: number
+  floorPriceUSD: number
+  averagePrice: number
+  medianPrice: number
+  volumeWeightedPrice: number
+  priceHistory: PricePoint[]
+  priceDistribution: PriceDistribution[]
+  priceVolatility: number
+  priceChange24h: number
+  priceChange7d: number
+  priceChange30d: number
+  priceChange90d: number
+  allTimeHigh: number
+  allTimeLow: number
+  athDate: string
+  atlDate: string
+}
+
+export interface PricePoint {
+  timestamp: string
+  price: number
+  priceUSD: number
+  volume: number
+  volumeUSD: number
+  sales: number
+}
+
+export interface PriceDistribution {
+  priceRange: string
+  count: number
+  percentage: number
+  volume: number
+}
+
+export interface RarityAnalytics {
+  rarityMethod: 'trait_count' | 'statistical' | 'jaccard' | 'information_content'
+  totalTraits: number
+  averageTraitCount: number
+  rarityDistribution: RarityDistribution[]
+  traitAnalytics: TraitAnalytics[]
+  rarityCorrelation: RarityCorrelation
+  topRareItems: RareItem[]
+}
+
+export interface RarityDistribution {
+  tier: string
+  range: string
+  count: number
+  percentage: number
+  floorPrice: number
+  averagePrice: number
+}
+
+export interface TraitAnalytics {
+  traitType: string
+  totalValues: number
+  rarity: number
+  priceImpact: number
+  values: TraitValueAnalytics[]
+}
+
+export interface TraitValueAnalytics {
+  value: string
+  count: number
+  percentage: number
+  rarity: number
+  floorPrice: number
+  averagePrice: number
+  priceMultiplier: number
+}
+
+export interface RarityCorrelation {
+  priceCorrelation: number
+  volumeCorrelation: number
+  liquidityCorrelation: number
+  holdingTimeCorrelation: number
+}
+
+export interface RareItem {
+  tokenId: string
+  rarityRank: number
+  rarityScore: number
+  traitCount: number
+  estimatedValue: number
+  lastSalePrice?: number
+  isListed: boolean
+  listingPrice?: number
+}
+
+export interface MarketAnalytics {
+  volume24h: number
+  volume7d: number
+  volume30d: number
+  volumeTotal: number
+  sales24h: number
+  sales7d: number
+  sales30d: number
+  salesTotal: number
+  uniqueBuyers24h: number
+  uniqueSellers24h: number
+  marketCap: number
+  liquidity: LiquidityMetrics
+  ownership: OwnershipMetrics
+  trading: TradingMetrics
+}
+
+export interface LiquidityMetrics {
+  listedCount: number
+  listedPercentage: number
+  averageListingTime: number
+  bidAskSpread: number
+  depthAnalysis: DepthLevel[]
+}
+
+export interface DepthLevel {
+  priceLevel: number
+  buyOrders: number
+  sellOrders: number
+  buyVolume: number
+  sellVolume: number
+}
+
+export interface OwnershipMetrics {
+  totalOwners: number
+  uniqueOwnerPercentage: number
+  whaleConcentration: number
+  ownershipDistribution: OwnershipTier[]
+  topHolders: TopHolder[]
+}
+
+export interface OwnershipTier {
+  tier: string
+  minTokens: number
+  maxTokens: number
+  holderCount: number
+  tokenCount: number
+  percentage: number
+}
+
+export interface TopHolder {
+  address: Address
+  tokenCount: number
+  estimatedValue: number
+  averageBuyPrice: number
+  unrealizedPnL: number
+}
+
+export interface TradingMetrics {
+  averageHoldingTime: number
+  flipRate: number
+  paperHandsPercentage: number
+  diamondHandsPercentage: number
+  profitableTradesPercentage: number
+  averageProfit: number
+  averageLoss: number
+}
+
+export interface TrendAnalytics {
+  momentum: MomentumIndicators
+  sentiment: SentimentAnalytics
+  social: SocialMetrics
+  predictions: PricePrediction[]
+}
+
+export interface MomentumIndicators {
+  rsi: number
+  macd: number
+  bollingerBands: {
+    upper: number
+    middle: number
+    lower: number
+    position: number
+  }
+  movingAverages: {
+    ma7: number
+    ma30: number
+    ma90: number
+  }
+  volumeProfile: VolumeProfile[]
+}
+
+export interface VolumeProfile {
+  priceLevel: number
+  volume: number
+  percentage: number
+}
+
+export interface SentimentAnalytics {
+  overallSentiment: 'bullish' | 'bearish' | 'neutral'
+  sentimentScore: number
+  socialMentions: number
+  positiveRatio: number
+  negativeRatio: number
+  neutralRatio: number
+  keywordAnalysis: KeywordSentiment[]
+}
+
+export interface KeywordSentiment {
+  keyword: string
+  mentions: number
+  sentiment: number
+  impact: number
+}
+
+export interface SocialMetrics {
+  twitterFollowers: number
+  discordMembers: number
+  telegramMembers: number
+  redditSubscribers: number
+  socialGrowth24h: number
+  socialGrowth7d: number
+  socialEngagement: number
+  influencerMentions: number
+}
+
+export interface PricePrediction {
+  timeframe: '1d' | '7d' | '30d' | '90d'
+  predictedPrice: number
+  confidence: number
+  priceRange: {
+    low: number
+    high: number
+  }
+  factors: PredictionFactor[]
+}
+
+export interface PredictionFactor {
+  factor: string
+  weight: number
+  impact: 'positive' | 'negative' | 'neutral'
+  confidence: number
+}
+
+export interface ValuationModel {
+  name: string
+  type: 'comparative' | 'intrinsic' | 'technical' | 'ml'
+  estimatedValue: number
+  confidence: number
+  factors: ValuationFactor[]
+  lastUpdate: string
+}
+
+export interface ValuationFactor {
+  factor: string
+  value: number
+  weight: number
+  impact: number
 }
 
 export interface RarityScore {
@@ -194,7 +491,7 @@ export class NFTAnalyticsService {
   }
 
   private initializeClients() {
-    Object.values(SUPPORTED_CHAINS).forEach(chain => {
+    Object.values(SUPPORTED_CHAINS).forEach((chain: any) => {
       if (!chain.isTestnet || chain.id === 11155111) {
         try {
           const client = createPublicClient({
@@ -449,7 +746,7 @@ export class NFTAnalyticsService {
     return RarityTier.COMMON
   }
 
-  async getPriceHistory(contractAddress: Address, tokenId: string): Promise<PriceHistory[]> {
+  async getPriceHistory(_contractAddress: Address, _tokenId: string): Promise<PriceHistory[]> {
     // Mock price history
     return [
       {

@@ -21,8 +21,9 @@ import {
   LineChart
 } from 'lucide-react'
 import { useTransactionMonitor } from '@/hooks/useTransactionMonitor'
-import { 
+import {
   TransactionAnalytics as Analytics,
+  AnalyticsTimeframe,
   type AnalyticsFilters,
   type TransactionMetrics,
   type ChainMetrics,
@@ -60,7 +61,14 @@ export function TransactionAnalytics() {
   }, [filteredTransactions])
 
   const timeSeriesData = useMemo(() => {
-    return Analytics.generateTimeSeriesData(filteredTransactions, filters.timeframe)
+    // Convert timeframe config back to enum for the API
+    const timeframeEnum = filters.timeframe.days === 1 ? AnalyticsTimeframe.LAST_24_HOURS :
+                         filters.timeframe.days === 7 ? AnalyticsTimeframe.LAST_7_DAYS :
+                         filters.timeframe.days === 30 ? AnalyticsTimeframe.LAST_30_DAYS :
+                         filters.timeframe.days === 90 ? AnalyticsTimeframe.LAST_90_DAYS :
+                         filters.timeframe.days === 365 ? AnalyticsTimeframe.LAST_YEAR :
+                         AnalyticsTimeframe.ALL_TIME
+    return Analytics.generateTimeSeriesData(filteredTransactions, timeframeEnum)
   }, [filteredTransactions, filters.timeframe])
 
   const handleExportCSV = () => {

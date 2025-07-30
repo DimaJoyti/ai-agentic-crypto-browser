@@ -2,332 +2,377 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Progress } from '@/components/ui/progress'
-import { 
-  Shield, 
-  Usb, 
-  CheckCircle, 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Shield,
+  Usb,
+  CheckCircle,
   AlertCircle,
   Loader2,
   Zap,
   Fingerprint,
   Lock,
   Unlock,
-  RefreshCw
+  RefreshCw,
+  Wallet,
+  Monitor,
+  Copy,
+  Eye,
+  EyeOff
 } from 'lucide-react'
+import { useHardwareWallet } from '@/hooks/useHardwareWallet'
+import { type HardwareWalletDevice, type HardwareWalletAccount } from '@/lib/hardware-wallet-manager'
 import { toast } from 'sonner'
 
 interface HardwareWalletModalProps {
   isOpen: boolean
   onClose: () => void
-  onSuccess?: (deviceInfo: HardwareDeviceInfo) => void
+  onSuccess?: (device: HardwareWalletDevice, account: HardwareWalletAccount) => void
 }
-
-interface HardwareDeviceInfo {
-  deviceId: string
-  model: string
-  manufacturer: string
-  version: string
-  isLocked: boolean
-  appName: string
-  appVersion: string
-  addresses?: string[]
-}
-
-interface HardwareWalletType {
-  id: string
-  name: string
-  manufacturer: string
-  icon: React.ReactNode
-  description: string
-  features: string[]
-  isSupported: boolean
-  connectionType: 'usb' | 'bluetooth' | 'wifi'
-}
-
-const hardwareWallets: HardwareWalletType[] = [
-  {
-    id: 'ledger',
-    name: 'Ledger',
-    manufacturer: 'Ledger SAS',
-    icon: <Shield className="w-8 h-8" />,
-    description: 'Nano S Plus, Nano X, Stax',
-    features: ['USB', 'Bluetooth', 'Multi-Chain', 'Secure Element'],
-    isSupported: true,
-    connectionType: 'usb'
-  },
-  {
-    id: 'trezor',
-    name: 'Trezor',
-    manufacturer: 'SatoshiLabs',
-    icon: <Lock className="w-8 h-8" />,
-    description: 'Model T, Model One',
-    features: ['USB', 'Touchscreen', 'Open Source', 'PIN Protection'],
-    isSupported: true,
-    connectionType: 'usb'
-  },
-  {
-    id: 'gridplus',
-    name: 'GridPlus',
-    manufacturer: 'GridPlus Inc.',
-    icon: <Zap className="w-8 h-8" />,
-    description: 'Lattice1',
-    features: ['WiFi', 'Large Screen', 'Card Reader', 'Always Online'],
-    isSupported: true,
-    connectionType: 'wifi'
-  }
-]
-
-const connectionSteps = [
-  'Detecting device...',
-  'Establishing connection...',
-  'Verifying device...',
-  'Loading applications...',
-  'Ready to use!'
-]
-
 export function HardwareWalletModal({ isOpen, onClose, onSuccess }: HardwareWalletModalProps) {
-  const [selectedWallet, setSelectedWallet] = useState<string | null>(null)
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [connectionStep, setConnectionStep] = useState(0)
-  const [connectionError, setConnectionError] = useState<string | null>(null)
-  const [deviceInfo, setDeviceInfo] = useState<HardwareDeviceInfo | null>(null)
-  const [isDeviceReady, setIsDeviceReady] = useState(false)
+  const [activeTab, setActiveTab] = useState('devices')
+  const [showAddresses, setShowAddresses] = useState(false)
 
-  const handleWalletSelect = async (walletId: string) => {
-    setSelectedWallet(walletId)
-    setIsConnecting(true)
-    setConnectionError(null)
-    setConnectionStep(0)
+  const {
+    state,
+    scanDevices,
+    connectDevice,
+    disconnectDevice,
+    selectDevice,
+    loadAccounts,
+    selectAccount,
+    clearError
+  } = useHardwareWallet({
+    autoScan: true,
+    onDeviceConnect: (device) => {
+      setActiveTab('accounts')
+    },
+    onAccountSelect: (account) => {
+      if (state.selectedDevice) {
+        onSuccess?.(state.selectedDevice, account)
+        onClose()
+      }
+    },
+    onError: (error) => {
+      toast.error('Hardware wallet error', {
+        description: error.message
+      })
+    }
+  })
 
+  const handleDeviceConnect = async (device: HardwareWalletDevice) => {
     try {
-      // Simulate hardware wallet connection process
-      for (let i = 0; i < connectionSteps.length; i++) {
-        setConnectionStep(i)
-        await new Promise(resolve => setTimeout(resolve, 1000))
-      }
-
-      // Simulate device info retrieval
-      const mockDeviceInfo: HardwareDeviceInfo = {
-        deviceId: `${walletId}-${Date.now()}`,
-        model: hardwareWallets.find(w => w.id === walletId)?.name || 'Unknown',
-        manufacturer: hardwareWallets.find(w => w.id === walletId)?.manufacturer || 'Unknown',
-        version: '2.1.0',
-        isLocked: false,
-        appName: 'Ethereum',
-        appVersion: '1.9.0',
-        addresses: []
-      }
-
-      setDeviceInfo(mockDeviceInfo)
-      setIsDeviceReady(true)
-      setIsConnecting(false)
-      
-      toast.success(`${mockDeviceInfo.model} connected successfully!`)
-      onSuccess?.(mockDeviceInfo)
-      
+      await connectDevice(device.id)
     } catch (error) {
-      console.error('Hardware wallet connection error:', error)
-      setConnectionError('Failed to connect to hardware wallet. Please check your device and try again.')
-      setIsConnecting(false)
+      console.error('Failed to connect device:', error)
     }
   }
 
-  const handleRetry = () => {
-    if (selectedWallet) {
-      handleWalletSelect(selectedWallet)
+  const handleAccountSelect = (account: HardwareWalletAccount) => {
+    selectAccount(account)
+  }
+
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`
+  }
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    toast.success('Copied to clipboard')
+  }
+
+  const getDeviceIcon = (type: string) => {
+    switch (type) {
+      case 'ledger':
+        return <Shield className="w-8 h-8" />
+      case 'trezor':
+        return <Lock className="w-8 h-8" />
+      case 'gridplus':
+        return <Zap className="w-8 h-8" />
+      default:
+        return <Wallet className="w-8 h-8" />
     }
   }
 
-  const handleClose = () => {
-    setSelectedWallet(null)
-    setIsConnecting(false)
-    setConnectionStep(0)
-    setConnectionError(null)
-    setDeviceInfo(null)
-    setIsDeviceReady(false)
-    onClose()
-  }
-
-  const getConnectionIcon = () => {
-    if (connectionError) return <AlertCircle className="w-8 h-8 text-red-500" />
-    if (isDeviceReady) return <CheckCircle className="w-8 h-8 text-green-500" />
-    if (isConnecting) return <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-    return <Usb className="w-8 h-8 text-gray-500" />
+  const getConnectionMethodIcon = (method: string) => {
+    switch (method) {
+      case 'usb':
+        return <Usb className="w-4 h-4" />
+      case 'bluetooth':
+        return <Monitor className="w-4 h-4" />
+      case 'webusb':
+        return <Monitor className="w-4 h-4" />
+      default:
+        return <Usb className="w-4 h-4" />
+    }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5" />
-            Connect Hardware Wallet
+            Hardware Wallet Connection
           </DialogTitle>
           <DialogDescription>
-            Connect your hardware wallet for maximum security
+            Connect your hardware wallet for maximum security and control
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {!selectedWallet ? (
-            // Wallet Selection
-            <div className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                Choose your hardware wallet type:
-              </div>
-              
-              <div className="grid gap-3">
-                {hardwareWallets.map((wallet) => (
-                  <Card 
-                    key={wallet.id}
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      !wallet.isSupported ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                    onClick={() => wallet.isSupported && handleWalletSelect(wallet.id)}
+        {state.error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {state.error}
+              <Button variant="ghost" size="sm" onClick={clearError} className="ml-2">
+                Dismiss
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="devices">Devices</TabsTrigger>
+            <TabsTrigger value="accounts" disabled={!state.selectedDevice}>
+              Accounts
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="devices" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Available Devices</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={scanDevices}
+                disabled={state.isScanning}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${state.isScanning ? 'animate-spin' : ''}`} />
+                {state.isScanning ? 'Scanning...' : 'Scan'}
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              <AnimatePresence>
+                {state.devices.map((device, index) => (
+                  <motion.div
+                    key={device.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
-                            {wallet.icon}
+                    <Card className={`cursor-pointer transition-all hover:shadow-md ${
+                      state.selectedDevice?.id === device.id ? 'ring-2 ring-primary' : ''
+                    }`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
+                              {getDeviceIcon(device.type)}
+                            </div>
+                            <div>
+                              <h4 className="font-medium">{device.model}</h4>
+                              <p className="text-sm text-muted-foreground capitalize">
+                                {device.type} • {device.version}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                {getConnectionMethodIcon(device.connectionMethod)}
+                                <span className="text-xs text-muted-foreground capitalize">
+                                  {device.connectionMethod}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex-1">
+                          <div className="flex flex-col items-end gap-2">
                             <div className="flex items-center gap-2">
-                              <h3 className="font-medium">{wallet.name}</h3>
-                              {!wallet.isSupported && (
-                                <Badge variant="outline" className="text-xs">
-                                  Coming Soon
+                              {device.isConnected ? (
+                                <Badge variant="default">Connected</Badge>
+                              ) : (
+                                <Badge variant="outline">Disconnected</Badge>
+                              )}
+                              {device.isLocked && (
+                                <Badge variant="secondary">
+                                  <Lock className="w-3 h-3 mr-1" />
+                                  Locked
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                              {wallet.description}
-                            </p>
-                            <div className="flex gap-1 mt-1">
-                              {wallet.features.slice(0, 2).map((feature) => (
-                                <Badge key={feature} variant="secondary" className="text-xs">
-                                  {feature}
+                            <Button
+                              size="sm"
+                              onClick={() => handleDeviceConnect(device)}
+                              disabled={state.isConnecting || device.isConnected}
+                            >
+                              {state.isConnecting && state.selectedDevice?.id === device.id ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Connecting...
+                                </>
+                              ) : device.isConnected ? (
+                                'Connected'
+                              ) : (
+                                'Connect'
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {device.supportedApps.length > 0 && (
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="text-xs text-muted-foreground mb-2">Supported Apps:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {device.supportedApps.slice(0, 4).map((app) => (
+                                <Badge key={app} variant="secondary" className="text-xs">
+                                  {app}
                                 </Badge>
                               ))}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <Badge variant="outline" className="text-xs">
-                            {wallet.connectionType.toUpperCase()}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ) : (
-            // Connection Process
-            <div className="space-y-6">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
-                  {getConnectionIcon()}
-                </div>
-                
-                {isConnecting && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">
-                      Connecting to {hardwareWallets.find(w => w.id === selectedWallet)?.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {connectionSteps[connectionStep]}
-                    </p>
-                    <Progress value={(connectionStep + 1) / connectionSteps.length * 100} className="w-full" />
-                  </div>
-                )}
-
-                {connectionError && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-red-600">Connection Failed</h3>
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{connectionError}</AlertDescription>
-                    </Alert>
-                    <div className="flex gap-2">
-                      <Button onClick={handleRetry} variant="outline">
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Retry
-                      </Button>
-                      <Button onClick={handleClose} variant="ghost">
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {isDeviceReady && deviceInfo && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-green-600">Device Connected!</h3>
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Model:</span>
-                            <span className="font-medium">{deviceInfo.model}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Version:</span>
-                            <span className="font-medium">{deviceInfo.version}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">App:</span>
-                            <span className="font-medium">{deviceInfo.appName} {deviceInfo.appVersion}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Status:</span>
-                            <div className="flex items-center gap-1">
-                              {deviceInfo.isLocked ? (
-                                <>
-                                  <Lock className="w-3 h-3 text-red-500" />
-                                  <span className="text-red-500">Locked</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Unlock className="w-3 h-3 text-green-500" />
-                                  <span className="text-green-500">Unlocked</span>
-                                </>
+                              {device.supportedApps.length > 4 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{device.supportedApps.length - 4} more
+                                </Badge>
                               )}
                             </div>
                           </div>
-                        </div>
+                        )}
                       </CardContent>
                     </Card>
-                    <Button onClick={handleClose} className="w-full">
-                      Continue with {deviceInfo.model}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {state.devices.length === 0 && !state.isScanning && (
+                <div className="text-center py-8">
+                  <Wallet className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Hardware Wallets Found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Make sure your device is connected and unlocked
+                  </p>
+                  <Button onClick={scanDevices} disabled={state.isScanning}>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Scan for Devices
+                  </Button>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="accounts" className="space-y-4">
+            {state.selectedDevice && (
+              <>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium">Select Account</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Choose an account from your {state.selectedDevice.model}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAddresses(!showAddresses)}
+                    >
+                      {showAddresses ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => loadAccounts(state.selectedDevice!.id)}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Refresh
                     </Button>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
+                </div>
 
-          {!selectedWallet && (
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                Make sure your hardware wallet is connected and unlocked before proceeding.
-              </p>
-            </div>
-          )}
-        </div>
+                <div className="space-y-3">
+                  <AnimatePresence>
+                    {state.accounts.map((account, index) => (
+                      <motion.div
+                        key={account.address}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <Card className={`cursor-pointer transition-all hover:shadow-md ${
+                          state.selectedAccount?.address === account.address ? 'ring-2 ring-primary' : ''
+                        }`}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
+                                  <Wallet className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <h4 className="font-medium">Account {account.index + 1}</h4>
+                                  <p className="text-sm text-muted-foreground font-mono">
+                                    {showAddresses ? account.address : formatAddress(account.address)}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {account.path}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => copyToClipboard(account.address)}
+                                >
+                                  <Copy className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleAccountSelect(account)}
+                                  variant={state.selectedAccount?.address === account.address ? "default" : "outline"}
+                                >
+                                  {state.selectedAccount?.address === account.address ? 'Selected' : 'Select'}
+                                </Button>
+                              </div>
+                            </div>
+                            {account.balance && (
+                              <div className="mt-2 pt-2 border-t">
+                                <p className="text-sm text-muted-foreground">
+                                  Balance: {account.balance} ETH
+                                </p>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+
+                  {state.accounts.length === 0 && (
+                    <div className="text-center py-8">
+                      <Wallet className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No Accounts Found</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Make sure the Ethereum app is open on your device
+                      </p>
+                      <Button onClick={() => loadAccounts(state.selectedDevice!.id)}>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Load Accounts
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   )

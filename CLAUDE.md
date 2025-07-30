@@ -39,8 +39,17 @@ AI-Powered Agentic Crypto Browser - A comprehensive autonomous cryptocurrency tr
 - `cd web && npm install` - Install frontend dependencies
 - `cd web && npm run dev` - Start Next.js development server (port 3000)
 - `cd web && npm run build` - Build frontend for production
+- `cd web && npm run build:ci` - Build with CI-friendly error handling
 - `cd web && npm run lint` - Run ESLint
 - `cd web && npm run type-check` - Run TypeScript type checking
+
+### Additional Development Commands
+- `make install-tools` - Install all development tools (golangci-lint, goimports, gosec)
+- `make security-scan` - Run security scan with gosec
+- `make db-reset` - Reset and recreate PostgreSQL database
+- `make frontend-install` - Install frontend dependencies
+- `make frontend-dev` - Start frontend development server
+- `make frontend-build` - Build frontend for production
 
 ### Frontend Tech Stack
 - **Next.js 14** with App Router, **TypeScript**, **TailwindCSS**
@@ -103,35 +112,53 @@ AI-Powered Agentic Crypto Browser - A comprehensive autonomous cryptocurrency tr
 
 ## Key Implementation Details
 
+### Configuration Management
+The application uses environment-based configuration with `internal/config/config.go` defining structured configuration for all services. Key configuration areas include:
+- **Server**: Timeouts, ports, host binding
+- **Database**: Connection pooling, timeouts, max connections (50 per service)
+- **Redis**: Caching, session storage, rate limiting
+- **JWT**: Token expiry, refresh token rotation
+- **AI**: Provider selection, model configurations, API keys
+- **Web3**: Multi-chain RPC URLs, trading parameters, risk settings
+- **Browser**: Chrome execution path, user data directory
+- **Observability**: Tracing, metrics collection, log levels
+
 ### Authentication Flow
-JWT-based authentication with refresh tokens. Protected routes use JWT middleware to extract user context. All services except auth-service require valid Authorization header. Sessions stored in Redis with configurable expiry.
+JWT-based authentication with refresh tokens. Protected routes use JWT middleware to extract user context. All services except auth-service require valid Authorization header. Sessions stored in Redis with configurable expiry. RBAC implemented via `internal/auth/rbac_service.go` with role-based permissions.
 
 ### AI Agent Integration  
-Supports multiple AI providers via AI_MODEL_PROVIDER env var: OpenAI, Anthropic, Ollama (local), and LM Studio (local). The AI service integrates with browser service for task execution. Task types include navigate, extract, interact, summarize, search, fill_form, screenshot, analyze, custom. Provider-specific configurations available in `configs/ai.yaml` and documented in `docs/AI_PROVIDERS.md`.
+Supports multiple AI providers via AI_MODEL_PROVIDER env var: OpenAI, Anthropic, Ollama (local), and LM Studio (local). The AI service integrates with browser service for task execution. Task types include navigate, extract, interact, summarize, search, fill_form, screenshot, analyze, custom. Provider-specific configurations available in `configs/ai.yaml` and documented in `docs/AI_PROVIDERS.md`. Advanced AI engines in `internal/ai/` include:
+- **Enhanced Service**: Multi-model AI analysis and prediction
+- **Decision Engine**: AI-driven decision making with confidence scoring  
+- **Learning Engine**: User behavior learning and adaptation
+- **Market Adaptation**: Real-time market pattern detection and strategy adaptation
+- **Multimodal Engine**: Image, document, audio, and chart analysis
+- **Predictive Engine**: Price prediction and market forecasting
 
 ### Browser Automation
-Uses chromedp for headless Chrome automation. Session-based architecture - users create browser sessions via API. Supports element interaction, content extraction, screenshots. Configured for Docker with disabled GPU and sandbox.
+Uses chromedp for headless Chrome automation. Session-based architecture - users create browser sessions via API. Supports element interaction, content extraction, screenshots. Configured for Docker with disabled GPU and sandbox. Vision service in `internal/browser/vision_service.go` provides intelligent page analysis and element detection.
 
 ### Web3 Integration & Autonomous Trading
 **Advanced autonomous cryptocurrency trading platform** with:
 - **Multi-chain Support**: Ethereum, Polygon, Arbitrum, Optimism with gas optimization
-- **Autonomous Trading**: AI-driven trading engines with professional-grade strategies
-- **DeFi Integration**: Automated yield farming, liquidity provision, protocol interactions
-- **Risk Management**: Real-time risk assessment with dynamic position sizing
-- **Portfolio Management**: Automated rebalancing and performance optimization
+- **Autonomous Trading**: AI-driven trading engines with professional-grade strategies in `internal/web3/trading_engine.go`
+- **DeFi Integration**: Automated yield farming, liquidity provision, protocol interactions via `internal/web3/defi_manager.go`
+- **Risk Management**: Real-time risk assessment with dynamic position sizing in `internal/web3/risk_assessment.go`
+- **Portfolio Management**: Automated rebalancing via `internal/web3/portfolio_rebalancer.go`
 - **Real-time Analytics**: 20+ performance metrics, Sharpe ratio, VaR, drawdown analysis
 - **Voice Control**: AI-powered voice commands for trading operations
-- **Market Data**: Real-time streaming from multiple exchanges with <100ms latency
+- **Market Data**: Real-time streaming from multiple exchanges with <100ms latency via `internal/realtime/market_data_service.go`
+- **Hardware Wallet Support**: Integration with hardware wallets for secure key management
 
 ### Observability & Monitoring
 **Enterprise-grade monitoring and alerting system** with:
-- **Real-time System Monitoring**: CPU, memory, disk, network, application metrics
+- **Real-time System Monitoring**: CPU, memory, disk, network, application metrics via `internal/monitoring/system_monitor.go`
 - **Health Scoring**: Weighted health scores with component-level status tracking
 - **Performance Tracking**: Request rates, response times, error rates, throughput
 - **Trading Metrics**: Portfolio performance, trade success rates, P&L tracking
-- **Alert Management**: Multi-channel notifications (Email, Slack, webhooks)
+- **Alert Management**: Multi-channel notifications (Email, Slack, webhooks) via `internal/alerts/alert_service.go`
 - **Real-time Streaming**: Server-Sent Events for instant updates
-- **OpenTelemetry Integration**: Distributed tracing with Jaeger
+- **OpenTelemetry Integration**: Distributed tracing with Jaeger via `pkg/observability/`
 - **Structured Logging**: JSON-formatted logs with trace correlation
 
 ## Environment Setup
@@ -213,11 +240,38 @@ CHROME_USER_DATA_DIR=/tmp/chrome-user-data
 
 ## Testing
 
+### Test Commands
 - **Unit Tests**: `go test ./...` for all Go packages
-- **Test with Coverage**: `make test-coverage` (creates coverage.html report)  
-- **Integration Tests**: Available via `docker/docker-compose.test.yml` with isolated test environment
-- **Individual Service Tests**: `make test-auth`, `make test-ai`, `make test-browser` (automated test runners)
+- **Test with Coverage**: `make test-coverage` (creates coverage.html report)
+- **Run Single Test**: `go test -run TestFunctionName ./internal/package/`
+- **Verbose Tests**: `go test -v ./...`
+- **Integration Tests**: `go test -tags=integration ./test/...`
 - **Setup Validation**: `./scripts/test-setup.sh` - Validates environment and dependencies
+
+### Test Categories & Environment Variables
+The project uses comprehensive test configuration via environment variables:
+- **Unit Tests**: Basic functionality tests (always enabled)
+- **Integration Tests**: Service-to-service communication tests
+- **E2E Tests**: End-to-end browser automation tests  
+- **Load Tests**: Performance and stress testing (disabled by default)
+- **Security Tests**: Vulnerability and security scanning
+
+Key test environment variables:
+- `TEST_USE_CONTAINERS=true` - Use testcontainers for isolated testing
+- `TEST_E2E_ENABLED=true` - Enable end-to-end tests
+- `TEST_LOAD_ENABLED=false` - Enable load testing (resource intensive)
+- `TEST_COVERAGE_THRESHOLD=80.0` - Minimum coverage percentage required
+
+### Test Environments
+- **Local**: All tests except load tests by default  
+- **CI**: Unit, integration, and smoke tests
+- **Staging**: All test categories enabled
+- **Production**: Only smoke tests
+
+### Individual Service Testing
+- `make test-auth` - Test auth service with sample requests
+- `make test-ai` - Test AI agent service (requires API keys)
+- `make test-browser` - Test browser automation service
 
 ## Service Dependencies
 
@@ -277,16 +331,42 @@ Services have these startup dependencies:
 1. Define task type constant in `internal/ai/models.go`
 2. Implement execution logic in `internal/ai/service.go`
 3. Add case to task execution switch statement
+4. Add corresponding tests in `internal/ai/*_test.go`
+5. Update AI configuration in `configs/ai.yaml` if needed
 
 ### Adding New Browser Actions
 1. Define action type in `internal/browser/models.go`
 2. Implement action handler in `internal/browser/service.go`
 3. Add case to action execution switch
+4. Test with actual browser automation scenarios
 
 ### Adding New API Endpoints
 1. Define in appropriate service main.go
-2. Add middleware for auth/validation as needed
-3. Follow existing error handling patterns
+2. Add middleware for auth/validation as needed (`pkg/middleware/`)
+3. Follow existing error handling patterns with structured errors
+4. Add OpenTelemetry tracing spans for observability
+5. Implement corresponding health checks if needed
+
+### Adding New Web3 Trading Strategies
+1. Define strategy in `internal/web3/trading_strategies.go`
+2. Implement risk assessment logic in `internal/web3/risk_assessment.go`
+3. Add strategy to trading engine in `internal/web3/trading_engine.go`
+4. Update portfolio rebalancer if needed
+5. Add comprehensive testing with mock market data
+
+### Working with Real-time Market Data
+1. Add new data sources in `internal/realtime/market_data_service.go`
+2. Update WebSocket connection handling for new exchanges
+3. Implement data validation and error handling
+4. Add buffering and rate limiting for high-frequency data
+5. Update analytics in `internal/analytics/` to process new data types
+
+### Configuration Changes
+1. Update `internal/config/config.go` struct definitions
+2. Add environment variable parsing in config initialization
+3. Update `.env.example` with new variables and documentation
+4. Ensure all services that need the config are updated
+5. Add validation for required configuration values
 
 ## Code Conventions
 

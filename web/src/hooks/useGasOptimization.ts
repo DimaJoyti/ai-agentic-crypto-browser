@@ -248,6 +248,118 @@ export function useGasOptimization(options: UseGasOptimizationOptions) {
     updateGasTracker()
   }, [chainId, updateGasTracker])
 
+  // Get optimization analysis
+  const getOptimizationAnalysis = useCallback(async (
+    gasLimit: bigint,
+    transactionType: string = 'transfer',
+    amount?: string
+  ) => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }))
+
+    try {
+      const result = await gasOptimizer.getOptimizationAnalysis(
+        chainId,
+        gasLimit,
+        transactionType,
+        { amount }
+      )
+
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        lastUpdated: Date.now()
+      }))
+
+      return result
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get optimization analysis'
+      setState(prev => ({
+        ...prev,
+        error: errorMessage,
+        isLoading: false
+      }))
+
+      if (enableNotifications) {
+        toast.error('Optimization analysis failed', {
+          description: errorMessage
+        })
+      }
+      throw error
+    }
+  }, [chainId, enableNotifications])
+
+  // Apply optimization suggestion
+  const applySuggestion = useCallback((suggestion: GasOptimizationSuggestion) => {
+    if (enableNotifications) {
+      toast.info(`Applied: ${suggestion.title}`, {
+        description: suggestion.description
+      })
+    }
+
+    // Execute suggestion action if available
+    if (suggestion.action) {
+      suggestion.action()
+    }
+  }, [enableNotifications])
+
+  // Get MEV risk assessment
+  const getMEVRisk = useCallback((transactionType: string): 'low' | 'medium' | 'high' => {
+    const tracker = state.gasTracker
+    if (!tracker) return 'low'
+
+    // High-value or MEV-sensitive transaction types
+    if (['swap', 'arbitrage', 'liquidation', 'nft'].includes(transactionType)) {
+      if (tracker.networkCongestion === 'high') return 'high'
+      if (tracker.networkCongestion === 'medium') return 'medium'
+    }
+
+    return 'low'
+  }, [state.gasTracker])
+
+  // Get time-based recommendations
+  const getTimeBasedRecommendation = useCallback((deadline?: number): {
+    priority: GasPriority
+    message: string
+    urgency: 'low' | 'medium' | 'high'
+  } => {
+    if (!deadline) {
+      return {
+        priority: getRecommendedPriority(),
+        message: 'No deadline specified - using standard priority',
+        urgency: 'low'
+      }
+    }
+
+    const timeRemaining = deadline - Date.now()
+    const minutes = timeRemaining / (1000 * 60)
+
+    if (minutes < 5) {
+      return {
+        priority: GasPriority.INSTANT,
+        message: 'Deadline approaching - use highest priority',
+        urgency: 'high'
+      }
+    } else if (minutes < 15) {
+      return {
+        priority: GasPriority.FAST,
+        message: 'Limited time - use fast priority',
+        urgency: 'medium'
+      }
+    } else if (minutes < 60) {
+      return {
+        priority: GasPriority.STANDARD,
+        message: 'Moderate time - standard priority recommended',
+        urgency: 'low'
+      }
+    } else {
+      return {
+        priority: GasPriority.SLOW,
+        message: 'Plenty of time - save costs with slow priority',
+        urgency: 'low'
+      }
+    }
+  }, [getRecommendedPriority])
+
   return {
     // State
     ...state,
@@ -256,6 +368,8 @@ export function useGasOptimization(options: UseGasOptimizationOptions) {
     getGasEstimates,
     updateGasTracker,
     generateSuggestions,
+    getOptimizationAnalysis,
+    applySuggestion,
 
     // Computed values
     getRecommendedPriority,
@@ -263,6 +377,8 @@ export function useGasOptimization(options: UseGasOptimizationOptions) {
     calculateSavings,
     formatGasPrice,
     getCongestionLevel,
+    getMEVRisk,
+    getTimeBasedRecommendation,
 
     // Utilities
     isOptimalTime: state.gasTracker?.recommendedAction === 'urgent',

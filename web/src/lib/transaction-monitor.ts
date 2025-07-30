@@ -319,9 +319,134 @@ export class TransactionMonitor {
     const chain = SUPPORTED_CHAINS[chainId]
     if (!chain) return
 
-    // This would connect to a WebSocket endpoint for real-time updates
-    // For now, we'll use polling, but this is where WebSocket logic would go
-    console.log(`WebSocket support for ${chain.name} would be initialized here`)
+    // For now, skip WebSocket initialization as wsRpcUrl is not available
+    // In a real implementation, you would need to add wsRpcUrl to the chain config
+    return
+
+    // WebSocket functionality disabled - requires wsRpcUrl in chain config
+    /*
+    try {
+      const ws = new WebSocket(chain.wsRpcUrl)
+
+      ws.onopen = () => {
+        console.log(`WebSocket connected for ${chain.name}`)
+
+        // Subscribe to pending transactions
+        ws.send(JSON.stringify({
+          id: 1,
+          method: 'eth_subscribe',
+          params: ['newPendingTransactions']
+        }))
+
+        // Subscribe to new blocks
+        ws.send(JSON.stringify({
+          id: 2,
+          method: 'eth_subscribe',
+          params: ['newHeads']
+        }))
+      }
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          this.handleWebSocketMessage(chainId, data)
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error)
+        }
+      }
+
+      ws.onclose = () => {
+        console.log(`WebSocket disconnected for ${chain.name}`)
+        this.websockets.delete(chainId)
+
+        // Attempt to reconnect after 5 seconds
+        setTimeout(() => {
+          this.initializeWebSocket(chainId)
+        }, 5000)
+      }
+
+      ws.onerror = (error) => {
+        console.error(`WebSocket error for ${chain.name}:`, error)
+      }
+
+      this.websockets.set(chainId, ws)
+    } catch (error) {
+      console.error(`Failed to initialize WebSocket for ${chain.name}:`, error)
+    }
+    */
+  }
+
+  /**
+   * Handle WebSocket messages
+   */
+  private handleWebSocketMessage(chainId: number, data: any): void {
+    if (data.method === 'eth_subscription') {
+      const { subscription, result } = data.params
+
+      // Handle new block
+      if (result.number) {
+        this.handleNewBlock(chainId, result)
+      }
+
+      // Handle new pending transaction
+      if (typeof result === 'string') {
+        this.handleNewPendingTransaction(chainId, result)
+      }
+    }
+  }
+
+  /**
+   * Handle new block for confirmation updates
+   */
+  private handleNewBlock(chainId: number, block: any): void {
+    // Update confirmations for all pending transactions on this chain
+    for (const [hash, transaction] of Array.from(this.trackedTransactions.entries())) {
+      if (transaction.chainId === chainId &&
+          transaction.status === TransactionStatus.CONFIRMED &&
+          transaction.blockNumber) {
+        const confirmations = Number(block.number) - transaction.blockNumber + 1
+
+        if (confirmations !== transaction.confirmations) {
+          this.updateTransactionStatus(hash, {
+            hash,
+            status: transaction.status,
+            confirmations,
+            timestamp: Date.now()
+          })
+        }
+      }
+    }
+  }
+
+  /**
+   * Handle new pending transaction
+   */
+  private handleNewPendingTransaction(chainId: number, txHash: string): void {
+    const transaction = this.trackedTransactions.get(txHash as Hash)
+    if (transaction && transaction.status === TransactionStatus.PENDING) {
+      console.log(`Tracked transaction ${txHash} appeared in mempool`)
+      // Transaction appeared in mempool, could trigger notification
+    }
+  }
+
+  /**
+   * Start real-time monitoring for a chain
+   */
+  startRealtimeMonitoring(chainId: number): void {
+    if (!this.websockets.has(chainId)) {
+      this.initializeWebSocket(chainId)
+    }
+  }
+
+  /**
+   * Stop real-time monitoring for a chain
+   */
+  stopRealtimeMonitoring(chainId: number): void {
+    const ws = this.websockets.get(chainId)
+    if (ws) {
+      ws.close()
+      this.websockets.delete(chainId)
+    }
   }
 
   /**
@@ -346,6 +471,162 @@ export class TransactionMonitor {
       }
     }
     return TransactionType.SEND
+  }
+
+  /**
+   * Get transactions by status
+   */
+  getTransactionsByStatus(status: TransactionStatus): TransactionData[] {
+    return Array.from(this.trackedTransactions.values())
+      .filter(tx => tx.status === status)
+      .sort((a, b) => b.timestamp - a.timestamp)
+  }
+
+  /**
+   * Get transactions by address
+   */
+  getTransactionsByAddress(address: string): TransactionData[] {
+    const normalizedAddress = address.toLowerCase()
+    return Array.from(this.trackedTransactions.values())
+      .filter(tx =>
+        tx.from.toLowerCase() === normalizedAddress ||
+        tx.to?.toLowerCase() === normalizedAddress
+      )
+      .sort((a, b) => b.timestamp - a.timestamp)
+  }
+
+  /**
+   * Get transactions by chain
+   */
+  getTransactionsByChain(chainId: number): TransactionData[] {
+    return Array.from(this.trackedTransactions.values())
+      .filter(tx => tx.chainId === chainId)
+      .sort((a, b) => b.timestamp - a.timestamp)
+  }
+
+  /**
+   * Get transaction statistics
+   */
+  getTransactionStats(): {
+    total: number
+    pending: number
+    confirmed: number
+    failed: number
+    dropped: number
+    avgConfirmationTime: number
+  } {
+    const transactions = Array.from(this.trackedTransactions.values())
+    const total = transactions.length
+    const pending = transactions.filter(tx => tx.status === TransactionStatus.PENDING).length
+    const confirmed = transactions.filter(tx => tx.status === TransactionStatus.CONFIRMED).length
+    const failed = transactions.filter(tx => tx.status === TransactionStatus.FAILED).length
+    const dropped = transactions.filter(tx => tx.status === TransactionStatus.DROPPED).length
+
+    // Calculate average confirmation time for confirmed transactions
+    const confirmedTxs = transactions.filter(tx =>
+      tx.status === TransactionStatus.CONFIRMED && tx.receipt
+    )
+    const avgConfirmationTime = confirmedTxs.length > 0
+      ? confirmedTxs.reduce((sum, tx) => {
+          // Estimate confirmation time based on block time
+          const blockTime = this.getAverageBlockTime(tx.chainId)
+          return sum + (tx.confirmations * blockTime)
+        }, 0) / confirmedTxs.length
+      : 0
+
+    return {
+      total,
+      pending,
+      confirmed,
+      failed,
+      dropped,
+      avgConfirmationTime
+    }
+  }
+
+  /**
+   * Get average block time for a chain
+   */
+  private getAverageBlockTime(chainId: number): number {
+    switch (chainId) {
+      case 1: // Ethereum
+        return 12
+      case 137: // Polygon
+        return 2
+      case 42161: // Arbitrum
+        return 0.25
+      case 10: // Optimism
+        return 2
+      case 8453: // Base
+        return 2
+      case 56: // BSC
+        return 3
+      default:
+        return 12
+    }
+  }
+
+  /**
+   * Retry a failed transaction
+   */
+  async retryTransaction(hash: Hash, newGasPrice?: string): Promise<Hash> {
+    const tx = this.trackedTransactions.get(hash)
+    if (!tx || tx.status !== TransactionStatus.FAILED) {
+      throw new Error('Transaction not found or not failed')
+    }
+
+    // This would implement transaction retry logic
+    // For now, just return the original hash
+    console.log(`Retrying transaction ${hash} with new gas price: ${newGasPrice}`)
+    return hash
+  }
+
+  /**
+   * Cancel a pending transaction
+   */
+  async cancelTransaction(hash: Hash): Promise<Hash> {
+    const tx = this.trackedTransactions.get(hash)
+    if (!tx || tx.status !== TransactionStatus.PENDING) {
+      throw new Error('Transaction not found or not pending')
+    }
+
+    // This would implement transaction cancellation logic
+    console.log(`Cancelling transaction ${hash}`)
+    return hash
+  }
+
+  /**
+   * Speed up a pending transaction
+   */
+  async speedUpTransaction(hash: Hash, newGasPrice: string): Promise<Hash> {
+    const tx = this.trackedTransactions.get(hash)
+    if (!tx || tx.status !== TransactionStatus.PENDING) {
+      throw new Error('Transaction not found or not pending')
+    }
+
+    // This would implement transaction speed up logic
+    console.log(`Speeding up transaction ${hash} with gas price: ${newGasPrice}`)
+    return hash
+  }
+
+  /**
+   * Clean up old transactions
+   */
+  cleanupOldTransactions(maxAge: number = 24 * 60 * 60 * 1000): void {
+    const cutoff = Date.now() - maxAge
+    const toDelete: Hash[] = []
+
+    for (const [hash, tx] of Array.from(this.trackedTransactions.entries())) {
+      if (tx.timestamp < cutoff && tx.status !== TransactionStatus.PENDING) {
+        toDelete.push(hash)
+      }
+    }
+
+    toDelete.forEach(hash => {
+      this.stopTracking(hash)
+    })
+
+    console.log(`Cleaned up ${toDelete.length} old transactions`)
   }
 
   /**
