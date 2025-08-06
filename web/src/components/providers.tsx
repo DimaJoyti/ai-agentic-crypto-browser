@@ -1,10 +1,10 @@
 'use client'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ThemeProvider } from 'next-themes'
 import { WagmiProvider } from 'wagmi'
-import { config } from '@/lib/wagmi'
+import { serverConfig, clientConfig } from '@/lib/wagmi'
 import { AuthProvider } from '@/components/auth-provider'
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -20,6 +20,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
       })
   )
 
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Use client config when mounted (browser), server config during SSR
+  const wagmiConfig = mounted ? clientConfig : serverConfig
+
   return (
     <ThemeProvider
       attribute="class"
@@ -27,7 +36,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <WagmiProvider config={config}>
+      <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             {children}

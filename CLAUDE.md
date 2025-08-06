@@ -19,7 +19,7 @@ AI-Powered Agentic Crypto Browser - A comprehensive autonomous cryptocurrency tr
 - `make deps` - Download and tidy Go dependencies (`go mod download && go mod tidy`)
 - `make setup` - Full environment setup (install tools, deps, create .env)
 
-**Note**: This project uses Go 1.23+ with a single module containing all services. Go workspace support is available via `go.work.sum`.
+**Note**: This project uses Go 1.23.0 with toolchain go1.24.5. Single module architecture containing all services.
 
 ### Individual Services (Default Ports)
 - `go run cmd/auth-service/main.go` - Start auth service (port 8081)
@@ -34,6 +34,8 @@ AI-Powered Agentic Crypto Browser - A comprehensive autonomous cryptocurrency tr
 - `make run-browser` - Start browser service
 - `make run-web3` - Start Web3 service
 - `make run-gateway` - Start API gateway
+- `make run-hft` - Start HFT Trading System (`go run cmd/main.go`)
+- `make build-hft` - Build HFT Trading System binary (`bin/ai-agentic-browser`)
 
 ### Frontend Development
 - `cd web && npm install` - Install frontend dependencies
@@ -52,11 +54,13 @@ AI-Powered Agentic Crypto Browser - A comprehensive autonomous cryptocurrency tr
 - `make frontend-build` - Build frontend for production
 
 ### Frontend Tech Stack
-- **Next.js 14** with App Router, **TypeScript**, **TailwindCSS**
-- **UI Components**: Radix UI primitives, Shadcn/ui components
-- **State Management**: Zustand, TanStack Query for server state
-- **Web3**: Wagmi v2, Viem for blockchain interactions
-- **Styling**: Tailwind with class-variance-authority, framer-motion
+- **Next.js 14.1.0** with App Router, **TypeScript 5.3.3**, **TailwindCSS 3.4.1**
+- **UI Components**: Radix UI primitives with custom shadcn/ui components
+- **State Management**: Zustand 4.5.0, TanStack Query 5.17.19 for server state  
+- **Web3**: Wagmi 2.5.7, Viem 2.7.13 for blockchain interactions
+- **Styling**: Tailwind with class-variance-authority, framer-motion 11.18.2
+- **Charts**: Recharts 3.1.0 for data visualization
+- **Additional**: Axios for HTTP, React Hot Toast for notifications
 
 ### Docker Operations
 - `make docker-up` - Start all services with Docker Compose
@@ -91,13 +95,19 @@ AI-Powered Agentic Crypto Browser - A comprehensive autonomous cryptocurrency tr
 - `internal/auth/` - Authentication, JWT, MFA, RBAC services
 - `internal/browser/` - Chromedp automation and vision services
 - `internal/web3/` - Multi-chain blockchain interactions, autonomous trading, DeFi protocols
-- `internal/realtime/` - **NEW** Real-time market data streaming and WebSocket management
-- `internal/analytics/` - **NEW** Portfolio analytics, performance metrics, risk analysis
-- `internal/monitoring/` - **NEW** System monitoring, health scoring, performance tracking
-- `internal/alerts/` - **NEW** Multi-channel alert management and notifications
+- `internal/realtime/` - Real-time market data streaming and WebSocket management
+- `internal/analytics/` - Portfolio analytics, performance metrics, risk analysis
+- `internal/monitoring/` - System monitoring, health scoring, performance tracking
+- `internal/alerts/` - Multi-channel alert management and notifications
+- `internal/binance/` - **NEW** Binance API integration and WebSocket client
+- `internal/tradingview/` - **NEW** TradingView integration and signal processing
+- `internal/hft/` - **NEW** High-frequency trading engine with order management
+- `internal/mcp/` - **NEW** MCP tools integration for crypto analysis
+- `internal/compliance/` - **NEW** Compliance monitoring and audit trail
 - `pkg/database/` - PostgreSQL and Redis database utilities
 - `pkg/middleware/` - HTTP middleware (JWT auth, rate limiting, CORS, logging, tracing)
 - `pkg/observability/` - OpenTelemetry tracing and structured logging
+- `pkg/strategies/` - **NEW** Trading strategy engine with arbitrage and market making
 
 ### Frontend (Next.js/React)
 - **Stack**: Next.js 14, TypeScript, TailwindCSS, Radix UI components
@@ -190,15 +200,26 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your-walletconnect-project-id
 
 # Real-time Market Data & Trading
-BINANCE_WS_URL=wss://stream.binance.com:9443/ws
+BINANCE_API_KEY=your_binance_api_key_here
+BINANCE_SECRET_KEY=your_binance_secret_key_here
+BINANCE_TESTNET=true
+BINANCE_WS_URL=wss://testnet.binance.vision/ws
 COINBASE_WS_URL=wss://ws-feed.pro.coinbase.com
-MARKET_DATA_BUFFER_SIZE=1000
+MARKET_DATA_BUFFER_SIZE=10000
 MARKET_DATA_RECONNECT_DELAY=5s
 TRADING_ENABLED=true
-MAX_POSITION_SIZE=0.1
+MAX_POSITION_SIZE=1.0
 RISK_TOLERANCE=medium
 AUTO_REBALANCE_ENABLED=true
 VOICE_TRADING_ENABLED=true
+
+# HFT Trading System
+HFT_MAX_ORDERS_PER_SECOND=1000
+HFT_LATENCY_TARGET_MICROS=1000
+HFT_ENABLE_MARKET_MAKING=true
+HFT_ENABLE_ARBITRAGE=true
+FEATURE_ENABLE_PAPER_TRADING=true
+FEATURE_ENABLE_LIVE_TRADING=false
 
 # Monitoring & Alerts
 MONITORING_INTERVAL=30s
@@ -246,6 +267,7 @@ CHROME_USER_DATA_DIR=/tmp/chrome-user-data
 - **Run Single Test**: `go test -run TestFunctionName ./internal/package/`
 - **Verbose Tests**: `go test -v ./...`
 - **Integration Tests**: `go test -tags=integration ./test/...`
+- **Frontend Tests**: `cd web && npm run lint` and `cd web && npm run type-check`
 - **Setup Validation**: `./scripts/test-setup.sh` - Validates environment and dependencies
 
 ### Test Categories & Environment Variables

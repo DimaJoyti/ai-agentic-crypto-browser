@@ -10,15 +10,16 @@ help:
 	@echo "Available targets:"
 	@echo ""
 	@echo "Development:"
-	@echo "  deps         - Download Go dependencies"
-	@echo "  build        - Build all services"
-	@echo "  test         - Run all tests"
-	@echo "  lint         - Run linters"
-	@echo "  format       - Format code"
-	@echo "  dev          - Start development environment"
-	@echo "  docker-up    - Start all services with Docker"
-	@echo "  docker-down  - Stop all Docker services"
-	@echo "  clean        - Clean build artifacts"
+	@echo "  deps                  - Download Go dependencies"
+	@echo "  build                 - Build all services"
+	@echo "  build-crypto-analyzer - Build crypto analyzer CLI tool"
+	@echo "  test                  - Run all tests"
+	@echo "  lint                  - Run linters"
+	@echo "  format                - Format code"
+	@echo "  dev                   - Start development environment"
+	@echo "  docker-up             - Start all services with Docker"
+	@echo "  docker-down           - Stop all Docker services"
+	@echo "  clean                 - Clean build artifacts"
 	@echo ""
 	@echo "Infrastructure:"
 	@echo "  setup        - Set up development environment"
@@ -32,7 +33,7 @@ help:
 # Go variables
 GO_VERSION := 1.22
 GO_FILES := $(shell find . -name '*.go' -not -path './vendor/*')
-SERVICES := auth-service ai-agent browser-service web3-service api-gateway
+SERVICES := auth-service ai-agent browser-service web3-service api-gateway crypto-analyzer
 
 # Development
 deps:
@@ -46,6 +47,10 @@ build:
 		echo "Building $$service..."; \
 		go build -o bin/$$service ./cmd/$$service; \
 	done
+
+build-crypto-analyzer:
+	@echo "Building crypto analyzer CLI..."
+	go build -o bin/crypto-analyzer ./cmd/crypto-analyzer
 
 test:
 	@echo "Running tests..."

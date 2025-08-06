@@ -1,0 +1,218 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/home/"
+      ]
+    },
+    "Context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ],
+      "alwaysAllow": [
+        "browser_navigate",
+        "browser_wait_for",
+        "browser_snapshot",
+        "browser_click",
+        "browser_take_screenshot"
+      ]
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://localhost/mydb"
+      ]
+    },
+    "redis": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-redis",
+        "redis://localhost:6379"
+      ]
+    },
+    "everything": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-everything"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@smithery-ai/puppeteer",
+        "--key",
+        "f8927db5-af9b-4c34-b3b1-046c5001f5fa"
+      ],
+      "alwaysAllow": [
+        "puppeteer_navigate"
+      ]
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "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"
+      }
+    },
+    "Bright Data": {
+      "command": "npx",
+      "args": [
+        "@brightdata/mcp"
+      ],
+      "env": {
+        "API_TOKEN": "fd358d1920658af81dcd8b442154950efd141500fe564d360a1d25b6c818234c",
+        "WEB_UNLOCKER_ZONE": "web_unlocker1",
+        "BROWSER_AUTH": "wss://brd-customer-hl_e6b08106-zone-scraping_browser2:8ncel5obblu0@brd.superproxy.io:9222"
+      },
+      "alwaysAllow": [
+        "scrape_as_markdown"
+      ],
+      "disabled": true
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-brave-search"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "BSAJuPah0gzC7mCh62saJiUxINoWn90"
+      },
+      "alwaysAllow": [
+        "brave_web_search"
+      ]
+    },
+    "gdrive": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-gdrive"
+      ],
+      "env": {
+        "GDRIVE_CREDENTIALS_PATH": "/home/dima/Desktop/Fun/dev/docs/gcp/gdrive-server-credentials.json"
+      },
+      "autoApprove": [
+        "search"
+      ],
+      "alwaysAllow": [
+        "search"
+      ]
+    },
+    "@21st-dev/magic": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@21st-dev/magic@latest",
+        "API_KEY=\"d76e77e62c1961a9c050c93fe6a1a36c5fc08a1c484d82128ac7853aaec88f57\""
+      ],
+      "disabled": true,
+      "alwaysAllow": []
+    },
+    "cloudflare-observability": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://observability.mcp.cloudflare.com/sse"
+      ],
+      "disabled": true,
+      "alwaysAllow": []
+    },
+    "cloudflare-bindings": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://bindings.mcp.cloudflare.com/sse"
+      ],
+      "disabled": false,
+      "alwaysAllow": []
+    },
+    "Comfy MCP Server": {
+      "command": "/path/to/uv",
+      "args": [
+        "comfy-mcp-server"
+      ],
+      "env": {
+        "COMFY_URL": "http://your-comfy-server-url:port",
+        "COMFY_WORKFLOW_JSON_FILE": "/path/to/the/comfyui_workflow_export.json",
+        "PROMPT_NODE_ID": "6",
+        "OUTPUT_NODE_ID": "9",
+        "OUTPUT_MODE": "file"
+      }
+    },
+    "docker-mcp": {
+      "command": "uv",
+      "args": [
+        "docker-mcp"
+      ]
+    },
+    "Figma MCP": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "figma-developer-mcp",
+        "--figma-api-key=figd_xcUBnQjmHBg-LugP-IdBR8dbs06zk_4Y8j50FIYA",
+        "--stdio"
+      ]
+    },
+    "shadcn-ui-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@ymadd/shadcn-ui-mcp-server",
+        "--key",
+        "f8927db5-af9b-4c34-b3b1-046c5001f5fa"
+      ],
+      "disabled": true,
+      "alwaysAllow": []
+    },
+    "firecrawl-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "firecrawl-mcp"
+      ],
+      "env": {
+        "FIRECRAWL_API_KEY": "fc-67640dd30ba44b4fb48b9dd3ce6c92ba"
+      }
+    }
+  }
+}

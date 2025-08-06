@@ -30,16 +30,37 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	URL             string
-	MaxOpenConns    int
-	MaxIdleConns    int
-	ConnMaxLifetime time.Duration
+	URL                string
+	MaxOpenConns       int
+	MaxIdleConns       int
+	ConnMaxLifetime    time.Duration
+	ConnMaxIdleTime    time.Duration
+	QueryTimeout       time.Duration
+	EnableQueryCache   bool
+	CacheSize          int
+	CacheTTL           time.Duration
+	ReadReplicaURL     string
+	EnableReadReplica  bool
+	HealthCheckInterval time.Duration
 }
 
 type RedisConfig struct {
-	URL      string
-	Password string
-	DB       int
+	URL                 string
+	Password            string
+	DB                  int
+	PoolSize            int
+	MinIdleConns        int
+	MaxIdleConns        int
+	PoolTimeout         time.Duration
+	IdleTimeout         time.Duration
+	IdleCheckFrequency  time.Duration
+	MaxRetries          int
+	MinRetryBackoff     time.Duration
+	MaxRetryBackoff     time.Duration
+	EnableMetrics       bool
+	MaxMemory           string
+	EvictionPolicy      string
+	CompressionLevel    int
 }
 
 type JWTConfig struct {
@@ -136,15 +157,36 @@ func Load() (*Config, error) {
 			IdleTimeout:  getDurationEnv("IDLE_TIMEOUT", 60*time.Second),
 		},
 		Database: DatabaseConfig{
-			URL:             getEnv("DATABASE_URL", ""),
-			MaxOpenConns:    getIntEnv("DB_MAX_OPEN_CONNS", 25),
-			MaxIdleConns:    getIntEnv("DB_MAX_IDLE_CONNS", 5),
-			ConnMaxLifetime: getDurationEnv("DB_CONN_MAX_LIFETIME", 5*time.Minute),
+			URL:                 getEnv("DATABASE_URL", ""),
+			MaxOpenConns:        getIntEnv("DB_MAX_OPEN_CONNS", 50),
+			MaxIdleConns:        getIntEnv("DB_MAX_IDLE_CONNS", 25),
+			ConnMaxLifetime:     getDurationEnv("DB_CONN_MAX_LIFETIME", 5*time.Minute),
+			ConnMaxIdleTime:     getDurationEnv("DB_CONN_MAX_IDLE_TIME", 5*time.Minute),
+			QueryTimeout:        getDurationEnv("DB_QUERY_TIMEOUT", 30*time.Second),
+			EnableQueryCache:    getBoolEnv("DB_ENABLE_QUERY_CACHE", true),
+			CacheSize:           getIntEnv("DB_CACHE_SIZE", 1000),
+			CacheTTL:            getDurationEnv("DB_CACHE_TTL", 5*time.Minute),
+			ReadReplicaURL:      getEnv("DATABASE_READ_REPLICA_URL", ""),
+			EnableReadReplica:   getBoolEnv("DB_ENABLE_READ_REPLICA", false),
+			HealthCheckInterval: getDurationEnv("DB_HEALTH_CHECK_INTERVAL", 30*time.Second),
 		},
 		Redis: RedisConfig{
-			URL:      getEnv("REDIS_URL", "redis://localhost:6379"),
-			Password: getEnv("REDIS_PASSWORD", ""),
-			DB:       getIntEnv("REDIS_DB", 0),
+			URL:                getEnv("REDIS_URL", "redis://localhost:6379"),
+			Password:           getEnv("REDIS_PASSWORD", ""),
+			DB:                 getIntEnv("REDIS_DB", 0),
+			PoolSize:           getIntEnv("REDIS_POOL_SIZE", 20),
+			MinIdleConns:       getIntEnv("REDIS_MIN_IDLE_CONNS", 5),
+			MaxIdleConns:       getIntEnv("REDIS_MAX_IDLE_CONNS", 10),
+			PoolTimeout:        getDurationEnv("REDIS_POOL_TIMEOUT", 4*time.Second),
+			IdleTimeout:        getDurationEnv("REDIS_IDLE_TIMEOUT", 5*time.Minute),
+			IdleCheckFrequency: getDurationEnv("REDIS_IDLE_CHECK_FREQUENCY", 1*time.Minute),
+			MaxRetries:         getIntEnv("REDIS_MAX_RETRIES", 3),
+			MinRetryBackoff:    getDurationEnv("REDIS_MIN_RETRY_BACKOFF", 8*time.Millisecond),
+			MaxRetryBackoff:    getDurationEnv("REDIS_MAX_RETRY_BACKOFF", 512*time.Millisecond),
+			EnableMetrics:      getBoolEnv("REDIS_ENABLE_METRICS", true),
+			MaxMemory:          getEnv("REDIS_MAX_MEMORY", "256mb"),
+			EvictionPolicy:     getEnv("REDIS_EVICTION_POLICY", "allkeys-lru"),
+			CompressionLevel:   getIntEnv("REDIS_COMPRESSION_LEVEL", 6),
 		},
 		JWT: JWTConfig{
 			Secret:             getEnv("JWT_SECRET", ""),

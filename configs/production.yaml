@@ -1,0 +1,264 @@
+# AI Agentic Browser Production Configuration
+# Optimized for high performance and scalability
+
+# Server Configuration - Production Optimized
+server:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: 60s
+  write_timeout: 60s
+  idle_timeout: 300s
+  max_header_bytes: 2097152  # 2MB
+
+# Database Configuration - High Performance
+database:
+  host: "${DB_HOST}"
+  port: 5432
+  name: "${DB_NAME}"
+  user: "${DB_USER}"
+  password: "${DB_PASSWORD}"
+  ssl_mode: "require"
+  
+  # Connection Pool Optimization
+  max_connections: 100
+  max_idle_connections: 50
+  max_lifetime: "300s"
+  max_idle_time: "300s"
+  
+  # Query Optimization
+  query_timeout: "30s"
+  enable_query_cache: true
+  cache_size: 5000
+  cache_ttl: "300s"
+  
+  # Read Replica Support
+  read_replica_url: "${DB_READ_REPLICA_URL}"
+  enable_read_replica: true
+  health_check_interval: "30s"
+  
+  # Logging
+  log_level: "warn"
+
+# Redis Configuration - Advanced Caching
+redis:
+  host: "${REDIS_HOST}"
+  port: 6379
+  password: "${REDIS_PASSWORD}"
+  db: 0
+  
+  # Connection Pool Optimization
+  pool_size: 50
+  min_idle_connections: 20
+  max_idle_connections: 30
+  pool_timeout: "10s"
+  idle_timeout: "300s"
+  idle_check_frequency: "60s"
+  
+  # Retry Configuration
+  max_retries: 5
+  min_retry_backoff: "10ms"
+  max_retry_backoff: "1s"
+  
+  # Performance Settings
+  enable_metrics: true
+  max_memory: "1gb"
+  eviction_policy: "allkeys-lru"
+  compression_level: 6
+
+# JWT Configuration
+jwt:
+  secret: "${JWT_SECRET}"
+  access_token_duration: "15m"
+  refresh_token_duration: "7d"
+  issuer: "ai-agentic-browser"
+  audience: "api"
+
+# AI Configuration - Production Models
+ai:
+  providers:
+    openai:
+      api_key: "${OPENAI_API_KEY}"
+      model: "gpt-4"
+      max_tokens: 4000
+      temperature: 0.7
+      timeout: "60s"
+      max_retries: 3
+      
+    anthropic:
+      api_key: "${ANTHROPIC_API_KEY}"
+      model: "claude-3-sonnet-20240229"
+      max_tokens: 4000
+      temperature: 0.7
+      timeout: "60s"
+      max_retries: 3
+      
+    ollama:
+      host: "${OLLAMA_HOST}"
+      model: "qwen3"
+      timeout: "120s"
+      max_retries: 3
+      
+  # Performance Settings
+  concurrent_requests: 20
+  request_queue_size: 1000
+  enable_caching: true
+  cache_ttl: "3600s"
+
+# Web3 Configuration - Multi-chain Support
+web3:
+  ethereum_rpc: "${ETHEREUM_RPC_URL}"
+  polygon_rpc: "${POLYGON_RPC_URL}"
+  bsc_rpc: "${BSC_RPC_URL}"
+  avalanche_rpc: "${AVALANCHE_RPC_URL}"
+  fantom_rpc: "${FANTOM_RPC_URL}"
+  arbitrum_rpc: "${ARBITRUM_RPC_URL}"
+  optimism_rpc: "${OPTIMISM_RPC_URL}"
+  
+  # Performance Settings
+  timeout: "60s"
+  max_retries: 5
+  retry_delay: "2s"
+  gas_optimization: true
+  hardware_wallets: true
+  ens_resolution: true
+  transaction_timeout: "300s"
+  
+  # IPFS Configuration
+  ipfs_node_url: "${IPFS_NODE_URL}"
+  ipfs_gateway: "${IPFS_GATEWAY}"
+  ipfs_max_file_size: 52428800  # 50MB
+
+# Browser Configuration - Optimized for Production
+browser:
+  headless: true
+  disable_gpu: true
+  no_sandbox: true
+  timeout: "60s"
+  max_pages: 20
+  user_agent: "AI-Crypto-Browser/1.0 (Production)"
+  
+  # Performance Settings
+  enable_cache: true
+  cache_size: "100mb"
+  max_memory: "512mb"
+
+# Observability Configuration - Full Monitoring
+observability:
+  # Tracing
+  jaeger_endpoint: "${JAEGER_ENDPOINT}"
+  service_name: "ai-agentic-browser"
+  trace_sample_rate: 0.1  # 10% sampling for production
+  
+  # Logging
+  log_level: "info"
+  log_format: "json"
+  enable_structured_logging: true
+  
+  # Metrics
+  prometheus_endpoint: "${PROMETHEUS_ENDPOINT}"
+  metrics_interval: "30s"
+  enable_custom_metrics: true
+  
+  # Health Checks
+  health_check_interval: "30s"
+  health_check_timeout: "10s"
+
+# Rate Limiting - Production Limits
+rate_limit:
+  enabled: true
+  requests_per_minute: 1000
+  burst_size: 100
+  cleanup_interval: "60s"
+  
+  # Per-endpoint limits
+  endpoints:
+    "/ai/": 100
+    "/web3/": 200
+    "/browser/": 50
+    "/auth/": 20
+
+# Security Configuration - Enhanced Security
+security:
+  cors_allowed_origins:
+    - "https://yourdomain.com"
+    - "https://app.yourdomain.com"
+  cors_allowed_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+  cors_allowed_headers:
+    - "Content-Type"
+    - "Authorization"
+    - "X-Requested-With"
+  cors_max_age: 86400
+  
+  # TLS Configuration
+  tls_enabled: true
+  tls_cert_file: "${TLS_CERT_FILE}"
+  tls_key_file: "${TLS_KEY_FILE}"
+  
+  # Security Headers
+  enable_security_headers: true
+  hsts_max_age: 31536000
+  content_security_policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+  
+  # API Security
+  api_key_header: "X-API-Key"
+  enable_api_versioning: true
+  max_request_size: "10mb"
+
+# Performance Configuration
+performance:
+  # CPU and Memory
+  max_cpu_percent: 80
+  max_memory_mb: 2048
+  gc_target_percent: 100
+  
+  # Concurrency
+  max_goroutines: 10000
+  worker_pool_size: 100
+  
+  # Timeouts
+  default_timeout: "30s"
+  long_running_timeout: "300s"
+  
+  # Caching
+  enable_response_caching: true
+  cache_default_ttl: "300s"
+  cache_max_size: "500mb"
+
+# Monitoring and Alerting
+monitoring:
+  # Alert Thresholds
+  cpu_threshold: 80
+  memory_threshold: 1073741824  # 1GB
+  response_time_threshold: "1s"
+  error_rate_threshold: 5.0
+  
+  # Notification Channels
+  slack_webhook: "${SLACK_WEBHOOK_URL}"
+  email_alerts: "${ALERT_EMAIL}"
+  
+  # Metrics Collection
+  collect_system_metrics: true
+  collect_application_metrics: true
+  collect_business_metrics: true
+  metrics_retention: "7d"
+
+# Feature Flags
+features:
+  enable_ai_caching: true
+  enable_predictive_scaling: true
+  enable_advanced_analytics: true
+  enable_real_time_monitoring: true
+  enable_automated_optimization: true
+  enable_circuit_breakers: true
+  enable_bulkhead_pattern: true
+  enable_adaptive_timeouts: true
+
+# Environment Specific
+environment: "production"
+debug: false
+profiling_enabled: false

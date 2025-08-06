@@ -1,0 +1,244 @@
+# 🔒 AI-Agentic Crypto Browser - Security Configuration
+# Enterprise-grade security settings for production deployment
+
+# Zero-Trust Configuration
+zero_trust:
+  # Enable comprehensive zero-trust features
+  enable_device_fingerprinting: true
+  enable_behavior_analysis: true
+  enable_threat_detection: true
+  enable_continuous_auth: true
+  
+  # Risk thresholds and scoring
+  risk_threshold: 0.7              # Block access above this risk score
+  max_risk_score: 1.0              # Maximum possible risk score
+  require_mfa_for_high_risk: true  # Require MFA for high-risk scenarios
+  
+  # Session management
+  session_timeout: "30m"           # Base session timeout
+  device_trust_duration: "168h"    # Device trust validity (7 days)
+  ttl_calculation_strategy: "adaptive"  # TTL calculation method
+  
+  # Available TTL strategies:
+  # - "linear": Simple linear reduction based on risk
+  # - "exponential": Exponential decay for high-risk scenarios
+  # - "logarithmic": Logarithmic scaling for gradual reduction
+  # - "stepped": Stepped reduction based on risk thresholds
+  # - "adaptive": Intelligent calculation based on multiple factors
+
+# Advanced Threat Detection
+threat_detection:
+  # Detection engines
+  enable_signature_engine: true     # Known attack pattern detection
+  enable_behavior_engine: true      # Behavioral anomaly detection
+  enable_ml_engine: true            # Machine learning threat detection
+  enable_threat_intelligence: true  # External threat intelligence feeds
+  
+  # Thresholds and actions
+  block_threshold: 0.8              # Auto-block above this threat score
+  alert_threshold: 0.6              # Generate alerts above this score
+  false_positive_threshold: 0.05    # Maximum acceptable false positive rate
+  
+  # Retention and storage
+  threat_retention_period: "24h"    # How long to keep threat data
+  max_active_threats: 10000         # Maximum active threats to track
+  
+  # Response actions
+  auto_block_enabled: true          # Automatically block high-threat requests
+  incident_creation_enabled: true   # Create incidents for threats
+  notification_enabled: true        # Send notifications for threats
+
+# Security Policy Engine
+policy_engine:
+  # Policy evaluation
+  default_policy: "deny"            # Default policy when no rules match
+  enable_audit_logging: true        # Log all policy evaluations
+  policy_cache_timeout: "5m"        # Cache policy decisions
+  max_policy_evaluations: 1000      # Rate limit for policy evaluations
+  
+  # Policy types and priorities
+  enable_rbac: true                 # Role-based access control
+  enable_abac: true                 # Attribute-based access control
+  enable_time_based: true           # Time-based access restrictions
+  enable_location_based: true       # Location-based access control
+
+# Device Trust Management
+device_trust:
+  # Device fingerprinting
+  enable_fingerprinting: true       # Generate device fingerprints
+  fingerprint_algorithm: "sha256"   # Fingerprinting algorithm
+  fingerprint_attributes:           # Attributes to include in fingerprint
+    - "user_agent"
+    - "screen_resolution"
+    - "timezone"
+    - "language"
+    - "plugins"
+  
+  # Trust scoring
+  initial_trust_level: 0.3          # Initial trust for new devices
+  max_trust_level: 0.95             # Maximum achievable trust
+  trust_decay_rate: 0.01            # Daily trust decay rate
+  trust_boost_rate: 0.05            # Trust increase per successful auth
+  
+  # Risk factors
+  risk_factors:
+    new_device: 0.3                 # Risk penalty for new devices
+    unusual_location: 0.4           # Risk penalty for unusual locations
+    suspicious_behavior: 0.5        # Risk penalty for suspicious behavior
+    failed_auth: 0.2                # Risk penalty for failed authentication
+
+# Security Dashboard
+dashboard:
+  # Real-time updates
+  update_interval: "1s"             # Dashboard update frequency
+  max_clients: 50                   # Maximum concurrent dashboard clients
+  retention_period: "24h"           # Metrics retention period
+  enable_real_time_alerts: true     # Real-time alert streaming
+  
+  # Alert thresholds
+  alert_thresholds:
+    threat_score_threshold: 0.7     # Alert on high threat scores
+    failed_logins_threshold: 5      # Alert on excessive failed logins
+    suspicious_ip_threshold: 10     # Alert on suspicious IP activity
+    anomaly_score_threshold: 0.8    # Alert on behavioral anomalies
+    incident_rate_threshold: 0.1    # Alert on high incident rates
+
+# Security Middleware
+middleware:
+  # Feature toggles
+  enable_zero_trust: true           # Enable zero-trust middleware
+  enable_threat_detection: true     # Enable threat detection middleware
+  enable_policy_engine: true        # Enable policy engine middleware
+  enable_device_trust: true         # Enable device trust middleware
+  enable_behavior_analysis: true    # Enable behavior analysis middleware
+  
+  # Request handling
+  block_suspicious_requests: true   # Block suspicious requests
+  log_security_events: true         # Log all security events
+  require_authentication: true      # Require authentication for all requests
+  
+  # CORS and headers
+  allowed_origins:                  # Allowed CORS origins
+    - "https://app.ai-crypto-browser.com"
+    - "https://dashboard.ai-crypto-browser.com"
+  rate_limit_enabled: true          # Enable rate limiting
+  csrf_protection: true             # Enable CSRF protection
+
+# Incident Management
+incident_management:
+  # Incident creation
+  auto_create_incidents: true       # Automatically create incidents
+  incident_severity_mapping:        # Map threat scores to severity
+    critical: 0.9                   # Critical incidents above 0.9
+    high: 0.7                       # High severity above 0.7
+    medium: 0.5                     # Medium severity above 0.5
+    low: 0.3                        # Low severity above 0.3
+  
+  # Response automation
+  auto_response_enabled: true       # Enable automated responses
+  response_actions:
+    block_ip: true                  # Block malicious IP addresses
+    disable_account: false          # Disable compromised accounts (manual)
+    require_mfa: true               # Force MFA for suspicious activity
+    notify_admin: true              # Notify administrators
+  
+  # Escalation
+  escalation_timeout: "30m"         # Escalate unresolved incidents
+  max_escalation_level: 3           # Maximum escalation levels
+
+# Compliance and Auditing
+compliance:
+  # Regulatory compliance
+  enable_gdpr_compliance: true      # GDPR compliance features
+  enable_sox_compliance: true       # SOX compliance features
+  enable_pci_compliance: true       # PCI DSS compliance features
+  
+  # Audit logging
+  audit_log_enabled: true           # Enable comprehensive audit logging
+  audit_log_retention: "7y"         # Audit log retention period
+  audit_log_encryption: true        # Encrypt audit logs
+  
+  # Data protection
+  data_encryption_at_rest: true     # Encrypt data at rest
+  data_encryption_in_transit: true  # Encrypt data in transit
+  key_rotation_interval: "90d"      # Encryption key rotation interval
+
+# Performance and Scaling
+performance:
+  # Caching
+  enable_security_cache: true       # Cache security decisions
+  cache_ttl: "5m"                   # Security cache TTL
+  max_cache_size: "100MB"           # Maximum cache size
+  
+  # Rate limiting
+  rate_limits:
+    authentication: "10/min"        # Authentication attempts per minute
+    api_calls: "1000/min"           # API calls per minute
+    security_events: "100/min"      # Security events per minute
+  
+  # Resource limits
+  max_concurrent_evaluations: 1000  # Maximum concurrent security evaluations
+  evaluation_timeout: "5s"          # Timeout for security evaluations
+  memory_limit: "2GB"               # Memory limit for security services
+
+# Monitoring and Alerting
+monitoring:
+  # Metrics collection
+  enable_metrics: true              # Enable security metrics collection
+  metrics_interval: "30s"           # Metrics collection interval
+  metrics_retention: "30d"          # Metrics retention period
+  
+  # Health checks
+  health_check_interval: "10s"      # Health check frequency
+  health_check_timeout: "5s"        # Health check timeout
+  
+  # Alerting channels
+  alert_channels:
+    email:
+      enabled: true
+      recipients:
+        - "security@ai-crypto-browser.com"
+        - "admin@ai-crypto-browser.com"
+    slack:
+      enabled: true
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+      channel: "#security-alerts"
+    pagerduty:
+      enabled: false
+      integration_key: "${PAGERDUTY_INTEGRATION_KEY}"
+
+# Development and Testing
+development:
+  # Debug settings (disable in production)
+  enable_debug_logging: false       # Enable debug logging
+  enable_test_mode: false           # Enable test mode
+  bypass_security_checks: false     # Bypass security (NEVER in production)
+  
+  # Testing features
+  enable_security_testing: true     # Enable security testing endpoints
+  test_data_retention: "1h"         # Test data retention period
+
+# Environment-specific overrides
+environments:
+  production:
+    zero_trust:
+      risk_threshold: 0.6           # Stricter risk threshold in production
+    threat_detection:
+      block_threshold: 0.7          # Lower block threshold in production
+    development:
+      enable_debug_logging: false   # Disable debug in production
+  
+  staging:
+    zero_trust:
+      risk_threshold: 0.8           # More lenient in staging
+    development:
+      enable_debug_logging: true    # Enable debug in staging
+  
+  development:
+    zero_trust:
+      risk_threshold: 0.9           # Very lenient in development
+    threat_detection:
+      auto_block_enabled: false     # Disable auto-blocking in development
+    development:
+      enable_debug_logging: true    # Enable debug in development
+      enable_test_mode: true        # Enable test mode in development

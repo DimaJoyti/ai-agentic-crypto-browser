@@ -70,9 +70,9 @@ export const WALLET_PROVIDERS: WalletProvider[] = [
     icon: '/icons/walletconnect.svg',
     description: 'Connect to 300+ mobile wallets via QR code',
     type: 'walletconnect',
-    isInstalled: true,
+    isInstalled: typeof window !== 'undefined', // Only available client-side
     features: ['Mobile Wallets', 'QR Code', 'Cross-Platform', '300+ Wallets'],
-    supported: true,
+    supported: typeof window !== 'undefined', // Only supported client-side
     priority: 2,
     category: 'mobile',
     security: 'high',

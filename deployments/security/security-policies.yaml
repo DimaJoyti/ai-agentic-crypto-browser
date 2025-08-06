@@ -1,0 +1,372 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-browser-security
+  labels:
+    name: ai-browser-security
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-browser-network-policy
+  namespace: ai-browser
+spec:
+  podSelector:
+    matchLabels:
+      app: ai-browser
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    - podSelector:
+        matchLabels:
+          app: ai-browser
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 3000
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ai-browser-service-account
+  namespace: ai-browser
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/ai-browser-pod-role
+automountServiceAccountToken: false
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: ai-browser
+  name: ai-browser-role
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ai-browser-role-binding
+  namespace: ai-browser
+subjects:
+- kind: ServiceAccount
+  name: ai-browser-service-account
+  namespace: ai-browser
+roleRef:
+  kind: Role
+  name: ai-browser-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-browser-pdb
+  namespace: ai-browser
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: ai-browser
+
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ai-browser-limits
+  namespace: ai-browser
+spec:
+  limits:
+  - default:
+      cpu: "500m"
+      memory: "512Mi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+    type: Container
+  - max:
+      cpu: "2"
+      memory: "4Gi"
+    min:
+      cpu: "50m"
+      memory: "64Mi"
+    type: Container
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: ai-browser-quota
+  namespace: ai-browser
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: 8Gi
+    limits.cpu: "8"
+    limits.memory: 16Gi
+    persistentvolumeclaims: "10"
+    services: "10"
+    secrets: "20"
+    configmaps: "20"
+
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: ai-browser-security-policy
+  annotations:
+    policies.kyverno.io/title: AI Browser Security Policy
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      This policy enforces security best practices for AI Browser workloads
+spec:
+  validationFailureAction: enforce
+  background: true
+  rules:
+  - name: require-non-root-user
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - ai-browser
+    validate:
+      message: "Containers must run as non-root user"
+      pattern:
+        spec:
+          securityContext:
+            runAsNonRoot: true
+          containers:
+          - securityContext:
+              runAsNonRoot: true
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: true
+
+  - name: require-resource-limits
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - ai-browser
+    validate:
+      message: "Containers must have resource limits"
+      pattern:
+        spec:
+          containers:
+          - resources:
+              limits:
+                memory: "?*"
+                cpu: "?*"
+              requests:
+                memory: "?*"
+                cpu: "?*"
+
+  - name: disallow-privileged-containers
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - ai-browser
+    validate:
+      message: "Privileged containers are not allowed"
+      pattern:
+        spec:
+          containers:
+          - securityContext:
+              privileged: "false"
+
+  - name: require-probes
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - ai-browser
+    validate:
+      message: "Containers must have liveness and readiness probes"
+      pattern:
+        spec:
+          containers:
+          - livenessProbe:
+              "?*": "?*"
+            readinessProbe:
+              "?*": "?*"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ai-browser-tls-cert
+  namespace: ai-browser
+type: kubernetes.io/tls
+data:
+  tls.crt: LS0tLS1CRUdJTi... # Base64 encoded certificate
+  tls.key: LS0tLS1CRUdJTi... # Base64 encoded private key
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ai-browser-cert
+  namespace: ai-browser
+spec:
+  secretName: ai-browser-tls-cert
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+  - ai-browser.com
+  - api.ai-browser.com
+  - *.ai-browser.com
+
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@ai-browser.com
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+    - dns01:
+        route53:
+          region: us-west-2
+          accessKeyID: AKIAIOSFODNN7EXAMPLE
+          secretAccessKeySecretRef:
+            name: route53-credentials
+            key: secret-access-key
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: security-config
+  namespace: ai-browser
+data:
+  security.yaml: |
+    security:
+      encryption:
+        enabled: true
+        algorithm: "AES-256-GCM"
+        keyRotationDays: 90
+      authentication:
+        jwt:
+          issuer: "ai-browser.com"
+          audience: "ai-browser-api"
+          expirationHours: 24
+        oauth:
+          providers:
+            - name: "google"
+              clientId: "google-client-id"
+              enabled: true
+            - name: "github"
+              clientId: "github-client-id"
+              enabled: true
+      authorization:
+        rbac:
+          enabled: true
+          defaultRole: "user"
+        policies:
+          - resource: "trading"
+            actions: ["read", "write"]
+            roles: ["trader", "admin"]
+          - resource: "admin"
+            actions: ["read", "write", "delete"]
+            roles: ["admin"]
+      audit:
+        enabled: true
+        logLevel: "info"
+        retention: "90d"
+        events:
+          - "authentication"
+          - "authorization"
+          - "trading"
+          - "admin"
+      compliance:
+        gdpr:
+          enabled: true
+          dataRetentionDays: 365
+        sox:
+          enabled: true
+          auditTrail: true
+        pci:
+          enabled: false
+      rateLimit:
+        enabled: true
+        requests:
+          perMinute: 1000
+          perHour: 10000
+        trading:
+          perMinute: 100
+          perHour: 1000
+      firewall:
+        enabled: true
+        allowedCountries: ["US", "CA", "GB", "DE", "JP"]
+        blockedIPs: []
+        ddosProtection: true
