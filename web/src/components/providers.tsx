@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 import { ThemeProvider } from 'next-themes'
 import { WagmiProvider } from 'wagmi'
-import { serverConfig, clientConfig } from '@/lib/wagmi'
+import { serverConfig, getClientConfig } from '@/lib/wagmi'
 import { AuthProvider } from '@/components/auth-provider'
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -27,7 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [])
 
   // Use client config when mounted (browser), server config during SSR
-  const wagmiConfig = mounted ? clientConfig : serverConfig
+  const wagmiConfig = mounted ? getClientConfig() : serverConfig
 
   return (
     <ThemeProvider

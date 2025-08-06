@@ -44,6 +44,11 @@ export class SessionRecoveryManager {
    */
   saveSession(data: SessionRecoveryData): void {
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        return
+      }
+
       const sessions = this.getSavedSessions()
       const updatedSessions = {
         ...sessions,
@@ -52,7 +57,7 @@ export class SessionRecoveryManager {
           lastActivity: Date.now()
         }
       }
-      
+
       localStorage.setItem(this.recoveryKey, JSON.stringify(updatedSessions))
       
       // Also update the wallet store
@@ -69,6 +74,11 @@ export class SessionRecoveryManager {
    */
   getSavedSessions(): Record<string, SessionRecoveryData> {
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        return {}
+      }
+
       const saved = localStorage.getItem(this.recoveryKey)
       return saved ? JSON.parse(saved) : {}
     } catch (error) {
@@ -208,6 +218,11 @@ export class SessionRecoveryManager {
    */
   removeSession(address: Address): void {
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        return
+      }
+
       const sessions = this.getSavedSessions()
       delete sessions[address]
       localStorage.setItem(this.recoveryKey, JSON.stringify(sessions))
@@ -221,6 +236,11 @@ export class SessionRecoveryManager {
    */
   clearAllSessions(): void {
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        return
+      }
+
       localStorage.removeItem(this.recoveryKey)
     } catch (error) {
       console.warn('Failed to clear sessions:', error)
@@ -243,6 +263,11 @@ export class SessionRecoveryManager {
     })
 
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        return
+      }
+
       localStorage.setItem(this.recoveryKey, JSON.stringify(validSessions))
     } catch (error) {
       console.warn('Failed to cleanup expired sessions:', error)
@@ -335,8 +360,13 @@ export class SessionRecoveryManager {
    */
   importSessions(data: string): boolean {
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        return false
+      }
+
       const importData = JSON.parse(data)
-      
+
       if (importData.sessions) {
         localStorage.setItem(this.recoveryKey, JSON.stringify(importData.sessions))
       }
