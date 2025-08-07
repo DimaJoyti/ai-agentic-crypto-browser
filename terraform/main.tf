@@ -2,7 +2,7 @@
 # This Terraform configuration sets up the complete infrastructure for the AI Agentic Browser platform
 
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.6"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -19,6 +19,10 @@ terraform {
     random = {
       source  = "hashicorp/random"
       version = "~> 3.1"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
     }
   }
 

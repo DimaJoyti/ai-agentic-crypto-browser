@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -39,7 +40,7 @@ func main() {
 	}
 	defer tracingProvider.Shutdown(context.Background())
 
-	// Initialize database connections
+	// Initialize optimized database connections
 	db, err := database.NewPostgresDB(cfg.Database)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
@@ -52,6 +53,21 @@ func main() {
 	}
 	defer redis.Close()
 
+	// Initialize performance monitoring
+	perfMonitor := observability.NewPerformanceMonitor(logger)
+	defer perfMonitor.Stop()
+
+	// Initialize caching middleware
+	cacheMiddleware := middleware.NewCacheMiddleware(redis, logger)
+
+	logger.Info(context.Background(), "Database and caching optimizations initialized", map[string]interface{}{
+		"db_max_open_conns":      cfg.Database.MaxOpenConns,
+		"db_max_idle_conns":      cfg.Database.MaxIdleConns,
+		"redis_pool_size":        cfg.Redis.PoolSize,
+		"cache_enabled":          true,
+		"performance_monitoring": true,
+	})
+
 	// Initialize browser service
 	browserService := browser.NewService(db, redis, cfg.Browser, logger)
 
@@ -62,6 +78,7 @@ func main() {
 	marketAdaptationEngine := ai.NewMarketAdaptationEngine(logger)
 	voiceInterface := ai.NewVoiceInterface(logger, nil, nil, nil)
 	conversationalAI := ai.NewConversationalAI(logger, nil, nil, nil)
+	cryptoCoinAnalyzer := ai.NewCryptoCoinAnalyzer(logger)
 
 	logger.Info(context.Background(), "AI services initialized", map[string]interface{}{
 		"enhanced_ai":       enhancedAI != nil,
@@ -70,13 +87,16 @@ func main() {
 		"conversational_ai": conversationalAI != nil,
 	})
 
-	// Create HTTP server
+	// Create HTTP server with performance optimizations
+	handler := setupRoutes(browserService, enhancedAI, multiModalEngine, userBehaviorEngine, marketAdaptationEngine, voiceInterface, conversationalAI, cryptoCoinAnalyzer, cfg, logger, db, perfMonitor, cacheMiddleware)
+
 	server := &http.Server{
-		Addr:         fmt.Sprintf("%s:%s", cfg.Server.Host, "8082"), // AI Agent port
-		Handler:      setupRoutes(browserService, enhancedAI, multiModalEngine, userBehaviorEngine, marketAdaptationEngine, voiceInterface, conversationalAI, cfg, logger, db),
-		ReadTimeout:  cfg.Server.ReadTimeout,
-		WriteTimeout: cfg.Server.WriteTimeout,
-		IdleTimeout:  cfg.Server.IdleTimeout,
+		Addr:           fmt.Sprintf("%s:%s", cfg.Server.Host, "8082"), // AI Agent port
+		Handler:        handler,
+		ReadTimeout:    cfg.Server.ReadTimeout,
+		WriteTimeout:   cfg.Server.WriteTimeout,
+		IdleTimeout:    cfg.Server.IdleTimeout,
+		MaxHeaderBytes: 1 << 20, // 1MB
 	}
 
 	// Start server in a goroutine
@@ -115,24 +135,29 @@ func setupRoutes(
 	marketAdaptationEngine *ai.MarketAdaptationEngine,
 	voiceInterface *ai.VoiceInterface,
 	conversationalAI *ai.ConversationalAI,
+	cryptoCoinAnalyzer *ai.CryptoCoinAnalyzer,
 	cfg *config.Config,
 	logger *observability.Logger,
 	db *database.DB,
+	perfMonitor *observability.PerformanceMonitor,
+	cacheMiddleware *middleware.CacheMiddleware,
 ) http.Handler {
 	mux := http.NewServeMux()
 
-	// Apply middleware
+	// Apply middleware stack with performance optimizations
 	handler := middleware.Recovery(logger)(
 		middleware.Logging(logger)(
 			middleware.Tracing("ai-agent")(
-				middleware.CORS(cfg.Security.CORSAllowedOrigins)(
-					middleware.RateLimit(cfg.RateLimit)(mux),
+				cacheMiddleware.Middleware()(
+					middleware.CORS(cfg.Security.CORSAllowedOrigins)(
+						middleware.RateLimit(cfg.RateLimit)(mux),
+					),
 				),
 			),
 		),
 	)
 
-	// Health check endpoints
+	// Health check endpoints with performance metrics
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -143,8 +168,42 @@ func setupRoutes(
 			return
 		}
 
+		// Get performance status
+		healthStatus := perfMonitor.GetHealthStatus()
+
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
+		json.NewEncoder(w).Encode(healthStatus)
+	})
+
+	// Performance metrics endpoint
+	mux.HandleFunc("GET /metrics", func(w http.ResponseWriter, r *http.Request) {
+		metrics := perfMonitor.GetMetrics()
+		dbMetrics := db.GetMetrics()
+		cacheMetrics := cacheMiddleware.GetStats()
+
+		response := map[string]interface{}{
+			"performance": metrics,
+			"database":    dbMetrics,
+			"cache":       cacheMetrics,
+			"timestamp":   time.Now(),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	})
+
+	// Database metrics endpoint
+	mux.HandleFunc("GET /metrics/database", func(w http.ResponseWriter, r *http.Request) {
+		metrics := db.GetMetrics()
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(metrics)
+	})
+
+	// Cache metrics endpoint
+	mux.HandleFunc("GET /metrics/cache", func(w http.ResponseWriter, r *http.Request) {
+		metrics := cacheMiddleware.GetStats()
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(metrics)
 	})
 
 	// AI providers health check (simplified for new architecture)
@@ -211,6 +270,12 @@ func setupRoutes(
 	protectedMux.HandleFunc("PUT /ai/market/strategies/{id}/status", handleUpdateStrategyStatus(marketAdaptationEngine, logger))
 	protectedMux.HandleFunc("GET /ai/market/adaptation/history", handleGetMarketAdaptationHistory(marketAdaptationEngine, logger))
 	protectedMux.HandleFunc("GET /ai/market/performance/{strategy_id}", handleGetStrategyPerformanceMetrics(marketAdaptationEngine, logger))
+
+	// Crypto Coin Analyzer endpoints
+	protectedMux.HandleFunc("POST /ai/crypto/analyze/{symbol}", handleCryptoCoinAnalysis(cryptoCoinAnalyzer, logger))
+	protectedMux.HandleFunc("GET /ai/crypto/analyze/{symbol}", handleCryptoCoinAnalysis(cryptoCoinAnalyzer, logger))
+	protectedMux.HandleFunc("POST /ai/crypto/report/{symbol}", handleCryptoCoinReport(cryptoCoinAnalyzer, logger))
+	protectedMux.HandleFunc("GET /ai/crypto/report/{symbol}", handleCryptoCoinReport(cryptoCoinAnalyzer, logger))
 
 	// Apply JWT middleware to protected routes
 	mux.Handle("/ai/", middleware.JWT(cfg.JWT.Secret)(protectedMux))
@@ -1840,6 +1905,115 @@ func handleGetStrategyPerformanceMetrics(engine *ai.MarketAdaptationEngine, logg
 
 		logger.Info(ctx, "Performance metrics retrieved", map[string]interface{}{
 			"strategy_id": strategyID,
+		})
+	}
+}
+
+// Crypto Coin Analyzer handlers
+
+func handleCryptoCoinAnalysis(analyzer *ai.CryptoCoinAnalyzer, logger *observability.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		// Get symbol from path
+		symbol := r.PathValue("symbol")
+		if symbol == "" {
+			http.Error(w, "Symbol is required", http.StatusBadRequest)
+			return
+		}
+
+		// Validate symbol format (basic validation)
+		symbol = strings.ToUpper(strings.TrimSpace(symbol))
+		if len(symbol) < 2 || len(symbol) > 10 {
+			http.Error(w, "Invalid symbol format", http.StatusBadRequest)
+			return
+		}
+
+		logger.Info(ctx, "Starting crypto coin analysis", map[string]interface{}{
+			"symbol": symbol,
+			"method": r.Method,
+		})
+
+		// Perform analysis
+		report, err := analyzer.AnalyzeCoin(ctx, symbol)
+		if err != nil {
+			logger.Error(ctx, "Crypto coin analysis failed", err, map[string]interface{}{
+				"symbol": symbol,
+			})
+			http.Error(w, fmt.Sprintf("Analysis failed: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Return JSON response
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(report); err != nil {
+			logger.Error(ctx, "Failed to encode response", err)
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			return
+		}
+
+		logger.Info(ctx, "Crypto coin analysis completed", map[string]interface{}{
+			"symbol":        symbol,
+			"sources_count": len(report.Sources),
+			"news_count":    len(report.NewsAndEvents),
+		})
+	}
+}
+
+func handleCryptoCoinReport(analyzer *ai.CryptoCoinAnalyzer, logger *observability.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		// Get symbol from path
+		symbol := r.PathValue("symbol")
+		if symbol == "" {
+			http.Error(w, "Symbol is required", http.StatusBadRequest)
+			return
+		}
+
+		// Validate symbol format
+		symbol = strings.ToUpper(strings.TrimSpace(symbol))
+		if len(symbol) < 2 || len(symbol) > 10 {
+			http.Error(w, "Invalid symbol format", http.StatusBadRequest)
+			return
+		}
+
+		logger.Info(ctx, "Generating crypto coin report", map[string]interface{}{
+			"symbol": symbol,
+			"method": r.Method,
+		})
+
+		// Generate structured report
+		reportMarkdown, err := analyzer.AnalyzeCoinWithStructuredReport(ctx, symbol)
+		if err != nil {
+			logger.Error(ctx, "Crypto coin report generation failed", err, map[string]interface{}{
+				"symbol": symbol,
+			})
+			http.Error(w, fmt.Sprintf("Report generation failed: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Check if client wants JSON or markdown
+		acceptHeader := r.Header.Get("Accept")
+		if strings.Contains(acceptHeader, "application/json") {
+			// Return JSON with markdown content
+			response := map[string]interface{}{
+				"symbol":    symbol,
+				"report":    reportMarkdown,
+				"format":    "markdown",
+				"timestamp": time.Now(),
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(response)
+		} else {
+			// Return raw markdown
+			w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+			w.Write([]byte(reportMarkdown))
+		}
+
+		logger.Info(ctx, "Crypto coin report generated", map[string]interface{}{
+			"symbol":      symbol,
+			"report_size": len(reportMarkdown),
 		})
 	}
 }

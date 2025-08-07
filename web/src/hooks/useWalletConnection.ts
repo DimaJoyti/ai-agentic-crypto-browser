@@ -55,6 +55,18 @@ export const useWalletConnection = (
 
   const connectionTimeoutRef = useRef<NodeJS.Timeout>()
   const retryCountRef = useRef(0)
+  const initializationRef = useRef(false)
+  const isUpdatingRef = useRef(false)
+  const previousStateRef = useRef<{
+    isConnected: boolean
+    address?: string
+    chainId?: number
+    connectorId?: string
+    isConnecting: boolean
+  }>({
+    isConnected: false,
+    isConnecting: false
+  })
 
   // Wagmi hooks
   const { connect, connectors, isPending, error: connectError } = useConnect()
@@ -63,7 +75,7 @@ export const useWalletConnection = (
   const chainId = useChainId()
   const { switchChain: wagmiSwitchChain } = useSwitchChain()
 
-  // Store hooks
+  // Store hooks - get stable references
   const walletStore = useWalletStore()
   const sessionRecovery = useSessionRecovery()
   const persistence = useWalletPersistence()
@@ -71,49 +83,55 @@ export const useWalletConnection = (
   // Get auto-connect setting from store
   const isAutoConnectEnabled = walletStore.preferences.autoConnect
   
-  // Update connection state when account changes
+  // Update connection state when account changes - prevent concurrent updates
   useEffect(() => {
-    const newState = {
+    // Prevent concurrent updates
+    if (isUpdatingRef.current) {
+      return
+    }
+
+    const currentState = {
+      isConnected,
+      address: address as string,
+      chainId,
+      connectorId: connector?.id,
+      isConnecting: isPending
+    }
+
+    const previousState = previousStateRef.current
+
+    // Check if anything actually changed
+    const hasChanged =
+      previousState.isConnected !== currentState.isConnected ||
+      previousState.address !== currentState.address ||
+      previousState.chainId !== currentState.chainId ||
+      previousState.connectorId !== currentState.connectorId ||
+      previousState.isConnecting !== currentState.isConnecting
+
+    if (!hasChanged) {
+      return // No changes, skip update
+    }
+
+    // Mark as updating
+    isUpdatingRef.current = true
+
+    // Update the ref with current state
+    previousStateRef.current = currentState
+
+    // Update state
+    setConnectionState({
       isConnected,
       address: address as Address,
       chainId,
       connector,
       isConnecting: isPending
-    }
+    })
 
-    setConnectionState(prev => ({ ...prev, ...newState }))
-    walletStore.setConnectionState(newState)
-
-    // Update current wallet in store
-    if (isConnected && address && connector) {
-      const walletProvider = getWalletByConnector(connector)
-      if (walletProvider) {
-        const connectedWallet: ConnectedWallet = {
-          id: `${walletProvider.id}_${address}`,
-          address: address as Address,
-          chainId: chainId || 1,
-          connector: connector.name,
-          provider: walletProvider,
-          connectedAt: Date.now(),
-          lastUsed: Date.now(),
-          isActive: true
-        }
-
-        walletStore.setCurrentWallet(connectedWallet)
-        walletStore.addConnectedWallet(connectedWallet)
-        walletStore.startSession(connectedWallet)
-
-        // Save session for recovery
-        sessionRecovery.saveCurrentSession()
-
-        // Update analytics
-        walletStore.incrementConnections(walletProvider.id)
-      }
-    } else if (!isConnected) {
-      walletStore.setCurrentWallet(null)
-      walletStore.endSession()
-    }
-  }, [isConnected, address, chainId, connector, isPending, walletStore, sessionRecovery])
+    // Reset updating flag after a short delay
+    setTimeout(() => {
+      isUpdatingRef.current = false
+    }, 100)
+  }, [isConnected, address, chainId, connector?.id, isPending])
   
   // Handle connection errors
   useEffect(() => {
@@ -134,7 +152,9 @@ export const useWalletConnection = (
   // Auto-connect and session recovery on mount
   useEffect(() => {
     const initializeConnection = async () => {
-      if (isConnected) return // Already connected
+      // Prevent multiple initializations
+      if (initializationRef.current || isConnected) return
+      initializationRef.current = true
 
       // First try session recovery
       if (sessionRecovery.hasRecoverableSession()) {
@@ -331,7 +351,7 @@ export const useWalletConnection = (
       console.error('Disconnect error:', error)
       toast.error('Failed to disconnect wallet')
     }
-  }, [disconnect, defaultOptions, walletStore, sessionRecovery])
+  }, [disconnect, defaultOptions])
   
   // Reconnect wallet function
   const reconnectWallet = useCallback(async () => {

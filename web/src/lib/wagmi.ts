@@ -1,4 +1,4 @@
-import { createConfig, http, fallback } from 'wagmi'
+import { createConfig, http, fallback, createStorage } from 'wagmi'
 import {
   mainnet,
   polygon,
@@ -17,17 +17,22 @@ import {
 } from 'wagmi/chains'
 import {
   injected,
-  walletConnect,
   coinbaseWallet,
   safe,
   metaMask
 } from 'wagmi/connectors'
+import { createWalletConnectConnector, isWalletConnectAvailable } from './walletconnect-client'
 
 // Environment variables with fallbacks
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || ''
 const infuraKey = process.env.NEXT_PUBLIC_INFURA_KEY || ''
 const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY || ''
 const quicknodeKey = process.env.NEXT_PUBLIC_QUICKNODE_KEY || ''
+
+// Validate required environment variables
+if (!projectId && process.env.NODE_ENV === 'production') {
+  console.warn('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is not set. WalletConnect features may not work properly.')
+}
 
 // Enhanced chain configuration with multiple RPC providers for redundancy
 const chains = [
@@ -75,14 +80,14 @@ const transports = Object.fromEntries(
   chains.map(chain => [chain.id, createTransportWithFallback(chain.id)])
 ) as Record<number, any>
 
-// Enhanced connector configuration with better error handling and features
-const connectors = [
+// Server-safe connectors (without WalletConnect to prevent SSR issues)
+const getServerConnectors = () => [
   // MetaMask with enhanced configuration
   metaMask({
     dappMetadata: {
       name: 'AI Agentic Browser',
-      url: typeof window !== 'undefined' ? window.location.origin : 'https://ai-agentic-browser.com',
-      iconUrl: 'https://ai-agentic-browser.com/icon.png'
+      url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      iconUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/icons/icon-192x192.svg`
     },
     extensionOnly: false,
     preferDesktop: true,
@@ -94,28 +99,10 @@ const connectors = [
     target: 'metaMask'
   }),
 
-  // WalletConnect with enhanced configuration
-  walletConnect({
-    projectId,
-    metadata: {
-      name: 'AI Agentic Browser',
-      description: 'AI-powered web browser with Web3 integration and DeFi capabilities',
-      url: typeof window !== 'undefined' ? window.location.origin : 'https://ai-agentic-browser.com',
-      icons: ['https://ai-agentic-browser.com/icon.png']
-    },
-    showQrModal: true,
-    qrModalOptions: {
-      themeMode: 'light',
-      themeVariables: {
-        '--wcm-z-index': '1000'
-      }
-    }
-  }),
-
   // Coinbase Wallet with enhanced configuration
   coinbaseWallet({
     appName: 'AI Agentic Browser',
-    appLogoUrl: 'https://ai-agentic-browser.com/icon.png',
+    appLogoUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/icons/icon-192x192.svg`,
     headlessMode: false
   }),
 
@@ -124,14 +111,84 @@ const connectors = [
     allowedDomains: [/gnosis-safe.io$/, /app.safe.global$/],
     debug: process.env.NODE_ENV === 'development'
   }),
-
-
 ]
 
-export const config = createConfig({
+
+
+// Server-safe config (without WalletConnect)
+export const serverConfig = createConfig({
   chains,
-  connectors,
+  connectors: getServerConnectors(),
   transports,
   ssr: true,
-
 })
+
+// Client-side config factory (lazy initialization)
+export const createClientConfig = () => {
+  if (typeof window === 'undefined') {
+    throw new Error('Client config can only be created on the client side')
+  }
+
+  // Create connectors only when needed (client-side)
+  const clientConnectors = [
+    // MetaMask with enhanced configuration
+    metaMask({
+      dappMetadata: {
+        name: 'AI Agentic Browser',
+        url: window.location.origin,
+        iconUrl: `${window.location.origin}/icons/icon-192x192.svg`
+      },
+      extensionOnly: false,
+      preferDesktop: true,
+      infuraAPIKey: infuraKey,
+    }),
+
+    // Generic injected connector for other browser wallets
+    injected({
+      target: 'metaMask'
+    }),
+
+    // WalletConnect with enhanced configuration (only if project ID is available and client-side)
+    ...(projectId && isWalletConnectAvailable() ? [createWalletConnectConnector(projectId)] : []),
+
+    // Coinbase Wallet with enhanced configuration
+    coinbaseWallet({
+      appName: 'AI Agentic Browser',
+      appLogoUrl: `${window.location.origin}/icons/icon-192x192.svg`,
+      headlessMode: false
+    }),
+
+    // Safe (Gnosis Safe) connector
+    safe({
+      allowedDomains: [/gnosis-safe.io$/, /app.safe.global$/],
+      debug: process.env.NODE_ENV === 'development'
+    }),
+  ]
+
+  return createConfig({
+    chains,
+    connectors: clientConnectors,
+    transports,
+    ssr: true,
+    storage: createStorage({ storage: window.localStorage }),
+  })
+}
+
+// Cached client config
+let _clientConfig: ReturnType<typeof createConfig> | null = null
+
+// Get client config (lazy initialization)
+export const getClientConfig = () => {
+  if (typeof window === 'undefined') {
+    return serverConfig
+  }
+
+  if (!_clientConfig) {
+    _clientConfig = createClientConfig()
+  }
+
+  return _clientConfig
+}
+
+// Default export for backward compatibility
+export const config = serverConfig

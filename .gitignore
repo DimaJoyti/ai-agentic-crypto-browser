@@ -8,3 +8,5 @@ bin
 .vscode
 logs
 CLAUDE.md
+ai_docs
+mcp.json

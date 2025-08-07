@@ -24,7 +24,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react'
-import { WalletConnectionModal } from './WalletConnectionModal'
+import { SimpleWalletModal } from './SimpleWalletModal'
 import { ChainSwitcher } from './ChainSwitcher'
 import { toast } from 'sonner'
 
@@ -160,7 +160,7 @@ export function WalletManager() {
           </CardContent>
         </Card>
 
-        <WalletConnectionModal
+        <SimpleWalletModal
           isOpen={showConnectionModal}
           onClose={() => setShowConnectionModal(false)}
           onSuccess={() => setShowConnectionModal(false)}
@@ -373,7 +373,7 @@ export function WalletManager() {
         </TabsContent>
       </Tabs>
 
-      <WalletConnectionModal
+      <SimpleWalletModal
         isOpen={showConnectionModal}
         onClose={() => setShowConnectionModal(false)}
         onSuccess={() => setShowConnectionModal(false)}

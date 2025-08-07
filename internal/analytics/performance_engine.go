@@ -12,17 +12,17 @@ import (
 
 // PerformanceEngine provides comprehensive performance analytics
 type PerformanceEngine struct {
-	logger             *observability.Logger
-	config             PerformanceConfig
-	tradingAnalyzer    *TradingPerformanceAnalyzer
-	systemAnalyzer     *SystemPerformanceAnalyzer
-	portfolioAnalyzer  *PortfolioPerformanceAnalyzer
-	benchmarkEngine    *BenchmarkEngine
-	optimizationEngine *OptimizationEngine
-	metrics            *PerformanceMetrics
-	mu                 sync.RWMutex
-	isRunning          int32
-	stopChan           chan struct{}
+	logger            *observability.Logger
+	config            PerformanceConfig
+	tradingAnalyzer   *TradingPerformanceAnalyzer
+	systemAnalyzer    *SystemPerformanceAnalyzer
+	portfolioAnalyzer *PortfolioPerformanceAnalyzer
+	benchmarkEngine   *BenchmarkEngine
+	// optimizationEngine will be added in future versions
+	metrics   *PerformanceMetrics
+	mu        sync.RWMutex
+	isRunning int32
+	stopChan  chan struct{}
 }
 
 // PerformanceConfig contains performance analytics configuration
@@ -237,7 +237,7 @@ func NewPerformanceEngine(logger *observability.Logger, config PerformanceConfig
 	pe.systemAnalyzer = NewSystemPerformanceAnalyzer(logger, config)
 	pe.portfolioAnalyzer = NewPortfolioPerformanceAnalyzer(logger, config)
 	pe.benchmarkEngine = NewBenchmarkEngine(logger, config)
-	pe.optimizationEngine = NewOptimizationEngine(logger, config)
+	// Optimization engine will be added in future versions
 
 	return pe
 }
@@ -260,9 +260,7 @@ func (pe *PerformanceEngine) Start(ctx context.Context) error {
 	if err := pe.benchmarkEngine.Start(ctx); err != nil {
 		return err
 	}
-	if err := pe.optimizationEngine.Start(ctx); err != nil {
-		return err
-	}
+	// Optimization engine will be started in future versions
 
 	// Start analysis loop
 	go pe.analysisLoop(ctx)
@@ -281,7 +279,7 @@ func (pe *PerformanceEngine) Stop(ctx context.Context) error {
 	pe.systemAnalyzer.Stop(ctx)
 	pe.portfolioAnalyzer.Stop(ctx)
 	pe.benchmarkEngine.Stop(ctx)
-	pe.optimizationEngine.Stop(ctx)
+	// Optimization engine will be stopped in future versions
 
 	return nil
 }
@@ -317,7 +315,7 @@ func (pe *PerformanceEngine) performAnalysis(ctx context.Context) {
 	pe.metrics.Portfolio = pe.portfolioAnalyzer.GetMetrics()
 	pe.metrics.Execution = pe.calculateExecutionMetrics()
 	pe.metrics.Risk = pe.calculateRiskMetrics()
-	pe.metrics.Optimization = pe.optimizationEngine.GetMetrics()
+	// // pe.metrics.Optimization = pe.optimizationEngine.GetMetrics() // Will be added in future versions // Will be added in future versions
 	pe.metrics.Benchmarks = pe.benchmarkEngine.GetMetrics()
 
 	// Check for performance alerts

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAccount, useChainId } from 'wagmi'
 import {
@@ -85,7 +85,7 @@ export function WalletConnectionModal({ isOpen, onClose, onSuccess }: WalletConn
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
 
-  // Use our enhanced wallet connection hook
+  // Use our enhanced wallet connection hook without onSuccess callback to prevent infinite loops
   const {
     connectionState,
     connectWallet,
@@ -96,27 +96,22 @@ export function WalletConnectionModal({ isOpen, onClose, onSuccess }: WalletConn
     enableAutoConnect,
     disableAutoConnect,
     isAutoConnectEnabled
-  } = useWalletConnection({
-    onSuccess: (address, chainId) => {
-      onSuccess?.(address, chainId)
-      onClose()
-    }
-  })
+  } = useWalletConnection()
 
-  // Get wallet categories
-  const installedWallets = detectInstalledWallets()
-  const recommendedWallets = getRecommendedWallets().slice(0, 6)
-  const browserWallets = availableWallets.filter(w => w.category === 'browser')
-  const mobileWallets = availableWallets.filter(w => w.category === 'mobile')
-  const hardwareWallets = availableWallets.filter(w => w.category === 'hardware')
-  const institutionalWallets = availableWallets.filter(w => w.category === 'institutional')
+  // Memoize wallet categories to prevent infinite re-renders
+  const installedWallets = useMemo(() => detectInstalledWallets(), [])
+  const recommendedWallets = useMemo(() => getRecommendedWallets().slice(0, 6), [])
+  const browserWallets = useMemo(() => availableWallets.filter(w => w.category === 'browser'), [availableWallets])
+  const mobileWallets = useMemo(() => availableWallets.filter(w => w.category === 'mobile'), [availableWallets])
+  const hardwareWallets = useMemo(() => availableWallets.filter(w => w.category === 'hardware'), [availableWallets])
+  const institutionalWallets = useMemo(() => availableWallets.filter(w => w.category === 'institutional'), [availableWallets])
 
   useEffect(() => {
     if (isConnected && address) {
       onSuccess?.(address, chainId)
       onClose()
     }
-  }, [isConnected, address, chainId, onSuccess, onClose])
+  }, [isConnected, address, chainId]) // Remove onSuccess and onClose from dependencies to prevent infinite loops
 
   const handleWalletConnect = async (wallet: WalletProvider) => {
     if (wallet.category === 'hardware') {
