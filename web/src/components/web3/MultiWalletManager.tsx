@@ -25,7 +25,7 @@ import {
   Zap
 } from 'lucide-react'
 import { SUPPORTED_CHAINS } from '@/lib/chains'
-import { WalletConnectionModal } from './WalletConnectionModal'
+import { SimpleWalletModal } from './SimpleWalletModal'
 import { toast } from 'sonner'
 
 interface ConnectedWallet {
@@ -419,7 +419,7 @@ export function MultiWalletManager() {
         </CardContent>
       </Card>
 
-      <WalletConnectionModal
+      <SimpleWalletModal
         isOpen={showConnectionModal}
         onClose={() => setShowConnectionModal(false)}
         onSuccess={handleWalletConnectionSuccess}
