@@ -12,6 +12,9 @@ compatibility_date = "2024-01-01"
 command = "npm run build:cloudflare"
 cwd = "."
 
+# Pages build output directory
+pages_build_output_dir = "out"
+
 # Environment variables
 [vars]
 NODE_ENV = "production"

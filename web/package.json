@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:ci": "next build || echo 'Build completed with warnings'",
+    "build:ci": "npm ci --prefer-offline --no-audit && next build",
     "build:cloudflare": "NODE_ENV=production next build",
+    "build:production": "NODE_ENV=production npm ci --prefer-offline --no-audit && next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
