@@ -10,3 +10,4 @@ logs
 CLAUDE.md
 ai_docs
 mcp.json
+web/.env.local

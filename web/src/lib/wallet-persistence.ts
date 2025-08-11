@@ -349,7 +349,7 @@ export class WalletPersistenceManager {
     const dataBuffer = encoder.encode(jsonString)
     
     if ('crypto' in window && 'subtle' in window.crypto) {
-      const hashBuffer = await window.crypto.subtle.digest('SHA-256', dataBuffer)
+      const hashBuffer = await window.crypto.subtle.digest('SHA-256', dataBuffer as BufferSource)
       const hashArray = Array.from(new Uint8Array(hashBuffer))
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
     }

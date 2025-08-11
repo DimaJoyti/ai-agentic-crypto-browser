@@ -168,6 +168,7 @@ interface SystemStatus {
 }
 
 export const TradingDashboard: React.FC<TradingDashboardProps> = ({ className }) => {
+  const [mounted, setMounted] = useState(false);
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSDT');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -209,6 +210,10 @@ export const TradingDashboard: React.FC<TradingDashboardProps> = ({ className })
     refreshData,
     emergencyStop,
   } = useTradingDashboard();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Get real market data
   const { ticker: currentTicker } = useBinanceTicker(selectedSymbol);
@@ -340,6 +345,18 @@ export const TradingDashboard: React.FC<TradingDashboardProps> = ({ className })
     );
   }
 
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-2"></div>
+          <p className="text-sm text-gray-400">Loading trading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`min-h-screen bg-gray-950 text-white ${className}`}>
       {/* Professional Trading Header */}
@@ -348,7 +365,7 @@ export const TradingDashboard: React.FC<TradingDashboardProps> = ({ className })
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">
               <Zap className="w-6 h-6 text-blue-400" />
-              <h1 className="text-xl font-bold text-white">HFT Pro</h1>
+              <h2 className="text-xl font-bold text-white">HFT Pro</h2>
             </div>
 
             <div className="flex items-center space-x-4">

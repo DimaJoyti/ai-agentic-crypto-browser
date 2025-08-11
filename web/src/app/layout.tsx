@@ -73,7 +73,11 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#3b82f6" />
         <meta name="msapplication-tap-highlight" content="no" />
       </head>
+<<<<<<< HEAD
+      <body className={inter.className} suppressHydrationWarning>
+=======
       <body className={inter.className}>
+>>>>>>> d850c235d1b366ccb3b4e75eebc09fc566798249
         <ChunkErrorBoundary>
           <Providers>
             <AccessibilityProvider>

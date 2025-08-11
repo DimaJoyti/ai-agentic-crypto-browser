@@ -41,6 +41,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { formatCurrency, formatDuration, formatPercentage } from '@/lib/utils'
+import { AdvancedPortfolioAnalytics } from '@/components/analytics/AdvancedPortfolioAnalytics'
 
 interface AnalyticsData {
   metrics: {
@@ -442,13 +443,18 @@ export default function AnalyticsPage() {
 
         {/* Charts and Detailed Analytics */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
             <TabsTrigger value="performance">Performance</TabsTrigger>
             <TabsTrigger value="costs">Costs</TabsTrigger>
             <TabsTrigger value="resources">Resources</TabsTrigger>
             <TabsTrigger value="errors">Errors</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="portfolio" className="space-y-6">
+            <AdvancedPortfolioAnalytics />
+          </TabsContent>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

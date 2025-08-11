@@ -142,6 +142,11 @@ export default function HomePage() {
                   Web3 Features <Wallet className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
+              <Button variant="outline" size="lg" className="text-lg px-8 py-4 glass-card hover:bg-white/20 transition-all duration-300 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/50">
+                <Link href="/solana">
+                  Solana Trading <Zap className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
               <Button variant="outline" size="lg" className="text-lg px-8 py-4 glass-card hover:bg-white/20 transition-all duration-300">
                 <Link href="/dashboard">
                   Dashboard <ArrowRight className="ml-2 h-5 w-5" />

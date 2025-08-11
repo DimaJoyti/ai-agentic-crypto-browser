@@ -122,7 +122,7 @@ export function TradingSignalsDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Trading Signals</h1>
+          <h2 className="text-3xl font-bold">Trading Signals</h2>
           <p className="text-muted-foreground">
             AI-powered trading signals and automated alerts
           </p>
