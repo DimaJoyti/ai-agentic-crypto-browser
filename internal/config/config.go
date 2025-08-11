@@ -16,9 +16,11 @@ type Config struct {
 	AI            AIConfig
 	Web3          Web3Config
 	Browser       BrowserConfig
+	Terminal      TerminalConfig
 	Observability ObservabilityConfig
 	RateLimit     RateLimitConfig
 	Security      SecurityConfig
+	Logger        LoggerConfig
 }
 
 type ServerConfig struct {
@@ -30,37 +32,37 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	URL                string
-	MaxOpenConns       int
-	MaxIdleConns       int
-	ConnMaxLifetime    time.Duration
-	ConnMaxIdleTime    time.Duration
-	QueryTimeout       time.Duration
-	EnableQueryCache   bool
-	CacheSize          int
-	CacheTTL           time.Duration
-	ReadReplicaURL     string
-	EnableReadReplica  bool
+	URL                 string
+	MaxOpenConns        int
+	MaxIdleConns        int
+	ConnMaxLifetime     time.Duration
+	ConnMaxIdleTime     time.Duration
+	QueryTimeout        time.Duration
+	EnableQueryCache    bool
+	CacheSize           int
+	CacheTTL            time.Duration
+	ReadReplicaURL      string
+	EnableReadReplica   bool
 	HealthCheckInterval time.Duration
 }
 
 type RedisConfig struct {
-	URL                 string
-	Password            string
-	DB                  int
-	PoolSize            int
-	MinIdleConns        int
-	MaxIdleConns        int
-	PoolTimeout         time.Duration
-	IdleTimeout         time.Duration
-	IdleCheckFrequency  time.Duration
-	MaxRetries          int
-	MinRetryBackoff     time.Duration
-	MaxRetryBackoff     time.Duration
-	EnableMetrics       bool
-	MaxMemory           string
-	EvictionPolicy      string
-	CompressionLevel    int
+	URL                string
+	Password           string
+	DB                 int
+	PoolSize           int
+	MinIdleConns       int
+	MaxIdleConns       int
+	PoolTimeout        time.Duration
+	IdleTimeout        time.Duration
+	IdleCheckFrequency time.Duration
+	MaxRetries         int
+	MinRetryBackoff    time.Duration
+	MaxRetryBackoff    time.Duration
+	EnableMetrics      bool
+	MaxMemory          string
+	EvictionPolicy     string
+	CompressionLevel   int
 }
 
 type JWTConfig struct {
@@ -246,6 +248,15 @@ func Load() (*Config, error) {
 			NoSandbox:  getBoolEnv("CHROME_NO_SANDBOX", true),
 			Timeout:    getDurationEnv("BROWSER_TIMEOUT", 30*time.Second),
 		},
+		Terminal: TerminalConfig{
+			Host:         getEnv("TERMINAL_HOST", "0.0.0.0"),
+			Port:         getIntEnv("TERMINAL_PORT", 8085),
+			ReadTimeout:  getDurationEnv("TERMINAL_READ_TIMEOUT", 15*time.Second),
+			WriteTimeout: getDurationEnv("TERMINAL_WRITE_TIMEOUT", 15*time.Second),
+			IdleTimeout:  getDurationEnv("TERMINAL_IDLE_TIMEOUT", 60*time.Second),
+			MaxSessions:  getIntEnv("TERMINAL_MAX_SESSIONS", 10),
+			SessionTTL:   getDurationEnv("TERMINAL_SESSION_TTL", 24*time.Hour),
+		},
 		Observability: ObservabilityConfig{
 			JaegerEndpoint: getEnv("JAEGER_ENDPOINT", "http://localhost:14268/api/traces"),
 			ServiceName:    getEnv("OTEL_SERVICE_NAME", "agentic-browser"),
@@ -259,6 +270,10 @@ func Load() (*Config, error) {
 		Security: SecurityConfig{
 			CORSAllowedOrigins: getSliceEnv("CORS_ALLOWED_ORIGINS", []string{"http://localhost:3000"}),
 			BCryptCost:         getIntEnv("BCRYPT_COST", 12),
+		},
+		Logger: LoggerConfig{
+			Level:  getEnv("LOG_LEVEL", "info"),
+			Format: getEnv("LOG_FORMAT", "json"),
 		},
 	}
 
@@ -337,4 +352,21 @@ func getSliceEnv(key string, defaultValue []string) []string {
 		}
 	}
 	return defaultValue
+}
+
+// TerminalConfig contains terminal service configuration
+type TerminalConfig struct {
+	Host         string        `json:"host"`
+	Port         int           `json:"port"`
+	ReadTimeout  time.Duration `json:"read_timeout"`
+	WriteTimeout time.Duration `json:"write_timeout"`
+	IdleTimeout  time.Duration `json:"idle_timeout"`
+	MaxSessions  int           `json:"max_sessions"`
+	SessionTTL   time.Duration `json:"session_ttl"`
+}
+
+// LoggerConfig contains logger configuration
+type LoggerConfig struct {
+	Level  string `json:"level"`
+	Format string `json:"format"`
 }

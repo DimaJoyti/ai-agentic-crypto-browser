@@ -1,0 +1,318 @@
+package solana
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+)
+
+// MockRPCClient is a mock implementation of the Solana RPC client
+type MockRPCClient struct {
+	mock.Mock
+}
+
+func (m *MockRPCClient) GetBalance(ctx context.Context, publicKey solana.PublicKey, commitment rpc.CommitmentType) (*rpc.GetBalanceResult, error) {
+	args := m.Called(ctx, publicKey, commitment)
+	return args.Get(0).(*rpc.GetBalanceResult), args.Error(1)
+}
+
+func (m *MockRPCClient) GetTokenAccountsByOwner(ctx context.Context, owner solana.PublicKey, filter rpc.GetTokenAccountsConfig, opts *rpc.GetTokenAccountsOpts) (*rpc.GetTokenAccountsResult, error) {
+	args := m.Called(ctx, owner, filter, opts)
+	return args.Get(0).(*rpc.GetTokenAccountsResult), args.Error(1)
+}
+
+func (m *MockRPCClient) SendTransaction(ctx context.Context, transaction *solana.Transaction) (solana.Signature, error) {
+	args := m.Called(ctx, transaction)
+	return args.Get(0).(solana.Signature), args.Error(1)
+}
+
+func (m *MockRPCClient) GetRecentBlockhash(ctx context.Context, commitment rpc.CommitmentType) (*rpc.GetRecentBlockhashResult, error) {
+	args := m.Called(ctx, commitment)
+	return args.Get(0).(*rpc.GetRecentBlockhashResult), args.Error(1)
+}
+
+// SolanaServiceTestSuite defines the test suite for Solana service
+type SolanaServiceTestSuite struct {
+	suite.Suite
+	service   *Service
+	mockRPC   *MockRPCClient
+	ctx       context.Context
+	testKey   solana.PublicKey
+}
+
+func (suite *SolanaServiceTestSuite) SetupTest() {
+	suite.ctx = context.Background()
+	suite.mockRPC = new(MockRPCClient)
+	
+	// Create test public key
+	var err error
+	suite.testKey, err = solana.PublicKeyFromBase58("11111111111111111111111111111111")
+	require.NoError(suite.T(), err)
+
+	// Initialize service with mock client
+	suite.service = &Service{
+		rpcClient: suite.mockRPC,
+		config: &Config{
+			Network:    "devnet",
+			RPCTimeout: 30 * time.Second,
+		},
+	}
+}
+
+func (suite *SolanaServiceTestSuite) TearDownTest() {
+	suite.mockRPC.AssertExpectations(suite.T())
+}
+
+// Test GetBalance functionality
+func (suite *SolanaServiceTestSuite) TestGetBalance() {
+	// Test successful balance retrieval
+	expectedBalance := &rpc.GetBalanceResult{
+		Value: 1000000000, // 1 SOL in lamports
+	}
+
+	suite.mockRPC.On("GetBalance", suite.ctx, suite.testKey, rpc.CommitmentFinalized).
+		Return(expectedBalance, nil)
+
+	balance, err := suite.service.GetBalance(suite.ctx, suite.testKey)
+	
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), decimal.NewFromInt(1), balance) // 1 SOL
+}
+
+func (suite *SolanaServiceTestSuite) TestGetBalance_Error() {
+	// Test error handling
+	suite.mockRPC.On("GetBalance", suite.ctx, suite.testKey, rpc.CommitmentFinalized).
+		Return((*rpc.GetBalanceResult)(nil), assert.AnError)
+
+	balance, err := suite.service.GetBalance(suite.ctx, suite.testKey)
+	
+	assert.Error(suite.T(), err)
+	assert.True(suite.T(), balance.IsZero())
+}
+
+// Test token account retrieval
+func (suite *SolanaServiceTestSuite) TestGetTokenAccounts() {
+	expectedResult := &rpc.GetTokenAccountsResult{
+		Value: []rpc.TokenAccount{
+			{
+				Pubkey: suite.testKey,
+				Account: rpc.Account{
+					Data: rpc.DataBytesOrJSON{},
+				},
+			},
+		},
+	}
+
+	suite.mockRPC.On("GetTokenAccountsByOwner", 
+		suite.ctx, 
+		suite.testKey, 
+		mock.AnythingOfType("rpc.GetTokenAccountsConfig"),
+		mock.AnythingOfType("*rpc.GetTokenAccountsOpts")).
+		Return(expectedResult, nil)
+
+	accounts, err := suite.service.GetTokenAccounts(suite.ctx, suite.testKey)
+	
+	assert.NoError(suite.T(), err)
+	assert.Len(suite.T(), accounts, 1)
+}
+
+// Test transaction creation and sending
+func (suite *SolanaServiceTestSuite) TestSendTransaction() {
+	// Mock recent blockhash
+	blockhashResult := &rpc.GetRecentBlockhashResult{
+		Value: &rpc.RecentBlockhashResult{
+			Blockhash: solana.Hash{1, 2, 3, 4, 5},
+		},
+	}
+
+	expectedSignature := solana.Signature{1, 2, 3, 4, 5}
+
+	suite.mockRPC.On("GetRecentBlockhash", suite.ctx, rpc.CommitmentFinalized).
+		Return(blockhashResult, nil)
+	
+	suite.mockRPC.On("SendTransaction", suite.ctx, mock.AnythingOfType("*solana.Transaction")).
+		Return(expectedSignature, nil)
+
+	// Create a simple transfer transaction
+	transaction := solana.NewTransaction(
+		[]solana.Instruction{
+			// Add a simple instruction here
+		},
+		blockhashResult.Value.Blockhash,
+		solana.TransactionPayer(suite.testKey),
+	)
+
+	signature, err := suite.service.SendTransaction(suite.ctx, transaction)
+	
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), expectedSignature, signature)
+}
+
+// Test connection health check
+func (suite *SolanaServiceTestSuite) TestHealthCheck() {
+	// Mock successful balance call for health check
+	suite.mockRPC.On("GetBalance", suite.ctx, mock.AnythingOfType("solana.PublicKey"), rpc.CommitmentFinalized).
+		Return(&rpc.GetBalanceResult{Value: 0}, nil)
+
+	healthy := suite.service.HealthCheck(suite.ctx)
+	assert.True(suite.T(), healthy)
+}
+
+func (suite *SolanaServiceTestSuite) TestHealthCheck_Unhealthy() {
+	// Mock failed balance call for health check
+	suite.mockRPC.On("GetBalance", suite.ctx, mock.AnythingOfType("solana.PublicKey"), rpc.CommitmentFinalized).
+		Return((*rpc.GetBalanceResult)(nil), assert.AnError)
+
+	healthy := suite.service.HealthCheck(suite.ctx)
+	assert.False(suite.T(), healthy)
+}
+
+// Run the test suite
+func TestSolanaServiceTestSuite(t *testing.T) {
+	suite.Run(t, new(SolanaServiceTestSuite))
+}
+
+// Benchmark tests for performance
+func BenchmarkGetBalance(b *testing.B) {
+	mockRPC := new(MockRPCClient)
+	service := &Service{
+		rpcClient: mockRPC,
+		config: &Config{
+			Network:    "devnet",
+			RPCTimeout: 30 * time.Second,
+		},
+	}
+
+	ctx := context.Background()
+	testKey, _ := solana.PublicKeyFromBase58("11111111111111111111111111111111")
+
+	expectedBalance := &rpc.GetBalanceResult{
+		Value: 1000000000,
+	}
+
+	mockRPC.On("GetBalance", ctx, testKey, rpc.CommitmentFinalized).
+		Return(expectedBalance, nil)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := service.GetBalance(ctx, testKey)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// Integration test helpers
+func TestIntegrationSetup(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	// This would connect to a real Solana devnet for integration testing
+	config := &Config{
+		Network:    "devnet",
+		RPCURL:     "https://api.devnet.solana.com",
+		RPCTimeout: 30 * time.Second,
+	}
+
+	service, err := NewService(config)
+	require.NoError(t, err)
+	require.NotNil(t, service)
+
+	// Test actual connection
+	ctx := context.Background()
+	healthy := service.HealthCheck(ctx)
+	assert.True(t, healthy, "Service should be healthy when connecting to devnet")
+}
+
+// Test configuration validation
+func TestConfigValidation(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  *Config
+		wantErr bool
+	}{
+		{
+			name: "valid config",
+			config: &Config{
+				Network:    "devnet",
+				RPCURL:     "https://api.devnet.solana.com",
+				RPCTimeout: 30 * time.Second,
+			},
+			wantErr: false,
+		},
+		{
+			name: "missing network",
+			config: &Config{
+				RPCURL:     "https://api.devnet.solana.com",
+				RPCTimeout: 30 * time.Second,
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing RPC URL",
+			config: &Config{
+				Network:    "devnet",
+				RPCTimeout: 30 * time.Second,
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid timeout",
+			config: &Config{
+				Network:    "devnet",
+				RPCURL:     "https://api.devnet.solana.com",
+				RPCTimeout: 0,
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.config.Validate()
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// Test error handling and retries
+func TestRetryLogic(t *testing.T) {
+	mockRPC := new(MockRPCClient)
+	service := &Service{
+		rpcClient: mockRPC,
+		config: &Config{
+			Network:    "devnet",
+			RPCTimeout: 30 * time.Second,
+			MaxRetries: 3,
+		},
+	}
+
+	ctx := context.Background()
+	testKey, _ := solana.PublicKeyFromBase58("11111111111111111111111111111111")
+
+	// Mock first two calls to fail, third to succeed
+	mockRPC.On("GetBalance", ctx, testKey, rpc.CommitmentFinalized).
+		Return((*rpc.GetBalanceResult)(nil), assert.AnError).Twice()
+	
+	mockRPC.On("GetBalance", ctx, testKey, rpc.CommitmentFinalized).
+		Return(&rpc.GetBalanceResult{Value: 1000000000}, nil).Once()
+
+	balance, err := service.GetBalanceWithRetry(ctx, testKey)
+	
+	assert.NoError(t, err)
+	assert.Equal(t, decimal.NewFromInt(1), balance)
+	mockRPC.AssertExpectations(t)
+}

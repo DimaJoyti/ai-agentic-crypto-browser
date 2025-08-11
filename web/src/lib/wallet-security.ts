@@ -492,7 +492,7 @@ Issued at: ${new Date(timestamp).toISOString()}`
       const encryptedBuffer = await window.crypto.subtle.encrypt(
         { name: 'AES-GCM', iv },
         this.encryptionKey,
-        dataBuffer
+        dataBuffer as BufferSource
       )
 
       const encryptedArray = new Uint8Array(encryptedBuffer)

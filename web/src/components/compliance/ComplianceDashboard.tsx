@@ -186,7 +186,7 @@ export const ComplianceDashboard: React.FC<ComplianceDashboardProps> = ({ classN
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Compliance & Risk Management</h1>
+          <h2 className="text-3xl font-bold">Compliance & Risk Management</h2>
           <p className="text-muted-foreground">
             Monitor regulatory compliance and risk metrics
           </p>

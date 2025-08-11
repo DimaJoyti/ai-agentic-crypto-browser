@@ -18,6 +18,38 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Context keys for storing user information
+type contextKey string
+
+const (
+	userContextKey   contextKey = "user"
+	userIDContextKey contextKey = "user_id"
+)
+
+// UserFromContext retrieves the user from the context
+func UserFromContext(ctx context.Context) (*User, bool) {
+	user, ok := ctx.Value(userContextKey).(*User)
+	return user, ok
+}
+
+// UserIDFromContext retrieves the user ID from the context
+func UserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
+	userID, ok := ctx.Value(userIDContextKey).(uuid.UUID)
+	return userID, ok
+}
+
+// WithUser adds a user to the context
+func WithUser(ctx context.Context, user *User) context.Context {
+	ctx = context.WithValue(ctx, userContextKey, user)
+	ctx = context.WithValue(ctx, userIDContextKey, user.ID)
+	return ctx
+}
+
+// WithUserID adds a user ID to the context
+func WithUserID(ctx context.Context, userID uuid.UUID) context.Context {
+	return context.WithValue(ctx, userIDContextKey, userID)
+}
+
 // Service provides authentication functionality
 type Service struct {
 	db             *database.DB

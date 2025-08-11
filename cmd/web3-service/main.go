@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
+	"github.com/ai-agentic-browser/cmd/web3-service/handlers"
 	"github.com/ai-agentic-browser/internal/ai"
 	"github.com/ai-agentic-browser/internal/alerts"
 	"github.com/ai-agentic-browser/internal/analytics"
@@ -177,7 +179,7 @@ func main() {
 
 	// Start server in a goroutine
 	go func() {
-		logger.Info(context.Background(), "Starting Web3 service", map[string]interface{}{
+		logger.Info(context.Background(), "Starting Web3 service", map[string]any{
 			"addr": server.Addr,
 		})
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -251,13 +253,13 @@ func setupRoutes(
 
 	// Protected Web3 endpoints
 	protectedMux := http.NewServeMux()
-	protectedMux.HandleFunc("POST /web3/connect-wallet", handleConnectWallet(web3Service, logger))
-	protectedMux.HandleFunc("GET /web3/wallets", handleListWallets(web3Service, logger))
-	protectedMux.HandleFunc("GET /web3/balance", handleGetBalance(web3Service, logger))
-	protectedMux.HandleFunc("POST /web3/transaction", handleCreateTransaction(web3Service, logger))
-	protectedMux.HandleFunc("GET /web3/transactions", handleListTransactions(web3Service, logger))
-	protectedMux.HandleFunc("GET /web3/prices", handleGetPrices(web3Service, logger))
-	protectedMux.HandleFunc("POST /web3/defi/interact", handleDeFiInteraction(web3Service, logger))
+	protectedMux.HandleFunc("POST /web3/connect-wallet", handlers.HandleConnectWallet(web3Service, logger))
+	protectedMux.HandleFunc("GET /web3/wallets", handlers.HandleListWallets(web3Service, logger))
+	protectedMux.HandleFunc("GET /web3/balance", handlers.HandleGetBalance(web3Service, logger))
+	protectedMux.HandleFunc("POST /web3/transaction", handlers.HandleCreateTransaction(web3Service, logger))
+	protectedMux.HandleFunc("GET /web3/transactions", handlers.HandleListTransactions(web3Service, logger))
+	protectedMux.HandleFunc("GET /web3/prices", handlers.HandleGetPrices(web3Service, logger))
+	protectedMux.HandleFunc("POST /web3/defi/interact", handlers.HandleDeFiInteraction(web3Service, logger))
 	protectedMux.HandleFunc("GET /web3/defi/positions", handleListDeFiPositions(web3Service, logger))
 	protectedMux.HandleFunc("GET /web3/chains", handleGetSupportedChains(web3Service, logger))
 
@@ -273,9 +275,9 @@ func setupRoutes(
 	protectedMux.HandleFunc("POST /web3/trading/positions/{id}/close", handleClosePosition(tradingEngine, logger))
 
 	// DeFi Protocol endpoints
-	protectedMux.HandleFunc("GET /web3/defi/protocols", handleGetProtocols(defiManager, logger))
-	protectedMux.HandleFunc("GET /web3/defi/protocols/{id}", handleGetProtocol(defiManager, logger))
-	protectedMux.HandleFunc("GET /web3/defi/opportunities", handleGetYieldOpportunities(defiManager, logger))
+	protectedMux.HandleFunc("GET /web3/defi/protocols", handlers.HandleGetProtocols(defiManager, logger))
+	protectedMux.HandleFunc("GET /web3/defi/protocols/{id}", handlers.HandleGetProtocol(defiManager, logger))
+	protectedMux.HandleFunc("GET /web3/defi/opportunities", handlers.HandleGetYieldOpportunities(defiManager, logger))
 
 	// Portfolio Rebalancing endpoints
 	protectedMux.HandleFunc("POST /web3/rebalance/strategy", handleCreateRebalanceStrategy(portfolioRebalancer, logger))
@@ -378,12 +380,39 @@ func handleListWallets(web3Service *web3.Service, logger *observability.Logger) 
 			return
 		}
 
-		// TODO: Implement ListWallets method in Web3 service
+		// Parse filters
+		filter := web3.WalletListFilter{}
+		if chain := r.URL.Query().Get("chain_id"); chain != "" {
+			if v, err := strconv.Atoi(chain); err == nil {
+				filter.ChainID = v
+			}
+		}
+		if p := r.URL.Query().Get("primary"); p != "" {
+			b := p == "true" || p == "1"
+			filter.IsPrimary = &b
+		}
+		if page := r.URL.Query().Get("page"); page != "" {
+			if v, err := strconv.Atoi(page); err == nil {
+				filter.Page = v
+			}
+		}
+		if ps := r.URL.Query().Get("page_size"); ps != "" {
+			if v, err := strconv.Atoi(ps); err == nil {
+				filter.PageSize = v
+			}
+		}
+
+		wallets, pagination, err := web3Service.ListWallets(r.Context(), userID, filter)
+		if err != nil {
+			logger.Error(r.Context(), "List wallets failed", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"user_id": userID.String(),
-			"wallets": []interface{}{},
-			"message": "Wallet listing not implemented yet",
+		json.NewEncoder(w).Encode(map[string]any{
+			"wallets":    wallets,
+			"pagination": pagination,
 		})
 	}
 }
@@ -467,12 +496,38 @@ func handleListTransactions(web3Service *web3.Service, logger *observability.Log
 			return
 		}
 
-		// TODO: Implement ListTransactions method in Web3 service
+		// Parse filters
+		filter := web3.TransactionListFilter{}
+		if chain := r.URL.Query().Get("chain_id"); chain != "" {
+			if v, err := strconv.Atoi(chain); err == nil {
+				filter.ChainID = v
+			}
+		}
+		if status := r.URL.Query().Get("status"); status != "" {
+			filter.Status = status
+		}
+		if page := r.URL.Query().Get("page"); page != "" {
+			if v, err := strconv.Atoi(page); err == nil {
+				filter.Page = v
+			}
+		}
+		if ps := r.URL.Query().Get("page_size"); ps != "" {
+			if v, err := strconv.Atoi(ps); err == nil {
+				filter.PageSize = v
+			}
+		}
+
+		transactions, pagination, err := web3Service.ListTransactions(r.Context(), userID, filter)
+		if err != nil {
+			logger.Error(r.Context(), "List transactions failed", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"user_id":      userID.String(),
-			"transactions": []interface{}{},
-			"message":      "Transaction listing not implemented yet",
+		json.NewEncoder(w).Encode(map[string]any{
+			"transactions": transactions,
+			"pagination":   pagination,
 		})
 	}
 }
@@ -545,9 +600,9 @@ func handleListDeFiPositions(web3Service *web3.Service, logger *observability.Lo
 
 		// TODO: Implement ListDeFiPositions method in Web3 service
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		json.NewEncoder(w).Encode(map[string]any{
 			"user_id":   userID.String(),
-			"positions": []interface{}{},
+			"positions": []any{},
 			"message":   "DeFi position listing not implemented yet",
 		})
 	}
@@ -556,7 +611,7 @@ func handleListDeFiPositions(web3Service *web3.Service, logger *observability.Lo
 func handleGetSupportedChains(web3Service *web3.Service, logger *observability.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		json.NewEncoder(w).Encode(map[string]any{
 			"chains": web3.SupportedChains,
 		})
 	}

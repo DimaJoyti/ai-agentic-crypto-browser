@@ -2,9 +2,9 @@ package web3
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/ai-agentic-browser/internal/config"
@@ -16,18 +16,20 @@ import (
 
 // Service provides Web3 and cryptocurrency functionality
 type Service struct {
-	db        *database.DB
-	redis     *database.RedisClient
-	config    config.Web3Config
-	logger    *observability.Logger
-	providers map[int]*ChainProvider
+	db         *database.DB
+	redis      *database.RedisClient
+	config     config.Web3Config
+	logger     *observability.Logger
+	providers  map[int]*ChainProvider
+	walletRepo WalletRepository
+	txRepo     TransactionRepository
 }
 
 // ChainProvider represents a blockchain provider
 type ChainProvider struct {
 	ChainID int
 	RpcURL  string
-	Client  interface{} // Would be ethclient.Client in real implementation
+	Client  interface{} // lazily set to *ethclient.Client when first used
 }
 
 // NewService creates a new Web3 service
@@ -48,12 +50,17 @@ func NewService(db *database.DB, redis *database.RedisClient, cfg config.Web3Con
 		providers[10] = &ChainProvider{ChainID: 10, RpcURL: cfg.OptimismRPC}
 	}
 
+	walletRepo := NewPostgresWalletRepository(db)
+	txRepo := NewPostgresTransactionRepository(db)
+
 	return &Service{
-		db:        db,
-		redis:     redis,
-		config:    cfg,
-		logger:    logger,
-		providers: providers,
+		db:         db,
+		redis:      redis,
+		config:     cfg,
+		logger:     logger,
+		providers:  providers,
+		walletRepo: walletRepo,
+		txRepo:     txRepo,
 	}
 }
 
@@ -62,34 +69,34 @@ func (s *Service) ConnectWallet(ctx context.Context, userID uuid.UUID, req Walle
 	ctx, span := observability.SpanFromContext(ctx).TracerProvider().Tracer("web3-service").Start(ctx, "web3.ConnectWallet")
 	defer span.End()
 
-	// Validate chain support
+	// Validate input
+	if req.Address == "" || len(req.Address) < 4 {
+		return nil, fmt.Errorf("invalid address")
+	}
 	if _, exists := SupportedChains[req.ChainID]; !exists {
 		return nil, fmt.Errorf("unsupported chain ID: %d", req.ChainID)
 	}
 
 	// Check if wallet already exists
-	existingWallet, err := s.getWalletByAddress(ctx, userID, req.Address, req.ChainID)
+	existingWallet, err := s.walletRepo.GetByAddress(ctx, userID, req.Address, req.ChainID)
 	if err == nil && existingWallet != nil {
-		return &WalletConnectResponse{
-			Wallet:  existingWallet,
-			Message: "Wallet already connected",
-		}, nil
+		return &WalletConnectResponse{Wallet: existingWallet, Message: "Wallet already connected"}, nil
 	}
 
 	// Create new wallet
 	wallet := &Wallet{
 		ID:         uuid.New(),
 		UserID:     userID,
-		Address:    req.Address,
+		Address:    strings.ToLower(req.Address),
 		ChainID:    req.ChainID,
 		WalletType: req.WalletType,
-		IsPrimary:  false, // Will be set to true if it's the first wallet
+		IsPrimary:  false,
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
 	}
 
 	// Check if this is the user's first wallet
-	walletCount, err := s.getUserWalletCount(ctx, userID)
+	walletCount, err := s.walletRepo.CountByUser(ctx, userID)
 	if err != nil {
 		s.logger.Error(ctx, "Failed to get user wallet count", err)
 	} else if walletCount == 0 {
@@ -97,23 +104,20 @@ func (s *Service) ConnectWallet(ctx context.Context, userID uuid.UUID, req Walle
 	}
 
 	// Save wallet to database
-	if err := s.saveWallet(ctx, wallet); err != nil {
+	if err := s.walletRepo.Save(ctx, wallet); err != nil {
 		s.logger.Error(ctx, "Failed to save wallet", err)
 		return nil, fmt.Errorf("failed to save wallet: %w", err)
 	}
 
-	s.logger.Info(ctx, "Wallet connected successfully", map[string]interface{}{
+	s.logger.Info(ctx, "Wallet connected successfully", map[string]any{
 		"wallet_id":   wallet.ID.String(),
 		"user_id":     userID.String(),
-		"address":     req.Address,
+		"address":     wallet.Address,
 		"chain_id":    req.ChainID,
 		"wallet_type": req.WalletType,
 	})
 
-	return &WalletConnectResponse{
-		Wallet:  wallet,
-		Message: "Wallet connected successfully",
-	}, nil
+	return &WalletConnectResponse{Wallet: wallet, Message: "Wallet connected successfully"}, nil
 }
 
 // GetBalance retrieves wallet balance information
@@ -126,7 +130,7 @@ func (s *Service) GetBalance(ctx context.Context, userID uuid.UUID, req BalanceR
 
 	// Determine address and chain ID
 	if req.WalletID != uuid.Nil {
-		wallet, err := s.getWalletByID(ctx, req.WalletID)
+		wallet, err := s.walletRepo.GetByID(ctx, req.WalletID)
 		if err != nil {
 			return nil, fmt.Errorf("wallet not found: %w", err)
 		}
@@ -148,27 +152,97 @@ func (s *Service) GetBalance(ctx context.Context, userID uuid.UUID, req BalanceR
 		return nil, fmt.Errorf("no provider configured for chain ID: %d", chainID)
 	}
 
-	// For demo purposes, return mock data
-	// In a real implementation, this would query the blockchain
-	nativeBalance := big.NewInt(1000000000000000000) // 1 ETH in wei
+	// Fetch native balance
+	nativeBalance, err := s.getNativeBalance(ctx, chainID, address)
+	if err != nil {
+		s.logger.Warn(ctx, "Failed to fetch native balance", map[string]any{"error": err.Error(), "address": address, "chain_id": chainID})
+		nativeBalance = big.NewInt(0)
+	}
 
-	tokenBalances := []TokenBalance{
-		{
-			TokenAddress: "0xA0b86a33E6441b8C4505E2E8E3C3C5C8E6441b8C",
-			TokenSymbol:  "USDC",
-			TokenName:    "USD Coin",
-			Balance:      big.NewInt(1000000000), // 1000 USDC (6 decimals)
-			Decimals:     6,
-			USDValue:     1000.0,
-		},
-		{
-			TokenAddress: "0xB0b86a33E6441b8C4505E2E8E3C3C5C8E6441b8C",
-			TokenSymbol:  "USDT",
-			TokenName:    "Tether USD",
-			Balance:      big.NewInt(500000000), // 500 USDT (6 decimals)
-			Decimals:     6,
-			USDValue:     500.0,
-		},
+	// Fetch common ERC-20 token balances with caching
+	var tokenBalances []TokenBalance
+	if tokens, ok := CommonERC20Tokens[chainID]; ok {
+		for _, t := range tokens {
+			decimals, derr := s.getERC20Decimals(ctx, chainID, t.Address)
+			if derr != nil {
+				s.logger.Warn(ctx, "Failed to read token decimals", map[string]any{"error": derr.Error(), "token": t.Symbol, "address": t.Address, "chain_id": chainID})
+				continue
+			}
+			bal, berr := s.getERC20Balance(ctx, chainID, t.Address, address)
+			if berr != nil {
+				s.logger.Warn(ctx, "Failed to read token balance", map[string]any{"error": berr.Error(), "token": t.Symbol, "address": t.Address, "chain_id": chainID})
+				continue
+			}
+			tokenBalances = append(tokenBalances, TokenBalance{
+				TokenAddress: t.Address,
+				TokenSymbol:  t.Symbol,
+				TokenName:    t.Name,
+				Balance:      bal,
+				Decimals:     decimals,
+				USDValue:     0, // priced elsewhere
+			})
+		}
+	}
+
+	// Price native and tokens via CoinGecko (USD)
+	cg := NewCoinGeckoClient(s.redis)
+	nativeID := NativeCoinGeckoIDByChain[chainID]
+	priceIDs := []string{}
+	if nativeID != "" {
+		priceIDs = append(priceIDs, nativeID)
+	}
+	for _, t := range tokenBalances {
+		// look up CG id from CommonERC20Tokens map by address
+		for _, meta := range CommonERC20Tokens[chainID] {
+			if strings.EqualFold(meta.Address, t.TokenAddress) && meta.CoinGeckoID != "" {
+				priceIDs = append(priceIDs, meta.CoinGeckoID)
+			}
+		}
+	}
+	prices := map[string]TokenPrice{}
+	if len(priceIDs) > 0 {
+		if p, err := cg.GetPrices(ctx, "USD", priceIDs); err == nil {
+			prices = p
+		} else {
+			s.logger.Warn(ctx, "Price fetch failed", map[string]any{"error": err.Error()})
+		}
+	}
+
+	// Compute USD values
+	totalUSD := 0.0
+	// native
+	if nativeID != "" {
+		if pt, ok := prices[nativeID]; ok {
+			// native decimals are 18 for ETH; Polygon MATIC also 18 (commonly). Keep it simple: 18.
+			usd := new(big.Float).Quo(new(big.Float).SetInt(nativeBalance), new(big.Float).SetFloat64(1e18))
+			v, _ := new(big.Float).Mul(usd, big.NewFloat(pt.Price)).Float64()
+			totalUSD += v
+		}
+	}
+	// tokens
+	for i := range tokenBalances {
+		metaID := ""
+		for _, meta := range CommonERC20Tokens[chainID] {
+			if strings.EqualFold(meta.Address, tokenBalances[i].TokenAddress) {
+				metaID = meta.CoinGeckoID
+				break
+			}
+		}
+		if metaID == "" {
+			continue
+		}
+		pt, ok := prices[metaID]
+		if !ok {
+			continue
+		}
+		decPow := new(big.Float).SetFloat64(1.0)
+		for j := 0; j < tokenBalances[i].Decimals; j++ {
+			decPow = new(big.Float).Mul(decPow, big.NewFloat(10))
+		}
+		amt := new(big.Float).Quo(new(big.Float).SetInt(tokenBalances[i].Balance), decPow)
+		v, _ := new(big.Float).Mul(amt, big.NewFloat(pt.Price)).Float64()
+		tokenBalances[i].USDValue = v
+		totalUSD += v
 	}
 
 	response := &BalanceResponse{
@@ -176,18 +250,19 @@ func (s *Service) GetBalance(ctx context.Context, userID uuid.UUID, req BalanceR
 		ChainID:       chainID,
 		NativeBalance: nativeBalance,
 		TokenBalances: tokenBalances,
-		TotalUSDValue: 3500.0, // Mock total value
-		Metadata: map[string]interface{}{
+		TotalUSDValue: totalUSD,
+		Metadata: map[string]any{
 			"provider":   provider.RpcURL,
 			"chain_name": SupportedChains[chainID],
 			"timestamp":  time.Now(),
 		},
 	}
 
-	s.logger.Info(ctx, "Balance retrieved", map[string]interface{}{
-		"address":         address,
-		"chain_id":        chainID,
-		"total_usd_value": response.TotalUSDValue,
+	s.logger.Info(ctx, "Balance retrieved", map[string]any{
+		"address":   address,
+		"chain_id":  chainID,
+		"tokens":    len(tokenBalances),
+		"total_usd": totalUSD,
 	})
 
 	return response, nil
@@ -199,7 +274,7 @@ func (s *Service) CreateTransaction(ctx context.Context, userID uuid.UUID, req T
 	defer span.End()
 
 	// Get wallet
-	wallet, err := s.getWalletByID(ctx, req.WalletID)
+	wallet, err := s.walletRepo.GetByID(ctx, req.WalletID)
 	if err != nil {
 		return nil, fmt.Errorf("wallet not found: %w", err)
 	}
@@ -230,7 +305,7 @@ func (s *Service) CreateTransaction(ctx context.Context, userID uuid.UUID, req T
 	}
 
 	// Save transaction to database
-	if err := s.saveTransaction(ctx, transaction); err != nil {
+	if err := s.txRepo.Save(ctx, transaction); err != nil {
 		s.logger.Error(ctx, "Failed to save transaction", err)
 		return nil, fmt.Errorf("failed to save transaction: %w", err)
 	}
@@ -245,7 +320,7 @@ func (s *Service) CreateTransaction(ctx context.Context, userID uuid.UUID, req T
 		Status:      string(transaction.Status),
 	}
 
-	s.logger.Info(ctx, "Transaction created", map[string]interface{}{
+	s.logger.Info(ctx, "Transaction created", map[string]any{
 		"tx_id":    transaction.ID.String(),
 		"tx_hash":  transaction.TxHash,
 		"from":     transaction.FromAddress,
@@ -261,58 +336,58 @@ func (s *Service) GetPrices(ctx context.Context, req PriceRequest) (*PriceRespon
 	ctx, span := observability.SpanFromContext(ctx).TracerProvider().Tracer("web3-service").Start(ctx, "web3.GetPrices")
 	defer span.End()
 
-	// For demo purposes, return mock price data
-	// In a real implementation, this would query a price API like CoinGecko
-	prices := map[string]TokenPrice{
-		"ethereum": {
-			Symbol:          "ETH",
-			Name:            "Ethereum",
-			Price:           2500.0,
-			PriceChange24h:  50.0,
-			PriceChangePerc: 2.04,
-			MarketCap:       300000000000,
-			Volume24h:       15000000000,
-			LastUpdated:     time.Now(),
-		},
-		"bitcoin": {
-			Symbol:          "BTC",
-			Name:            "Bitcoin",
-			Price:           45000.0,
-			PriceChange24h:  1000.0,
-			PriceChangePerc: 2.27,
-			MarketCap:       850000000000,
-			Volume24h:       25000000000,
-			LastUpdated:     time.Now(),
-		},
-		"polygon": {
-			Symbol:          "MATIC",
-			Name:            "Polygon",
-			Price:           0.85,
-			PriceChange24h:  0.05,
-			PriceChangePerc: 6.25,
-			MarketCap:       8000000000,
-			Volume24h:       500000000,
-			LastUpdated:     time.Now(),
-		},
-	}
-
+	// Normalize currency and token IDs
 	currency := req.Currency
 	if currency == "" {
 		currency = "USD"
 	}
+	// Default tokens if none provided
+	ids := []string{"ethereum", "bitcoin", "polygon"}
+	if strings.TrimSpace(req.Token) != "" {
+		ids = []string{strings.ToLower(req.Token)}
+	}
+
+	cg := NewCoinGeckoClient(s.redis)
+	prices, err := cg.GetPrices(ctx, currency, ids)
+	if err != nil {
+		s.logger.Error(ctx, "CoinGecko price fetch failed", err)
+		return nil, fmt.Errorf("failed to fetch prices: %w", err)
+	}
 
 	response := &PriceResponse{
 		Prices:    prices,
-		Currency:  currency,
+		Currency:  strings.ToUpper(currency),
 		Timestamp: time.Now(),
 	}
 
-	s.logger.Info(ctx, "Prices retrieved", map[string]interface{}{
-		"currency":    currency,
+	s.logger.Info(ctx, "Prices retrieved", map[string]any{
+		"currency":    response.Currency,
 		"price_count": len(prices),
 	})
 
 	return response, nil
+}
+
+// ListWallets returns user's wallets with filters and pagination
+func (s *Service) ListWallets(ctx context.Context, userID uuid.UUID, filter WalletListFilter) ([]*Wallet, Pagination, error) {
+	if filter.Page <= 0 {
+		filter.Page = 1
+	}
+	if filter.PageSize <= 0 || filter.PageSize > 100 {
+		filter.PageSize = 20
+	}
+	return s.walletRepo.ListByUser(ctx, userID, filter)
+}
+
+// ListTransactions returns user's transactions with filters and pagination
+func (s *Service) ListTransactions(ctx context.Context, userID uuid.UUID, filter TransactionListFilter) ([]*Transaction, Pagination, error) {
+	if filter.Page <= 0 {
+		filter.Page = 1
+	}
+	if filter.PageSize <= 0 || filter.PageSize > 100 {
+		filter.PageSize = 20
+	}
+	return s.txRepo.ListByUser(ctx, userID, filter)
 }
 
 // InteractWithDeFiProtocol interacts with DeFi protocols
@@ -321,7 +396,7 @@ func (s *Service) InteractWithDeFiProtocol(ctx context.Context, userID uuid.UUID
 	defer span.End()
 
 	// Get wallet
-	wallet, err := s.getWalletByID(ctx, req.WalletID)
+	wallet, err := s.walletRepo.GetByID(ctx, req.WalletID)
 	if err != nil {
 		return nil, fmt.Errorf("wallet not found: %w", err)
 	}
@@ -361,14 +436,14 @@ func (s *Service) InteractWithDeFiProtocol(ctx context.Context, userID uuid.UUID
 		Success:  true,
 		TxHash:   txHash,
 		Position: position,
-		Metadata: map[string]interface{}{
+		Metadata: map[string]any{
 			"protocol":  req.Protocol,
 			"action":    req.Action,
 			"timestamp": time.Now(),
 		},
 	}
 
-	s.logger.Info(ctx, "DeFi interaction completed", map[string]interface{}{
+	s.logger.Info(ctx, "DeFi interaction completed", map[string]any{
 		"protocol":  req.Protocol,
 		"action":    req.Action,
 		"tx_hash":   txHash,
@@ -378,88 +453,18 @@ func (s *Service) InteractWithDeFiProtocol(ctx context.Context, userID uuid.UUID
 	return response, nil
 }
 
-// Helper methods
-
-// getWalletByAddress retrieves a wallet by address and chain ID
-func (s *Service) getWalletByAddress(ctx context.Context, userID uuid.UUID, address string, chainID int) (*Wallet, error) {
-	query := `
-		SELECT id, user_id, address, chain_id, wallet_type, is_primary, created_at, updated_at
-		FROM web3_wallets WHERE user_id = $1 AND address = $2 AND chain_id = $3
-	`
-	wallet := &Wallet{}
-	err := s.db.QueryRowContext(ctx, query, userID, address, chainID).Scan(
-		&wallet.ID, &wallet.UserID, &wallet.Address, &wallet.ChainID,
-		&wallet.WalletType, &wallet.IsPrimary, &wallet.CreatedAt, &wallet.UpdatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return wallet, nil
-}
-
-// getWalletByID retrieves a wallet by ID
-func (s *Service) getWalletByID(ctx context.Context, walletID uuid.UUID) (*Wallet, error) {
-	query := `
-		SELECT id, user_id, address, chain_id, wallet_type, is_primary, created_at, updated_at
-		FROM web3_wallets WHERE id = $1
-	`
-	wallet := &Wallet{}
-	err := s.db.QueryRowContext(ctx, query, walletID).Scan(
-		&wallet.ID, &wallet.UserID, &wallet.Address, &wallet.ChainID,
-		&wallet.WalletType, &wallet.IsPrimary, &wallet.CreatedAt, &wallet.UpdatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return wallet, nil
-}
-
-// getUserWalletCount gets the number of wallets for a user
-func (s *Service) getUserWalletCount(ctx context.Context, userID uuid.UUID) (int, error) {
-	query := `SELECT COUNT(*) FROM web3_wallets WHERE user_id = $1`
-	var count int
-	err := s.db.QueryRowContext(ctx, query, userID).Scan(&count)
-	return count, err
-}
-
-// saveWallet saves a wallet to the database
-func (s *Service) saveWallet(ctx context.Context, wallet *Wallet) error {
-	query := `
-		INSERT INTO web3_wallets (id, user_id, address, chain_id, wallet_type, is_primary, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	`
-	_, err := s.db.ExecContext(ctx, query, wallet.ID, wallet.UserID, wallet.Address, wallet.ChainID,
-		wallet.WalletType, wallet.IsPrimary, wallet.CreatedAt, wallet.UpdatedAt)
-	return err
-}
-
-// saveTransaction saves a transaction to the database
-func (s *Service) saveTransaction(ctx context.Context, tx *Transaction) error {
-	metadataJSON, _ := json.Marshal(tx.Metadata)
-	query := `
-		INSERT INTO web3_transactions (id, user_id, wallet_id, tx_hash, chain_id, from_address, to_address, value, status, transaction_type, metadata, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-	`
-	_, err := s.db.ExecContext(ctx, query, tx.ID, tx.UserID, tx.WalletID, tx.TxHash, tx.ChainID,
-		tx.FromAddress, tx.ToAddress, tx.Value, tx.Status, tx.TransactionType, metadataJSON, tx.CreatedAt, tx.UpdatedAt)
-	return err
-}
+// Repository-backed helper methods (kept minimal)
 
 // simulateTransactionConfirmation simulates transaction confirmation
 func (s *Service) simulateTransactionConfirmation(ctx context.Context, tx *Transaction) {
 	// Simulate network delay
 	time.Sleep(5 * time.Second)
 
-	// Update transaction status
-	tx.Status = TxStatusConfirmed
-	tx.BlockNumber = 18500000 // Mock block number
-	tx.GasUsed = 21000        // Mock gas used
-	tx.UpdatedAt = time.Now()
+	// Update transaction status in DB
+	_ = s.txRepo.UpdateStatus(ctx, tx.ID, TxStatusConfirmed)
 
-	// In a real implementation, this would update the database
-	s.logger.Info(ctx, "Transaction confirmed", map[string]interface{}{
-		"tx_hash":      tx.TxHash,
-		"block_number": fmt.Sprintf("%d", tx.BlockNumber),
+	s.logger.Info(ctx, "Transaction confirmed", map[string]any{
+		"tx_hash": tx.TxHash,
 	})
 }
 

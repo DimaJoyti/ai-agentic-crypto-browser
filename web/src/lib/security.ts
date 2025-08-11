@@ -29,7 +29,7 @@ export class WalletSecurity {
     const encoder = new TextEncoder()
     const keyMaterial = await crypto.subtle.importKey(
       'raw',
-      encoder.encode(password),
+      encoder.encode(password) as BufferSource,
       { name: 'PBKDF2' },
       false,
       ['deriveBits', 'deriveKey']
@@ -38,7 +38,7 @@ export class WalletSecurity {
     return crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
-        salt: encoder.encode(salt),
+        salt: encoder.encode(salt) as BufferSource,
         iterations: 100000,
         hash: 'SHA-256'
       },
@@ -59,7 +59,7 @@ export class WalletSecurity {
     const encrypted = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv },
       key,
-      encoder.encode(data)
+      encoder.encode(data) as BufferSource
     )
 
     // Combine IV and encrypted data

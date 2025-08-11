@@ -438,7 +438,7 @@ export class SecureStorage {
       const encrypted = await window.crypto.subtle.encrypt(
         { name: 'AES-GCM', iv },
         this.encryptionKey,
-        data
+        data as BufferSource
       )
 
       const encryptedArray = new Uint8Array(encrypted)
