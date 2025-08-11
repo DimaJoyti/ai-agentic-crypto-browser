@@ -40,6 +40,7 @@ import {
   Wallet
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import { AuthGuard } from '@/components/auth-guard'
 import { formatCurrency, formatDuration, formatPercentage } from '@/lib/utils'
 import { AdvancedPortfolioAnalytics } from '@/components/analytics/AdvancedPortfolioAnalytics'
 
@@ -289,11 +290,12 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
+    <AuthGuard>
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="border-b border-border bg-card">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
               <p className="text-muted-foreground mt-1">
@@ -746,5 +748,6 @@ export default function AnalyticsPage() {
         </Tabs>
       </div>
     </div>
+    </AuthGuard>
   )
 }

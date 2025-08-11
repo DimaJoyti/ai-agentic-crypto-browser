@@ -1,6 +1,89 @@
 # 🔒 AI-Agentic Crypto Browser - Security Configuration
 # Enterprise-grade security settings for production deployment
 
+# Authentication and Authorization Configuration
+authentication:
+  # Multi-Factor Authentication
+  require_mfa: true
+  mfa_methods: ["totp", "sms", "email"]
+  mfa_backup_codes: true
+
+  # Session Management
+  session_timeout: "24h"
+  max_concurrent_sessions: 5
+  session_renewal_threshold: "2h"
+  remember_device_duration: "30d"
+
+  # Password Policy
+  require_strong_passwords: true
+  password_min_length: 12
+  password_require_uppercase: true
+  password_require_lowercase: true
+  password_require_numbers: true
+  password_require_symbols: true
+  password_history_count: 5
+  password_expiry_days: 90
+
+  # Account Lockout
+  max_login_attempts: 5
+  lockout_duration: "15m"
+  progressive_lockout: true
+  lockout_multiplier: 2
+
+# API Security Configuration
+api_security:
+  # API Key Management
+  require_api_key_auth: true
+  api_key_rotation_interval: "90d"
+  max_api_keys_per_user: 10
+  api_key_rate_limit: 1000
+
+  # API Key Security Levels
+  security_levels:
+    read_only:
+      permissions: ["trading:read", "account:read", "monitoring:read"]
+      rate_limit: 500
+      trading_enabled: false
+
+    trading:
+      permissions: ["trading:read", "trading:write", "account:read"]
+      rate_limit: 1000
+      trading_enabled: true
+      max_trade_amount: 10000.0
+
+    admin:
+      permissions: ["*"]
+      rate_limit: 2000
+      trading_enabled: true
+      max_trade_amount: 100000.0
+
+  # IP Whitelisting
+  enable_ip_whitelisting: false
+  allowed_ip_ranges: []
+
+# Rate Limiting Configuration
+rate_limiting:
+  # Global Rate Limits
+  global_rate_limit: 10000
+  global_rate_window: "1h"
+
+  # Per-User Rate Limits
+  user_rate_limit: 1000
+  user_rate_window: "1h"
+
+  # Per-IP Rate Limits
+  ip_rate_limit: 100
+  ip_rate_window: "1m"
+
+  # Endpoint-Specific Limits
+  endpoint_limits:
+    "/api/v1/auth/login":
+      limit: 5
+      window: "1m"
+    "/api/v1/trading/orders":
+      limit: 100
+      window: "1m"
+
 # Zero-Trust Configuration
 zero_trust:
   # Enable comprehensive zero-trust features

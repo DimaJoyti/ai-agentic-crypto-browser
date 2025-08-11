@@ -1,13 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Configure for Cloudflare Pages deployment
+  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
+  trailingSlash: true,
+  skipTrailingSlashRedirect: true,
+
   // Reduce experimental features that might cause chunk issues
   experimental: {
     optimizeCss: false, // Disable to prevent chunk conflicts
     // Remove optimizePackageImports temporarily
   },
-  // Remove standalone output for development
-  // output: 'standalone',
-  trailingSlash: false,
   // Use stable build ID to prevent chunk loading issues
   generateBuildId: async () => {
     return 'ai-browser-stable'
@@ -69,13 +71,15 @@ const nextConfig = {
   // Compression
   compress: true,
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
-    NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://ai-crypto-browser-api.gcp-inspiration.workers.dev' : 'http://localhost:8080'),
+    NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || (process.env.NODE_ENV === 'production' ? 'wss://ai-crypto-browser-api.gcp-inspiration.workers.dev' : 'ws://localhost:8080'),
     NEXT_PUBLIC_CHAIN_ID: process.env.NEXT_PUBLIC_CHAIN_ID || '1',
     NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '',
+    NEXT_PUBLIC_CLOUDFLARE_DEPLOYMENT: process.env.NEXT_PUBLIC_CLOUDFLARE_DEPLOYMENT || 'false',
   },
   images: {
-    domains: ['localhost'],
+    unoptimized: process.env.NODE_ENV === 'production', // Disable optimization for static export
+    domains: ['localhost', 'your-domain.com'],
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],

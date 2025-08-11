@@ -74,8 +74,8 @@ func NewSecurityMiddleware(logger *observability.Logger) *SecurityMiddleware {
 		zeroTrustEngine:  security.NewZeroTrustEngine(logger),
 		threatDetector:   security.NewAdvancedThreatDetector(logger),
 		policyEngine:     security.NewPolicyEngine(logger),
-		deviceManager:    security.NewDeviceTrustManager(logger),
-		behaviorAnalyzer: security.NewBehaviorAnalyzer(logger),
+		deviceManager:    security.NewDeviceTrustManager(logger, &security.SecurityConfig{}),
+		behaviorAnalyzer: security.NewBehaviorAnalyzer(logger, &security.SecurityConfig{}),
 		config:           config,
 	}
 }
@@ -221,10 +221,15 @@ func (sm *SecurityMiddleware) evaluateDeviceTrust(ctx context.Context, w http.Re
 		device = &security.TrustedDevice{
 			DeviceID:    secCtx.DeviceID,
 			UserID:      secCtx.UserID,
+			Fingerprint: secCtx.DeviceID,
 			TrustLevel:  0.3, // Low initial trust
+			TrustScore:  30,  // Low initial trust
 			Attributes:  attributes,
 			RiskFactors: []string{"new_device"},
 			LastSeen:    time.Now(),
+			TrustedAt:   time.Now(),
+			ExpiresAt:   time.Now().Add(24 * time.Hour),
+			IsActive:    true,
 		}
 		sm.deviceManager.RegisterDevice(device)
 	} else {
@@ -255,30 +260,24 @@ func (sm *SecurityMiddleware) performBehaviorAnalysis(ctx context.Context, w htt
 		Timestamp: time.Now(),
 	}
 
-	// Create user behavior profile for analysis
-	profile := &security.UserBehaviorProfile{
-		UserID: secCtx.UserID,
+	// Behavior analysis will be performed using the authentication request
+
+	// Create authentication request for behavior analysis
+	authRequest := &security.AuthenticationRequest{
+		Username:          secCtx.UserID.String(),
+		IPAddress:         request.IPAddress,
+		UserAgent:         request.UserAgent,
+		DeviceFingerprint: secCtx.DeviceID,
 	}
 
-	// Convert SecurityRequest to AccessRequest
-	accessRequest := &security.AccessRequest{
-		UserID:    &secCtx.UserID,
-		DeviceID:  secCtx.DeviceID,
-		IPAddress: secCtx.IPAddress,
-		UserAgent: secCtx.UserAgent,
-		Resource:  request.URL,
-		Action:    request.Method,
-		Timestamp: request.Timestamp,
-	}
-
-	riskScore := sm.behaviorAnalyzer.AnalyzeBehavior(profile, accessRequest)
+	riskScore := sm.behaviorAnalyzer.AnalyzeBehavior(secCtx.UserID, authRequest)
 	if riskScore < 0 {
 		sm.logger.Error(ctx, "Behavior analysis failed", nil)
 		return true // Continue on error
 	}
 
 	// Update risk score based on behavioral analysis
-	secCtx.RiskScore = riskScore
+	secCtx.RiskScore = float64(riskScore)
 
 	return true
 }

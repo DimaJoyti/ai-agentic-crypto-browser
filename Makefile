@@ -47,6 +47,23 @@ build:
 		echo "Building $$service..."; \
 		go build -o bin/$$service ./cmd/$$service; \
 	done
+	@echo "Building trading bots service..."
+	go build -o bin/trading-bots ./cmd/trading-bots
+
+# Build trading bots specifically
+build-trading-bots:
+	@echo "Building trading bots service..."
+	go build -o bin/trading-bots ./cmd/trading-bots
+
+# Build trading bots for production
+build-trading-bots-prod:
+	@echo "Building trading bots for production..."
+	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/trading-bots ./cmd/trading-bots
+
+# Run trading bots service
+run-trading-bots:
+	@echo "Starting trading bots service..."
+	go run ./cmd/trading-bots
 
 build-crypto-analyzer:
 	@echo "Building crypto analyzer CLI..."
@@ -121,6 +138,7 @@ docker-build:
 	docker build -t ai-browser/browser-service -f cmd/browser-service/Dockerfile .
 	docker build -t ai-browser/web3-service -f cmd/web3-service/Dockerfile .
 	docker build -t ai-browser/api-gateway -f cmd/api-gateway/Dockerfile .
+	docker build -t ai-browser/trading-bots -f cmd/trading-bots/Dockerfile .
 	docker build -t ai-browser/web -f web/Dockerfile ./web
 
 # Database operations

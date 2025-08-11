@@ -1,0 +1,384 @@
+# Bot Testing Framework Configuration
+# AI-Agentic Crypto Browser - Trading Bot Testing System
+
+# Test Execution Configuration
+execution:
+  # Maximum number of concurrent tests
+  max_concurrent_tests: 5
+  
+  # Default test timeout
+  default_timeout: "300s"
+  
+  # Test retry configuration
+  retry_attempts: 3
+  retry_delay: "10s"
+  
+  # Test queue size
+  queue_size: 100
+  
+  # Worker configuration
+  max_workers: 5
+  worker_timeout: "300s"
+
+# Test Environment Configuration
+environment:
+  # Enable paper trading mode
+  enable_paper_trading: true
+  
+  # Enable backtesting
+  enable_backtesting: true
+  
+  # Simulation speed multiplier
+  simulation_speed: 10.0
+  
+  # Initial test balance
+  initial_balance: 10000.0
+  
+  # Commission rate for testing
+  commission_rate: 0.001  # 0.1%
+  
+  # Slippage rate for testing
+  slippage_rate: 0.0005   # 0.05%
+
+# Mock Exchange Configuration
+mock_exchange:
+  # Trading fees
+  maker_fee: 0.001        # 0.1%
+  taker_fee: 0.001        # 0.1%
+  
+  # Order execution
+  execution_delay: "100ms"
+  slippage_rate: 0.0005   # 0.05%
+  failure_rate: 0.02      # 2% failure rate
+  
+  # Market simulation
+  price_volatility: 0.02  # 2% volatility
+  update_interval: "1s"
+  
+  # Supported trading pairs
+  supported_pairs:
+    - "BTC/USDT"
+    - "ETH/USDT"
+    - "BNB/USDT"
+    - "ADA/USDT"
+    - "DOT/USDT"
+    - "LINK/USDT"
+    - "UNI/USDT"
+  
+  # Base currency
+  base_currency: "USDT"
+
+# Mock Market Data Configuration
+mock_market_data:
+  # Data update interval
+  update_interval: "1s"
+  
+  # Kline interval
+  kline_interval: "1m"
+  
+  # Historical data length
+  history_length: 1000
+  
+  # Price volatility
+  price_volatility: 0.02  # 2%
+  
+  # Volume variation
+  volume_variation: 0.30  # 30%
+
+# Test Data Configuration
+test_data:
+  # Historical data path
+  historical_data_path: "./test/data/historical"
+  
+  # Test datasets
+  datasets:
+    - "btc_usdt_1h"
+    - "eth_usdt_1h"
+    - "bnb_usdt_1h"
+    - "ada_usdt_1h"
+    - "dot_usdt_1h"
+  
+  # Market conditions for testing
+  market_conditions:
+    - "bull"
+    - "bear"
+    - "sideways"
+    - "volatile"
+    - "crash"
+    - "recovery"
+
+# Performance Thresholds
+thresholds:
+  # Minimum performance requirements
+  min_win_rate: 0.40           # 40%
+  max_drawdown: 0.20           # 20%
+  min_sharpe_ratio: 0.30       # 0.3
+  min_total_return: 0.05       # 5%
+  max_risk_score: 80           # 0-100 scale
+  
+  # Trading performance
+  min_order_fill_rate: 0.95    # 95%
+  max_slippage: 0.01           # 1%
+  max_execution_time: "30s"
+  
+  # System performance
+  max_cpu_usage: 80.0          # 80%
+  max_memory_usage: 85.0       # 85%
+  max_response_time: "2s"
+  max_error_rate: 5.0          # 5%
+
+# Test Scenarios Configuration
+scenarios:
+  # DCA Strategy Tests
+  dca:
+    - name: "DCA Bull Market"
+      description: "Test DCA strategy in bull market conditions"
+      market_condition: "bull"
+      duration: "1h"
+      parameters:
+        investment_amount: 100.0
+        interval: "1h"
+        max_deviation: 0.05
+      expected_results:
+        min_win_rate: 0.60
+        max_drawdown: 0.15
+        min_sharpe_ratio: 0.50
+        min_total_return: 0.05
+        max_risk_score: 50
+    
+    - name: "DCA Bear Market"
+      description: "Test DCA strategy in bear market conditions"
+      market_condition: "bear"
+      duration: "1h"
+      parameters:
+        investment_amount: 100.0
+        interval: "1h"
+        max_deviation: 0.05
+      expected_results:
+        min_win_rate: 0.30
+        max_drawdown: 0.25
+        min_sharpe_ratio: 0.20
+        min_total_return: -0.10
+        max_risk_score: 70
+
+  # Grid Strategy Tests
+  grid:
+    - name: "Grid Sideways Market"
+      description: "Test Grid strategy in sideways market conditions"
+      market_condition: "sideways"
+      duration: "1h"
+      parameters:
+        grid_levels: 20
+        grid_spacing: 0.02
+        upper_bound: 1.20
+        lower_bound: 0.80
+        order_amount: 50.0
+      expected_results:
+        min_win_rate: 0.70
+        max_drawdown: 0.12
+        min_sharpe_ratio: 0.60
+        min_total_return: 0.08
+        max_risk_score: 60
+    
+    - name: "Grid Volatile Market"
+      description: "Test Grid strategy in volatile market conditions"
+      market_condition: "volatile"
+      duration: "1h"
+      parameters:
+        grid_levels: 30
+        grid_spacing: 0.015
+        upper_bound: 1.30
+        lower_bound: 0.70
+        order_amount: 30.0
+      expected_results:
+        min_win_rate: 0.65
+        max_drawdown: 0.18
+        min_sharpe_ratio: 0.45
+        min_total_return: 0.12
+        max_risk_score: 75
+
+  # Momentum Strategy Tests
+  momentum:
+    - name: "Momentum Trending Market"
+      description: "Test Momentum strategy in trending market conditions"
+      market_condition: "bull"
+      duration: "1h"
+      parameters:
+        momentum_period: 14
+        rsi_threshold_buy: 30
+        rsi_threshold_sell: 70
+        volume_threshold: 1.5
+      expected_results:
+        min_win_rate: 0.55
+        max_drawdown: 0.18
+        min_sharpe_ratio: 0.45
+        min_total_return: 0.10
+        max_risk_score: 75
+
+  # Mean Reversion Strategy Tests
+  mean_reversion:
+    - name: "Mean Reversion Sideways Market"
+      description: "Test Mean Reversion strategy in sideways market"
+      market_condition: "sideways"
+      duration: "1h"
+      parameters:
+        lookback_period: 20
+        deviation_threshold: 2.0
+        position_size: 0.1
+      expected_results:
+        min_win_rate: 0.60
+        max_drawdown: 0.15
+        min_sharpe_ratio: 0.50
+        min_total_return: 0.06
+        max_risk_score: 65
+
+  # Arbitrage Strategy Tests
+  arbitrage:
+    - name: "Arbitrage Multi-Exchange"
+      description: "Test Arbitrage strategy across multiple exchanges"
+      market_condition: "normal"
+      duration: "30m"
+      parameters:
+        min_spread: 0.005
+        max_position_size: 0.2
+        execution_timeout: "10s"
+      expected_results:
+        min_win_rate: 0.80
+        max_drawdown: 0.05
+        min_sharpe_ratio: 1.00
+        min_total_return: 0.03
+        max_risk_score: 30
+
+  # Scalping Strategy Tests
+  scalping:
+    - name: "Scalping High Frequency"
+      description: "Test Scalping strategy with high frequency trading"
+      market_condition: "volatile"
+      duration: "30m"
+      parameters:
+        tick_size: 0.0001
+        profit_target: 0.002
+        stop_loss: 0.001
+        max_hold_time: "5m"
+      expected_results:
+        min_win_rate: 0.65
+        max_drawdown: 0.08
+        min_sharpe_ratio: 0.70
+        min_total_return: 0.04
+        max_risk_score: 60
+
+  # Portfolio Rebalancing Tests
+  portfolio_rebalancing:
+    - name: "Portfolio Rebalancing Multi-Asset"
+      description: "Test Portfolio Rebalancing across multiple assets"
+      market_condition: "normal"
+      duration: "2h"
+      parameters:
+        rebalance_frequency: "1h"
+        target_allocations:
+          BTC: 0.40
+          ETH: 0.30
+          BNB: 0.20
+          ADA: 0.10
+        rebalance_threshold: 0.05
+      expected_results:
+        min_win_rate: 0.50
+        max_drawdown: 0.20
+        min_sharpe_ratio: 0.40
+        min_total_return: 0.08
+        max_risk_score: 70
+
+# Test Reporting Configuration
+reporting:
+  # Report output directory
+  output_directory: "./test-reports"
+  
+  # Report formats
+  formats:
+    - "json"
+    - "html"
+    - "csv"
+    - "pdf"
+  
+  # Include detailed metrics
+  include_detailed_metrics: true
+  
+  # Include trade history
+  include_trade_history: true
+  
+  # Include performance charts
+  include_charts: true
+  
+  # Chart types
+  chart_types:
+    - "performance"
+    - "drawdown"
+    - "returns"
+    - "risk_metrics"
+    - "trade_distribution"
+
+# Continuous Integration Configuration
+ci:
+  # Enable CI mode
+  enabled: false
+  
+  # Test selection for CI
+  test_types:
+    - "unit"
+    - "integration"
+    - "performance"
+  
+  # Parallel execution
+  parallel_execution: true
+  
+  # Maximum CI test duration
+  max_duration: "30m"
+  
+  # Failure threshold
+  failure_threshold: 0.10  # 10% failure rate
+  
+  # Performance regression threshold
+  performance_regression_threshold: 0.05  # 5%
+
+# Monitoring and Alerting
+monitoring:
+  # Enable test monitoring
+  enabled: true
+  
+  # Monitoring interval
+  interval: "30s"
+  
+  # Alert thresholds
+  alert_thresholds:
+    test_failure_rate: 0.20      # 20%
+    avg_test_duration: "600s"    # 10 minutes
+    queue_size: 50               # 50 queued tests
+    worker_utilization: 0.90     # 90%
+  
+  # Alert channels
+  alert_channels:
+    email:
+      enabled: false
+      recipients: ["admin@example.com"]
+    
+    slack:
+      enabled: false
+      webhook_url: "https://hooks.slack.com/services/YOUR/WEBHOOK"
+      channel: "#trading-bot-tests"
+
+# Cleanup Configuration
+cleanup:
+  # Auto cleanup after tests
+  auto_cleanup: true
+  
+  # Cleanup interval
+  cleanup_interval: "1h"
+  
+  # Retention periods
+  test_results_retention: "7d"
+  test_logs_retention: "3d"
+  test_data_retention: "1d"
+  
+  # Cleanup thresholds
+  max_disk_usage: "10GB"
+  max_test_results: 1000

@@ -11,3 +11,8 @@ CLAUDE.md
 ai_docs
 mcp.json
 web/.env.local
+web/.wrangler/tmp
+cloudflare/workers/api/node_modules
+cloudflare/workers/api/.wrangler
+.mcp.json
+web/out

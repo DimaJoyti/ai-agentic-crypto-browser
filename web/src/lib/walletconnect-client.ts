@@ -38,8 +38,14 @@ export const createWalletConnectConnector = (projectId: string) => {
 
 // Check if WalletConnect is available (client-side only)
 export const isWalletConnectAvailable = () => {
-  return typeof window !== 'undefined' &&
-         typeof indexedDB !== 'undefined' &&
-         typeof localStorage !== 'undefined' &&
-         Boolean(process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID)
+  try {
+    return typeof window !== 'undefined' &&
+           typeof indexedDB !== 'undefined' &&
+           typeof localStorage !== 'undefined' &&
+           Boolean(process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID) &&
+           process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID !== 'your_walletconnect_project_id_here'
+  } catch (error) {
+    console.warn('WalletConnect availability check failed:', error)
+    return false
+  }
 }

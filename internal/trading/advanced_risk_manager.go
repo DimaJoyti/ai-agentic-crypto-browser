@@ -47,105 +47,112 @@ type RiskConfig struct {
 
 // RiskPosition represents a position with risk metrics
 type RiskPosition struct {
-	ID              string          `json:"id"`
-	Symbol          string          `json:"symbol"`
-	Quantity        decimal.Decimal `json:"quantity"`
-	MarketValue     decimal.Decimal `json:"market_value"`
-	UnrealizedPnL   decimal.Decimal `json:"unrealized_pnl"`
-	DeltaExposure   decimal.Decimal `json:"delta_exposure"`
-	GammaExposure   decimal.Decimal `json:"gamma_exposure"`
-	VegaExposure    decimal.Decimal `json:"vega_exposure"`
-	ThetaExposure   decimal.Decimal `json:"theta_exposure"`
-	Beta            decimal.Decimal `json:"beta"`
-	Volatility      decimal.Decimal `json:"volatility"`
-	VaR95           decimal.Decimal `json:"var_95"`
-	CVaR95          decimal.Decimal `json:"cvar_95"`
-	MaxDrawdown     decimal.Decimal `json:"max_drawdown"`
-	Liquidity       decimal.Decimal `json:"liquidity"`
+	ID               string          `json:"id"`
+	Symbol           string          `json:"symbol"`
+	Quantity         decimal.Decimal `json:"quantity"`
+	MarketValue      decimal.Decimal `json:"market_value"`
+	UnrealizedPnL    decimal.Decimal `json:"unrealized_pnl"`
+	DeltaExposure    decimal.Decimal `json:"delta_exposure"`
+	GammaExposure    decimal.Decimal `json:"gamma_exposure"`
+	VegaExposure     decimal.Decimal `json:"vega_exposure"`
+	ThetaExposure    decimal.Decimal `json:"theta_exposure"`
+	Beta             decimal.Decimal `json:"beta"`
+	Volatility       decimal.Decimal `json:"volatility"`
+	VaR95            decimal.Decimal `json:"var_95"`
+	CVaR95           decimal.Decimal `json:"cvar_95"`
+	MaxDrawdown      decimal.Decimal `json:"max_drawdown"`
+	Liquidity        decimal.Decimal `json:"liquidity"`
 	ConcentrationPct decimal.Decimal `json:"concentration_pct"`
-	LastUpdated     time.Time       `json:"last_updated"`
+	LastUpdated      time.Time       `json:"last_updated"`
 }
 
 // RiskExposure represents risk exposure by category
 type RiskExposure struct {
-	Category        string                            `json:"category"`
-	TotalExposure   decimal.Decimal                   `json:"total_exposure"`
-	NetExposure     decimal.Decimal                   `json:"net_exposure"`
-	GrossExposure   decimal.Decimal                   `json:"gross_exposure"`
-	LongExposure    decimal.Decimal                   `json:"long_exposure"`
-	ShortExposure   decimal.Decimal                   `json:"short_exposure"`
-	Positions       map[string]*RiskPosition          `json:"positions"`
-	Correlations    map[string]decimal.Decimal        `json:"correlations"`
-	VaR             decimal.Decimal                   `json:"var"`
-	CVaR            decimal.Decimal                   `json:"cvar"`
-	Beta            decimal.Decimal                   `json:"beta"`
-	Volatility      decimal.Decimal                   `json:"volatility"`
-	Sharpe          decimal.Decimal                   `json:"sharpe"`
-	MaxDrawdown     decimal.Decimal                   `json:"max_drawdown"`
-	LiquidityScore  decimal.Decimal                   `json:"liquidity_score"`
-	LastUpdated     time.Time                         `json:"last_updated"`
+	Category       string                     `json:"category"`
+	TotalExposure  decimal.Decimal            `json:"total_exposure"`
+	NetExposure    decimal.Decimal            `json:"net_exposure"`
+	GrossExposure  decimal.Decimal            `json:"gross_exposure"`
+	LongExposure   decimal.Decimal            `json:"long_exposure"`
+	ShortExposure  decimal.Decimal            `json:"short_exposure"`
+	Positions      map[string]*RiskPosition   `json:"positions"`
+	Correlations   map[string]decimal.Decimal `json:"correlations"`
+	VaR            decimal.Decimal            `json:"var"`
+	CVaR           decimal.Decimal            `json:"cvar"`
+	Beta           decimal.Decimal            `json:"beta"`
+	Volatility     decimal.Decimal            `json:"volatility"`
+	Sharpe         decimal.Decimal            `json:"sharpe"`
+	MaxDrawdown    decimal.Decimal            `json:"max_drawdown"`
+	LiquidityScore decimal.Decimal            `json:"liquidity_score"`
+	LastUpdated    time.Time                  `json:"last_updated"`
 }
 
 // VolatilityMetrics tracks volatility metrics
 type VolatilityMetrics struct {
-	Symbol              string          `json:"symbol"`
-	RealizedVolatility  decimal.Decimal `json:"realized_volatility"`
-	ImpliedVolatility   decimal.Decimal `json:"implied_volatility"`
+	Symbol               string          `json:"symbol"`
+	RealizedVolatility   decimal.Decimal `json:"realized_volatility"`
+	ImpliedVolatility    decimal.Decimal `json:"implied_volatility"`
 	HistoricalVolatility decimal.Decimal `json:"historical_volatility"`
-	VolatilitySkew      decimal.Decimal `json:"volatility_skew"`
-	VolatilitySmile     decimal.Decimal `json:"volatility_smile"`
-	GARCH               decimal.Decimal `json:"garch"`
-	LastUpdated         time.Time       `json:"last_updated"`
+	VolatilitySkew       decimal.Decimal `json:"volatility_skew"`
+	VolatilitySmile      decimal.Decimal `json:"volatility_smile"`
+	GARCH                decimal.Decimal `json:"garch"`
+	LastUpdated          time.Time       `json:"last_updated"`
 }
 
 // RiskMetrics contains overall portfolio risk metrics
 type RiskMetrics struct {
-	PortfolioValue      decimal.Decimal `json:"portfolio_value"`
-	TotalRisk           decimal.Decimal `json:"total_risk"`
-	SystematicRisk      decimal.Decimal `json:"systematic_risk"`
-	IdiosyncraticRisk   decimal.Decimal `json:"idiosyncratic_risk"`
-	VaR95               decimal.Decimal `json:"var_95"`
-	VaR99               decimal.Decimal `json:"var_99"`
-	CVaR95              decimal.Decimal `json:"cvar_95"`
-	CVaR99              decimal.Decimal `json:"cvar_99"`
-	MaxDrawdown         decimal.Decimal `json:"max_drawdown"`
-	SharpeRatio         decimal.Decimal `json:"sharpe_ratio"`
-	SortinoRatio        decimal.Decimal `json:"sortino_ratio"`
-	CalmarRatio         decimal.Decimal `json:"calmar_ratio"`
-	Beta                decimal.Decimal `json:"beta"`
-	Alpha               decimal.Decimal `json:"alpha"`
-	TrackingError       decimal.Decimal `json:"tracking_error"`
-	InformationRatio    decimal.Decimal `json:"information_ratio"`
-	ConcentrationRisk   decimal.Decimal `json:"concentration_risk"`
-	LiquidityRisk       decimal.Decimal `json:"liquidity_risk"`
-	CurrencyRisk        decimal.Decimal `json:"currency_risk"`
-	CounterpartyRisk    decimal.Decimal `json:"counterparty_risk"`
-	OperationalRisk     decimal.Decimal `json:"operational_risk"`
-	LastUpdated         time.Time       `json:"last_updated"`
+	PortfolioValue    decimal.Decimal `json:"portfolio_value"`
+	TotalRisk         decimal.Decimal `json:"total_risk"`
+	SystematicRisk    decimal.Decimal `json:"systematic_risk"`
+	IdiosyncraticRisk decimal.Decimal `json:"idiosyncratic_risk"`
+	VaR95             decimal.Decimal `json:"var_95"`
+	VaR99             decimal.Decimal `json:"var_99"`
+	CVaR95            decimal.Decimal `json:"cvar_95"`
+	CVaR99            decimal.Decimal `json:"cvar_99"`
+	MaxDrawdown       decimal.Decimal `json:"max_drawdown"`
+	SharpeRatio       decimal.Decimal `json:"sharpe_ratio"`
+	SortinoRatio      decimal.Decimal `json:"sortino_ratio"`
+	CalmarRatio       decimal.Decimal `json:"calmar_ratio"`
+	Beta              decimal.Decimal `json:"beta"`
+	Alpha             decimal.Decimal `json:"alpha"`
+	TrackingError     decimal.Decimal `json:"tracking_error"`
+	InformationRatio  decimal.Decimal `json:"information_ratio"`
+	ConcentrationRisk decimal.Decimal `json:"concentration_risk"`
+	LiquidityRisk     decimal.Decimal `json:"liquidity_risk"`
+	CurrencyRisk      decimal.Decimal `json:"currency_risk"`
+	CounterpartyRisk  decimal.Decimal `json:"counterparty_risk"`
+	OperationalRisk   decimal.Decimal `json:"operational_risk"`
+	LastUpdated       time.Time       `json:"last_updated"`
 }
 
 // AlertThresholds defines risk alert thresholds
 type AlertThresholds struct {
-	VaRThreshold            decimal.Decimal `json:"var_threshold"`
-	DrawdownThreshold       decimal.Decimal `json:"drawdown_threshold"`
-	ConcentrationThreshold  decimal.Decimal `json:"concentration_threshold"`
-	VolatilityThreshold     decimal.Decimal `json:"volatility_threshold"`
-	CorrelationThreshold    decimal.Decimal `json:"correlation_threshold"`
-	LiquidityThreshold      decimal.Decimal `json:"liquidity_threshold"`
-	LeverageThreshold       decimal.Decimal `json:"leverage_threshold"`
+	VaRThreshold           decimal.Decimal `json:"var_threshold"`
+	DrawdownThreshold      decimal.Decimal `json:"drawdown_threshold"`
+	ConcentrationThreshold decimal.Decimal `json:"concentration_threshold"`
+	VolatilityThreshold    decimal.Decimal `json:"volatility_threshold"`
+	CorrelationThreshold   decimal.Decimal `json:"correlation_threshold"`
+	LiquidityThreshold     decimal.Decimal `json:"liquidity_threshold"`
+	LeverageThreshold      decimal.Decimal `json:"leverage_threshold"`
 }
 
 // RiskAlert represents a risk alert
 type RiskAlert struct {
-	ID          string          `json:"id"`
-	Type        RiskAlertType   `json:"type"`
-	Severity    AlertSeverity   `json:"severity"`
-	Message     string          `json:"message"`
-	Symbol      string          `json:"symbol,omitempty"`
-	Value       decimal.Decimal `json:"value"`
-	Threshold   decimal.Decimal `json:"threshold"`
-	Timestamp   time.Time       `json:"timestamp"`
-	Acknowledged bool           `json:"acknowledged"`
+	ID           string                 `json:"id"`
+	Type         RiskAlertType          `json:"type"`
+	Severity     AlertSeverity          `json:"severity"`
+	BotID        string                 `json:"bot_id,omitempty"`
+	Symbol       string                 `json:"symbol,omitempty"`
+	Message      string                 `json:"message"`
+	Details      map[string]interface{} `json:"details"`
+	Threshold    decimal.Decimal        `json:"threshold,omitempty"`
+	ActualValue  decimal.Decimal        `json:"actual_value,omitempty"`
+	Value        decimal.Decimal        `json:"value"`
+	CreatedAt    time.Time              `json:"created_at"`
+	UpdatedAt    time.Time              `json:"updated_at"`
+	Timestamp    time.Time              `json:"timestamp"`
+	Status       AlertStatus            `json:"status"`
+	Actions      []AlertAction          `json:"actions"`
+	Acknowledged bool                   `json:"acknowledged"`
 }
 
 // RiskAlertType defines types of risk alerts
@@ -159,17 +166,41 @@ const (
 	RiskAlertTypeCorrelation   RiskAlertType = "correlation_breach"
 	RiskAlertTypeLiquidity     RiskAlertType = "liquidity_breach"
 	RiskAlertTypeLeverage      RiskAlertType = "leverage_breach"
+	RiskAlertTypeDailyLoss     RiskAlertType = "daily_loss"
+	RiskAlertTypePosition      RiskAlertType = "position"
+	RiskAlertTypeBotHalted     RiskAlertType = "bot_halted"
+	RiskAlertTypeEmergencyStop RiskAlertType = "emergency_stop"
 )
 
 // AlertSeverity defines alert severity levels
 type AlertSeverity string
 
 const (
+	AlertSeverityInfo     AlertSeverity = "info"
 	AlertSeverityLow      AlertSeverity = "low"
 	AlertSeverityMedium   AlertSeverity = "medium"
+	AlertSeverityWarning  AlertSeverity = "warning"
 	AlertSeverityHigh     AlertSeverity = "high"
 	AlertSeverityCritical AlertSeverity = "critical"
 )
+
+// AlertStatus defines alert status
+type AlertStatus string
+
+const (
+	AlertStatusActive       AlertStatus = "active"
+	AlertStatusAcknowledged AlertStatus = "acknowledged"
+	AlertStatusResolved     AlertStatus = "resolved"
+	AlertStatusSuppressed   AlertStatus = "suppressed"
+)
+
+// AlertAction represents an action taken for an alert
+type AlertAction struct {
+	Type        string    `json:"type"`
+	Description string    `json:"description"`
+	Timestamp   time.Time `json:"timestamp"`
+	UserID      string    `json:"user_id,omitempty"`
+}
 
 // NewAdvancedRiskManager creates a new advanced risk manager
 func NewAdvancedRiskManager(logger *observability.Logger) *AdvancedRiskManager {
@@ -189,13 +220,13 @@ func NewAdvancedRiskManager(logger *observability.Logger) *AdvancedRiskManager {
 	}
 
 	alertThresholds := &AlertThresholds{
-		VaRThreshold:            decimal.NewFromFloat(0.02),
-		DrawdownThreshold:       decimal.NewFromFloat(0.10),
-		ConcentrationThreshold:  decimal.NewFromFloat(0.20),
-		VolatilityThreshold:     decimal.NewFromFloat(0.25),
-		CorrelationThreshold:    decimal.NewFromFloat(0.75),
-		LiquidityThreshold:      decimal.NewFromFloat(0.15),
-		LeverageThreshold:       decimal.NewFromFloat(3.0),
+		VaRThreshold:           decimal.NewFromFloat(0.02),
+		DrawdownThreshold:      decimal.NewFromFloat(0.10),
+		ConcentrationThreshold: decimal.NewFromFloat(0.20),
+		VolatilityThreshold:    decimal.NewFromFloat(0.25),
+		CorrelationThreshold:   decimal.NewFromFloat(0.75),
+		LiquidityThreshold:     decimal.NewFromFloat(0.15),
+		LeverageThreshold:      decimal.NewFromFloat(3.0),
 	}
 
 	return &AdvancedRiskManager{
@@ -382,7 +413,7 @@ func (arm *AdvancedRiskManager) checkLiquidityRequirements(order *ExecutionOrder
 	// Simplified liquidity check
 	position, exists := arm.positions[order.Symbol]
 	if exists && position.Liquidity.LessThan(arm.config.LiquidityThreshold) {
-		return fmt.Errorf("insufficient liquidity %s below threshold %s", 
+		return fmt.Errorf("insufficient liquidity %s below threshold %s",
 			position.Liquidity.String(), arm.config.LiquidityThreshold.String())
 	}
 
@@ -400,7 +431,7 @@ func (arm *AdvancedRiskManager) checkCorrelationLimits(order *ExecutionOrder) er
 	for symbol, correlation := range symbolCorrelations {
 		if _, hasPosition := arm.positions[symbol]; hasPosition {
 			if correlation.GreaterThan(arm.config.CorrelationThreshold) {
-				return fmt.Errorf("correlation with %s (%s) exceeds threshold %s", 
+				return fmt.Errorf("correlation with %s (%s) exceeds threshold %s",
 					symbol, correlation.String(), arm.config.CorrelationThreshold.String())
 			}
 		}
@@ -454,19 +485,19 @@ func (arm *AdvancedRiskManager) calculateConcentrationRisk() {
 func (arm *AdvancedRiskManager) checkRiskAlerts(ctx context.Context) {
 	// Check VaR threshold
 	if arm.riskMetrics.VaR95.GreaterThan(arm.alertThresholds.VaRThreshold.Mul(arm.riskMetrics.PortfolioValue)) {
-		arm.generateAlert(RiskAlertTypeVaR, AlertSeverityHigh, "VaR threshold exceeded", "", 
+		arm.generateAlert(RiskAlertTypeVaR, AlertSeverityHigh, "VaR threshold exceeded", "",
 			arm.riskMetrics.VaR95, arm.alertThresholds.VaRThreshold)
 	}
 
 	// Check drawdown threshold
 	if arm.riskMetrics.MaxDrawdown.GreaterThan(arm.alertThresholds.DrawdownThreshold) {
-		arm.generateAlert(RiskAlertTypeDrawdown, AlertSeverityCritical, "Drawdown threshold exceeded", "", 
+		arm.generateAlert(RiskAlertTypeDrawdown, AlertSeverityCritical, "Drawdown threshold exceeded", "",
 			arm.riskMetrics.MaxDrawdown, arm.alertThresholds.DrawdownThreshold)
 	}
 
 	// Check concentration threshold
 	if arm.riskMetrics.ConcentrationRisk.GreaterThan(arm.alertThresholds.ConcentrationThreshold) {
-		arm.generateAlert(RiskAlertTypeConcentration, AlertSeverityMedium, "Concentration threshold exceeded", "", 
+		arm.generateAlert(RiskAlertTypeConcentration, AlertSeverityMedium, "Concentration threshold exceeded", "",
 			arm.riskMetrics.ConcentrationRisk, arm.alertThresholds.ConcentrationThreshold)
 	}
 }
@@ -611,7 +642,7 @@ func (arm *AdvancedRiskManager) performStressTests(ctx context.Context) {
 	// Simplified stress testing
 	for _, scenario := range arm.config.StressTestScenarios {
 		stressedValue := arm.riskMetrics.PortfolioValue.Mul(decimal.NewFromFloat(0.8)) // 20% stress
-		stressedVaR := arm.riskMetrics.VaR95.Mul(decimal.NewFromFloat(1.5))           // 50% VaR increase
+		stressedVaR := arm.riskMetrics.VaR95.Mul(decimal.NewFromFloat(1.5))            // 50% VaR increase
 
 		arm.logger.Info(ctx, "Stress test result", map[string]interface{}{
 			"scenario":       scenario,

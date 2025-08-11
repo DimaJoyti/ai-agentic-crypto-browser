@@ -1,0 +1,48 @@
+# Cloudflare Worker Configuration for API Gateway
+name = "ai-crypto-browser-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"
+API_VERSION = "v1"
+
+# KV Namespaces for caching and sessions
+[[kv_namespaces]]
+binding = "CACHE"
+id = "55e7705f73ee4c698f1d4281408e4d8a"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "39aa68b7361644ecb8be0e203c98fef0"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "ai-crypto-browser-db"
+database_id = "0ba27a6b-1120-4979-9723-1a5504a8d5b1"
+
+# R2 Storage binding
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "ai-crypto-browser-storage"
+
+# Durable Objects for real-time features
+[[durable_objects.bindings]]
+name = "WEBSOCKET_HANDLER"
+class_name = "WebSocketHandler"
+
+# Durable Objects migrations
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["WebSocketHandler"]
+
+# Environment-specific configurations
+[env.staging]
+name = "ai-crypto-browser-api-staging"
+vars = { ENVIRONMENT = "staging" }
+
+[env.development]
+name = "ai-crypto-browser-api-dev"
+vars = { ENVIRONMENT = "development" }

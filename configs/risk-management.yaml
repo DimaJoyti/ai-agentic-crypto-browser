@@ -1,0 +1,356 @@
+# Risk Management Configuration
+# AI-Agentic Crypto Browser - Trading Bot Risk Management System
+
+# Portfolio-Level Risk Configuration
+portfolio_risk:
+  # Maximum portfolio exposure (80% of total capital)
+  max_portfolio_exposure: 0.80
+  
+  # Maximum correlation between bots (70%)
+  max_correlation_limit: 0.70
+  
+  # Value at Risk limit (5% of portfolio)
+  var_limit: 0.05
+  
+  # Maximum portfolio drawdown (15%)
+  max_drawdown_limit: 0.15
+  
+  # Maximum daily loss for entire portfolio (10%)
+  max_daily_loss_portfolio: 0.10
+
+# Bot-Level Risk Configuration
+bot_risk:
+  # Maximum exposure per bot (20% of portfolio)
+  max_bot_exposure: 0.20
+  
+  # Maximum daily loss per bot (5%)
+  max_daily_loss_per_bot: 0.05
+  
+  # Maximum consecutive losses before alert
+  max_consecutive_losses: 5
+  
+  # Risk tolerance levels by strategy
+  strategy_risk_profiles:
+    dca:
+      risk_tolerance: "low"
+      max_position_size: 0.20
+      stop_loss: 0.15
+      take_profit: 0.30
+      max_drawdown: 0.10
+      max_daily_loss: 0.03
+      max_consecutive_losses: 3
+      
+    grid:
+      risk_tolerance: "medium"
+      max_position_size: 0.15
+      stop_loss: 0.20
+      take_profit: 0.25
+      max_drawdown: 0.12
+      max_daily_loss: 0.04
+      max_consecutive_losses: 4
+      
+    momentum:
+      risk_tolerance: "high"
+      max_position_size: 0.10
+      stop_loss: 0.08
+      take_profit: 0.15
+      max_drawdown: 0.15
+      max_daily_loss: 0.05
+      max_consecutive_losses: 5
+      
+    mean_reversion:
+      risk_tolerance: "medium"
+      max_position_size: 0.15
+      stop_loss: 0.10
+      take_profit: 0.20
+      max_drawdown: 0.12
+      max_daily_loss: 0.04
+      max_consecutive_losses: 4
+      
+    arbitrage:
+      risk_tolerance: "low"
+      max_position_size: 0.20
+      stop_loss: 0.05
+      take_profit: 0.02
+      max_drawdown: 0.08
+      max_daily_loss: 0.03
+      max_consecutive_losses: 3
+      
+    scalping:
+      risk_tolerance: "aggressive"
+      max_position_size: 0.10
+      stop_loss: 0.003
+      take_profit: 0.002
+      max_drawdown: 0.15
+      max_daily_loss: 0.06
+      max_consecutive_losses: 8
+      
+    swing:
+      risk_tolerance: "medium"
+      max_position_size: 0.10
+      stop_loss: 0.12
+      take_profit: 0.25
+      max_drawdown: 0.15
+      max_daily_loss: 0.04
+      max_consecutive_losses: 4
+
+# Risk Monitoring Configuration
+monitoring:
+  # Risk update interval
+  risk_update_interval: "1m"
+  
+  # Health check interval
+  health_check_interval: "30s"
+  
+  # Performance monitoring interval
+  performance_update_interval: "5m"
+  
+  # Correlation update interval
+  correlation_update_interval: "1h"
+
+# Alert Thresholds
+alert_thresholds:
+  # VaR alert thresholds
+  var_warning: 0.03      # 3% VaR warning
+  var_critical: 0.05     # 5% VaR critical
+  
+  # Drawdown alert thresholds
+  drawdown_warning: 0.10   # 10% drawdown warning
+  drawdown_critical: 0.15  # 15% drawdown critical
+  
+  # Loss alert thresholds
+  loss_warning: 0.03       # 3% daily loss warning
+  loss_critical: 0.05      # 5% daily loss critical
+  
+  # Volatility alert thresholds
+  volatility_warning: 0.25  # 25% volatility warning
+  volatility_critical: 0.40 # 40% volatility critical
+  
+  # Correlation alert thresholds
+  correlation_warning: 0.70  # 70% correlation warning
+  correlation_critical: 0.85 # 85% correlation critical
+
+# Emergency Controls
+emergency_controls:
+  # Enable emergency stop functionality
+  emergency_stop_enabled: true
+  
+  # Auto-halt bots on risk violations
+  auto_halt_on_violation: true
+  
+  # Emergency stop triggers
+  emergency_triggers:
+    # Portfolio drawdown threshold for emergency stop
+    portfolio_drawdown: 0.20  # 20%
+    
+    # Portfolio daily loss threshold for emergency stop
+    portfolio_daily_loss: 0.15  # 15%
+    
+    # VaR threshold for emergency stop
+    var_threshold: 0.08  # 8%
+    
+    # Number of simultaneous bot failures for emergency stop
+    bot_failure_threshold: 3
+
+# Risk Limits Configuration
+risk_limits:
+  # Position size limits
+  position_limits:
+    # Maximum position size per symbol
+    max_position_per_symbol: 0.25  # 25%
+    
+    # Maximum position size per exchange
+    max_position_per_exchange: 0.60  # 60%
+    
+    # Maximum position size per sector
+    max_position_per_sector: 0.40  # 40%
+  
+  # Concentration limits
+  concentration_limits:
+    # Maximum concentration in single asset
+    max_single_asset: 0.30  # 30%
+    
+    # Maximum concentration in top 3 assets
+    max_top_three_assets: 0.60  # 60%
+    
+    # Maximum concentration in single strategy
+    max_single_strategy: 0.35  # 35%
+  
+  # Leverage limits
+  leverage_limits:
+    # Maximum leverage per bot
+    max_leverage_per_bot: 3.0
+    
+    # Maximum portfolio leverage
+    max_portfolio_leverage: 2.0
+    
+    # Margin requirements
+    min_margin_ratio: 0.20  # 20%
+
+# Alert Configuration
+alerts:
+  # Maximum alerts per hour to prevent spam
+  max_alerts_per_hour: 100
+  
+  # Alert retention period
+  alert_retention: "24h"
+  
+  # Alert channels
+  channels:
+    email:
+      enabled: true
+      smtp_host: "smtp.gmail.com"
+      smtp_port: 587
+      username: "alerts@example.com"
+      use_tls: true
+      to_addresses:
+        - "admin@example.com"
+        - "risk@example.com"
+    
+    webhook:
+      enabled: false
+      url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+      timeout: "10s"
+      headers:
+        Content-Type: "application/json"
+    
+    slack:
+      enabled: false
+      webhook_url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+      channel: "#trading-alerts"
+      username: "RiskBot"
+
+# Stress Testing Configuration
+stress_testing:
+  # Enable stress testing
+  enabled: true
+  
+  # Stress test scenarios
+  scenarios:
+    market_crash:
+      name: "Market Crash Scenario"
+      description: "Simulate 30% market drop"
+      price_shock: -0.30
+      correlation_increase: 0.20
+      volatility_multiplier: 2.0
+      
+    flash_crash:
+      name: "Flash Crash Scenario"
+      description: "Simulate rapid 15% drop and recovery"
+      price_shock: -0.15
+      duration: "5m"
+      recovery_time: "30m"
+      
+    high_volatility:
+      name: "High Volatility Scenario"
+      description: "Simulate extreme volatility period"
+      volatility_multiplier: 3.0
+      correlation_breakdown: true
+      duration: "2h"
+      
+    liquidity_crisis:
+      name: "Liquidity Crisis Scenario"
+      description: "Simulate liquidity shortage"
+      spread_widening: 5.0
+      volume_reduction: 0.50
+      slippage_increase: 3.0
+
+# Compliance and Reporting
+compliance:
+  # Enable compliance monitoring
+  enabled: true
+  
+  # Regulatory frameworks
+  frameworks:
+    - "MiFID II"
+    - "CFTC"
+    - "SEC"
+  
+  # Reporting requirements
+  reporting:
+    # Daily risk report
+    daily_report: true
+    
+    # Weekly risk summary
+    weekly_summary: true
+    
+    # Monthly compliance report
+    monthly_compliance: true
+    
+    # Real-time violation reporting
+    real_time_violations: true
+  
+  # Audit trail
+  audit_trail:
+    enabled: true
+    retention_period: "7y"  # 7 years
+    include_all_decisions: true
+    include_risk_calculations: true
+
+# Performance Optimization
+performance:
+  # Risk calculation optimization
+  calculation_optimization:
+    # Use parallel processing for risk calculations
+    parallel_processing: true
+    
+    # Number of worker threads
+    worker_threads: 4
+    
+    # Batch size for risk calculations
+    batch_size: 100
+  
+  # Caching configuration
+  caching:
+    # Cache risk calculations
+    cache_risk_calculations: true
+    
+    # Cache TTL
+    cache_ttl: "5m"
+    
+    # Cache size limit
+    cache_size_limit: 1000
+  
+  # Database optimization
+  database:
+    # Connection pool size
+    connection_pool_size: 20
+    
+    # Query timeout
+    query_timeout: "30s"
+    
+    # Batch insert size
+    batch_insert_size: 500
+
+# Integration Settings
+integration:
+  # External risk data providers
+  data_providers:
+    # Market data provider
+    market_data:
+      provider: "internal"
+      update_frequency: "1s"
+    
+    # Volatility data provider
+    volatility_data:
+      provider: "internal"
+      update_frequency: "1m"
+    
+    # Correlation data provider
+    correlation_data:
+      provider: "internal"
+      update_frequency: "5m"
+  
+  # External systems
+  external_systems:
+    # Risk management system integration
+    external_risk_system:
+      enabled: false
+      endpoint: "https://risk.example.com/api"
+      api_key: "your_api_key"
+    
+    # Compliance system integration
+    compliance_system:
+      enabled: false
+      endpoint: "https://compliance.example.com/api"
+      api_key: "your_api_key"

@@ -1,0 +1,121 @@
+{
+  "name": "AI Agentic Crypto Browser WAF Rules",
+  "description": "Web Application Firewall rules for the crypto trading platform",
+  "rules": [
+    {
+      "name": "Block SQL Injection Attempts",
+      "description": "Block common SQL injection patterns",
+      "expression": "(http.request.uri.query contains \"union select\") or (http.request.uri.query contains \"drop table\") or (http.request.uri.query contains \"insert into\") or (http.request.body contains \"union select\") or (http.request.body contains \"drop table\")",
+      "action": "block",
+      "enabled": true,
+      "priority": 1
+    },
+    {
+      "name": "Block XSS Attempts",
+      "description": "Block cross-site scripting attempts",
+      "expression": "(http.request.uri.query contains \"<script\") or (http.request.uri.query contains \"javascript:\") or (http.request.body contains \"<script\") or (http.request.body contains \"javascript:\")",
+      "action": "block",
+      "enabled": true,
+      "priority": 2
+    },
+    {
+      "name": "Rate Limit API Endpoints",
+      "description": "Rate limit API calls to prevent abuse",
+      "expression": "(http.request.uri.path matches \"^/api/.*\")",
+      "action": "challenge",
+      "enabled": true,
+      "priority": 3,
+      "rate_limit": {
+        "threshold": 100,
+        "period": 60,
+        "action": "challenge"
+      }
+    },
+    {
+      "name": "Block Suspicious User Agents",
+      "description": "Block known malicious user agents",
+      "expression": "(http.user_agent contains \"sqlmap\") or (http.user_agent contains \"nikto\") or (http.user_agent contains \"nessus\") or (http.user_agent contains \"masscan\")",
+      "action": "block",
+      "enabled": true,
+      "priority": 4
+    },
+    {
+      "name": "Protect Admin Endpoints",
+      "description": "Extra protection for admin endpoints",
+      "expression": "(http.request.uri.path matches \"^/admin/.*\") or (http.request.uri.path matches \"^/api/admin/.*\")",
+      "action": "challenge",
+      "enabled": true,
+      "priority": 5
+    },
+    {
+      "name": "Block Crypto Mining Scripts",
+      "description": "Block requests for crypto mining scripts",
+      "expression": "(http.request.uri.query contains \"coinhive\") or (http.request.uri.query contains \"cryptoloot\") or (http.request.uri.path contains \"mining.js\")",
+      "action": "block",
+      "enabled": true,
+      "priority": 6
+    },
+    {
+      "name": "Geo-blocking High Risk Countries",
+      "description": "Challenge requests from high-risk countries",
+      "expression": "(ip.geoip.country in {\"CN\" \"RU\" \"KP\" \"IR\"})",
+      "action": "challenge",
+      "enabled": false,
+      "priority": 7,
+      "note": "Disabled by default - enable based on your requirements"
+    },
+    {
+      "name": "Protect Trading Endpoints",
+      "description": "Enhanced protection for trading-related endpoints",
+      "expression": "(http.request.uri.path matches \"^/api/trading/.*\") or (http.request.uri.path matches \"^/api/orders/.*\")",
+      "action": "challenge",
+      "enabled": true,
+      "priority": 8,
+      "rate_limit": {
+        "threshold": 50,
+        "period": 60,
+        "action": "block"
+      }
+    },
+    {
+      "name": "Block File Upload Exploits",
+      "description": "Block malicious file upload attempts",
+      "expression": "(http.request.body contains \".php\") or (http.request.body contains \".jsp\") or (http.request.body contains \".asp\") or (http.request.body contains \"<?php\")",
+      "action": "block",
+      "enabled": true,
+      "priority": 9
+    },
+    {
+      "name": "DDoS Protection",
+      "description": "Advanced DDoS protection rules",
+      "expression": "(cf.threat_score gt 50) or (cf.bot_management.score lt 30)",
+      "action": "challenge",
+      "enabled": true,
+      "priority": 10
+    }
+  ],
+  "managed_rules": [
+    {
+      "name": "Cloudflare Managed Ruleset",
+      "enabled": true,
+      "action": "challenge"
+    },
+    {
+      "name": "OWASP Core Rule Set",
+      "enabled": true,
+      "action": "block"
+    }
+  ],
+  "bot_management": {
+    "enabled": true,
+    "fight_mode": true,
+    "session_score": 30,
+    "static_resource_protection": true
+  },
+  "ddos_protection": {
+    "enabled": true,
+    "sensitivity": "high",
+    "http_ddos_attack_protection": true,
+    "l7_ddos_attack_protection": true
+  }
+}

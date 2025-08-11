@@ -5,10 +5,14 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:ci": "next build || echo 'Build completed with warnings'",
+    "build:ci": "npm ci --prefer-offline --no-audit && next build",
+    "build:cloudflare": "NODE_ENV=production next build",
+    "build:production": "NODE_ENV=production npm ci --prefer-offline --no-audit && next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "deploy:cloudflare": "npm run build:cloudflare && wrangler pages deploy out",
+    "preview:cloudflare": "wrangler pages dev out"
   },
   "dependencies": {
     "@jup-ag/api": "^6.0.44",
@@ -39,11 +43,7 @@
     "@types/qrcode.react": "^1.0.5",
     "@types/react-syntax-highlighter": "^15.5.11",
     "@wagmi/connectors": "^5.9.1",
-<<<<<<< HEAD
     "@wagmi/core": "^2.18.1",
-=======
-    "@wagmi/core": "^2.6.5",
->>>>>>> d850c235d1b366ccb3b4e75eebc09fc566798249
     "@walletconnect/web3wallet": "^1.10.0",
     "autoprefixer": "^10.4.17",
     "axios": "^1.7.9",
@@ -52,30 +52,18 @@
     "clsx": "^2.1.0",
     "date-fns": "^4.1.0",
     "framer-motion": "^11.18.2",
-<<<<<<< HEAD
     "lucide-react": "^0.539.0",
     "next": "^14.2.31",
     "next-themes": "^0.4.6",
-=======
-    "lucide-react": "^0.323.0",
-    "next": "^14.2.31",
-    "next-themes": "^0.2.1",
->>>>>>> d850c235d1b366ccb3b4e75eebc09fc566798249
     "postcss": "^8.4.33",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-day-picker": "^9.8.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.4.1",
-<<<<<<< HEAD
     "react-markdown": "^9.1.0",
     "react-syntax-highlighter": "^15.6.1",
     "recharts": "^3.1.2",
-=======
-    "react-markdown": "^9.0.1",
-    "react-syntax-highlighter": "^15.6.1",
-    "recharts": "^3.1.0",
->>>>>>> d850c235d1b366ccb3b4e75eebc09fc566798249
     "sonner": "^2.0.6",
     "tailwind-merge": "^2.6.0",
     "tailwindcss": "^3.4.17",

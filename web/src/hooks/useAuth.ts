@@ -32,6 +32,18 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {
+    // During SSR/SSG, return a default state instead of throwing
+    if (typeof window === 'undefined') {
+      return {
+        user: null,
+        isLoading: true,
+        isAuthenticated: false,
+        login: async () => {},
+        register: async () => {},
+        logout: () => {},
+        refreshToken: async () => {},
+      }
+    }
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
@@ -45,11 +57,15 @@ export function useAuthState() {
   const isAuthenticated = !!user
 
   useEffect(() => {
-    // Check for existing token on mount
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      // Validate token and get user info
-      validateToken(token)
+    // Check for existing token on mount (client-side only)
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('access_token')
+      if (token) {
+        // Validate token and get user info
+        validateToken(token)
+      } else {
+        setIsLoading(false)
+      }
     } else {
       setIsLoading(false)
     }
@@ -57,7 +73,7 @@ export function useAuthState() {
 
   const validateToken = async (token: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -68,13 +84,17 @@ export function useAuthState() {
         setUser(userData.user)
       } else {
         // Token is invalid
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+        }
       }
     } catch (error) {
       console.error('Token validation failed:', error)
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -83,7 +103,7 @@ export function useAuthState() {
   const login = async (email: string, password: string) => {
     setIsLoading(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,8 +119,10 @@ export function useAuthState() {
       const data = await response.json()
       
       // Store tokens
-      localStorage.setItem('access_token', data.access_token)
-      localStorage.setItem('refresh_token', data.refresh_token)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('access_token', data.access_token)
+        localStorage.setItem('refresh_token', data.refresh_token)
+      }
       
       // Set user data
       setUser(data.user)
@@ -118,7 +140,7 @@ export function useAuthState() {
   const register = async (userData: RegisterData) => {
     setIsLoading(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,8 +156,10 @@ export function useAuthState() {
       const data = await response.json()
       
       // Store tokens
-      localStorage.setItem('access_token', data.access_token)
-      localStorage.setItem('refresh_token', data.refresh_token)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('access_token', data.access_token)
+        localStorage.setItem('refresh_token', data.refresh_token)
+      }
       
       // Set user data
       setUser(data.user)
@@ -151,13 +175,19 @@ export function useAuthState() {
   }
 
   const logout = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+    }
     setUser(null)
     router.push('/')
   }
 
   const refreshToken = async () => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
     const refreshToken = localStorage.getItem('refresh_token')
     if (!refreshToken) {
       logout()
@@ -165,7 +195,7 @@ export function useAuthState() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,10 +209,12 @@ export function useAuthState() {
       }
 
       const data = await response.json()
-      localStorage.setItem('access_token', data.access_token)
-      
-      if (data.refresh_token) {
-        localStorage.setItem('refresh_token', data.refresh_token)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('access_token', data.access_token)
+
+        if (data.refresh_token) {
+          localStorage.setItem('refresh_token', data.refresh_token)
+        }
       }
     } catch (error) {
       console.error('Token refresh failed:', error)
