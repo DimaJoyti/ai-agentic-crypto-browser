@@ -26,6 +26,7 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { formatCurrency, formatRelativeTime } from '@/lib/utils'
+import { AuthGuard } from '@/components/auth-guard'
 import Link from 'next/link'
 
 interface DashboardStats {
@@ -159,11 +160,12 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
+    <AuthGuard>
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="border-b border-border bg-card">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Dashboard</h1>
               <p className="text-muted-foreground mt-1">
@@ -558,5 +560,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </AuthGuard>
   )
 }

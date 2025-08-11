@@ -271,7 +271,11 @@ func demoSecurityDashboard(ctx context.Context, logger *observability.Logger) {
 // demoDeviceTrustManagement demonstrates device trust features
 func demoDeviceTrustManagement(ctx context.Context, logger *observability.Logger) {
 	// Create device trust manager
-	deviceManager := security.NewDeviceTrustManager(logger)
+	config := &security.SecurityConfig{
+		DeviceTrustDuration: 30 * 24 * time.Hour,
+		MaxTrustedDevices:   5,
+	}
+	deviceManager := security.NewDeviceTrustManager(logger, config)
 
 	fmt.Println("  Creating device trust management system...")
 

@@ -1,0 +1,260 @@
+# 7 Trading Bots Configuration
+# AI-Agentic Crypto Browser - Trading Bot System
+
+trading_bots:
+  # Bot 1: Dollar Cost Averaging (DCA) Bot
+  dca_bot:
+    id: "dca-bot-001"
+    name: "DCA Conservative Bot"
+    strategy: "dollar_cost_averaging"
+    enabled: true
+    
+    # Trading Configuration
+    trading:
+      pairs: ["BTC/USDT", "ETH/USDT"]
+      exchange: "binance"
+      base_currency: "USDT"
+      
+    # Strategy Parameters
+    strategy_params:
+      investment_amount: 100.0  # USDT per interval
+      interval: "1h"            # 1 hour intervals
+      max_deviation: 0.05       # 5% price deviation threshold
+      accumulation_period: "24h" # 24 hours accumulation
+      
+    # Risk Management
+    risk_management:
+      max_position_size: 0.20   # 20% of total capital
+      stop_loss: 0.15           # 15% stop loss
+      take_profit: 0.30         # 30% take profit
+      max_drawdown: 0.10        # 10% max drawdown
+      
+    # Capital Allocation
+    capital:
+      initial_balance: 10000.0  # $10,000 USDT
+      allocation_percentage: 0.20 # 20% of total portfolio
+      
+  # Bot 2: Grid Trading Bot
+  grid_bot:
+    id: "grid-bot-002"
+    name: "Grid Trading Bot"
+    strategy: "grid_trading"
+    enabled: true
+    
+    trading:
+      pairs: ["BNB/USDT", "ADA/USDT"]
+      exchange: "binance"
+      base_currency: "USDT"
+      
+    strategy_params:
+      grid_levels: 20           # Number of grid levels
+      grid_spacing: 0.02        # 2% spacing between levels
+      upper_bound: 1.20         # 20% above current price
+      lower_bound: 0.80         # 20% below current price
+      order_amount: 50.0        # USDT per grid order
+      
+    risk_management:
+      max_position_size: 0.15
+      stop_loss: 0.20
+      take_profit: 0.25
+      max_drawdown: 0.12
+      
+    capital:
+      initial_balance: 7500.0
+      allocation_percentage: 0.15
+      
+  # Bot 3: Momentum Trading Bot
+  momentum_bot:
+    id: "momentum-bot-003"
+    name: "Momentum Aggressive Bot"
+    strategy: "momentum"
+    enabled: true
+    
+    trading:
+      pairs: ["SOL/USDT", "AVAX/USDT"]
+      exchange: "coinbase"
+      base_currency: "USDT"
+      
+    strategy_params:
+      momentum_period: 14       # 14 periods for momentum calculation
+      rsi_threshold_buy: 30     # RSI oversold threshold
+      rsi_threshold_sell: 70    # RSI overbought threshold
+      volume_threshold: 1.5     # 1.5x average volume
+      breakout_threshold: 0.03  # 3% breakout threshold
+      
+    risk_management:
+      max_position_size: 0.10
+      stop_loss: 0.08
+      take_profit: 0.15
+      max_drawdown: 0.15
+      
+    capital:
+      initial_balance: 5000.0
+      allocation_percentage: 0.10
+      
+  # Bot 4: Mean Reversion Bot
+  mean_reversion_bot:
+    id: "mean-reversion-bot-004"
+    name: "Mean Reversion Bot"
+    strategy: "mean_reversion"
+    enabled: true
+    
+    trading:
+      pairs: ["DOT/USDT", "LINK/USDT"]
+      exchange: "kraken"
+      base_currency: "USDT"
+      
+    strategy_params:
+      lookback_period: 20       # 20 periods for mean calculation
+      std_dev_multiplier: 2.0   # 2 standard deviations
+      rsi_oversold: 25          # RSI oversold level
+      rsi_overbought: 75        # RSI overbought level
+      bollinger_period: 20      # Bollinger Bands period
+      
+    risk_management:
+      max_position_size: 0.15
+      stop_loss: 0.10
+      take_profit: 0.20
+      max_drawdown: 0.12
+      
+    capital:
+      initial_balance: 7500.0
+      allocation_percentage: 0.15
+      
+  # Bot 5: Arbitrage Bot
+  arbitrage_bot:
+    id: "arbitrage-bot-005"
+    name: "Cross-Exchange Arbitrage Bot"
+    strategy: "arbitrage"
+    enabled: true
+    
+    trading:
+      pairs: ["BTC/USDT"]
+      exchanges: ["binance", "coinbase", "kraken"]
+      base_currency: "USDT"
+      
+    strategy_params:
+      min_profit_threshold: 0.005 # 0.5% minimum profit
+      max_execution_time: 30      # 30 seconds max execution
+      slippage_tolerance: 0.002   # 0.2% slippage tolerance
+      balance_threshold: 0.1      # 10% balance threshold
+      
+    risk_management:
+      max_position_size: 0.20
+      stop_loss: 0.05
+      take_profit: 0.02
+      max_drawdown: 0.08
+      
+    capital:
+      initial_balance: 10000.0
+      allocation_percentage: 0.20
+      
+  # Bot 6: Scalping Bot
+  scalping_bot:
+    id: "scalping-bot-006"
+    name: "High-Frequency Scalping Bot"
+    strategy: "scalping"
+    enabled: true
+    
+    trading:
+      pairs: ["ETH/USDT"]
+      exchange: "binance"
+      base_currency: "USDT"
+      
+    strategy_params:
+      timeframe: "1m"           # 1-minute timeframe
+      profit_target: 0.002      # 0.2% profit target
+      max_holding_time: 300     # 5 minutes max holding
+      volume_spike_threshold: 2.0 # 2x volume spike
+      spread_threshold: 0.001   # 0.1% spread threshold
+      
+    risk_management:
+      max_position_size: 0.10
+      stop_loss: 0.003
+      take_profit: 0.002
+      max_drawdown: 0.15
+      
+    capital:
+      initial_balance: 5000.0
+      allocation_percentage: 0.10
+      
+  # Bot 7: Swing Trading Bot
+  swing_bot:
+    id: "swing-bot-007"
+    name: "Multi-Asset Swing Bot"
+    strategy: "swing_trading"
+    enabled: true
+    
+    trading:
+      pairs: ["MATIC/USDT", "UNI/USDT", "AAVE/USDT", "SUSHI/USDT"]
+      exchange: "binance"
+      base_currency: "USDT"
+      
+    strategy_params:
+      timeframe: "4h"           # 4-hour timeframe
+      ma_fast: 12               # Fast moving average
+      ma_slow: 26               # Slow moving average
+      signal_line: 9            # MACD signal line
+      rsi_period: 14            # RSI period
+      
+    risk_management:
+      max_position_size: 0.10
+      stop_loss: 0.12
+      take_profit: 0.25
+      max_drawdown: 0.15
+      
+    capital:
+      initial_balance: 5000.0
+      allocation_percentage: 0.10
+
+# Global Bot Configuration
+global_config:
+  # Execution Settings
+  execution:
+    max_concurrent_bots: 7
+    execution_interval: "5s"
+    order_timeout: "30s"
+    retry_attempts: 3
+    
+  # Risk Management
+  portfolio_risk:
+    max_total_exposure: 0.80    # 80% max portfolio exposure
+    correlation_limit: 0.70     # 70% max correlation between bots
+    var_limit: 0.05             # 5% Value at Risk limit
+    
+  # Monitoring
+  monitoring:
+    performance_update_interval: "1m"
+    health_check_interval: "30s"
+    alert_thresholds:
+      drawdown: 0.10
+      profit_target: 0.20
+      error_rate: 0.05
+      
+  # Database
+  database:
+    bot_state_table: "trading_bot_states"
+    trade_history_table: "bot_trade_history"
+    performance_table: "bot_performance_metrics"
+    
+  # Security
+  security:
+    api_key_encryption: true
+    config_encryption: true
+    audit_logging: true
+    
+# Exchange Configuration
+exchanges:
+  binance:
+    api_url: "https://api.binance.com"
+    testnet_url: "https://testnet.binance.vision"
+    rate_limit: 1200  # requests per minute
+    
+  coinbase:
+    api_url: "https://api.exchange.coinbase.com"
+    sandbox_url: "https://api-public.sandbox.exchange.coinbase.com"
+    rate_limit: 10    # requests per second
+    
+  kraken:
+    api_url: "https://api.kraken.com"
+    rate_limit: 60    # requests per minute

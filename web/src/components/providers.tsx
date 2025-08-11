@@ -27,9 +27,33 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setMounted(true)
     // Only get client config once when mounted
     if (typeof window !== 'undefined') {
-      setWagmiConfig(getClientConfig())
+      try {
+        setWagmiConfig(getClientConfig())
+      } catch (error) {
+        console.error('Failed to initialize client config:', error)
+        // Fallback to server config
+        setWagmiConfig(serverConfig)
+      }
     }
   }, [])
+
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <WagmiProvider config={serverConfig}>
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        </WagmiProvider>
+      </ThemeProvider>
+    )
+  }
 
   return (
     <ThemeProvider

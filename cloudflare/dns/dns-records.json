@@ -1,0 +1,140 @@
+{
+  "name": "AI Agentic Crypto Browser DNS Configuration",
+  "description": "DNS records for the crypto trading platform",
+  "records": [
+    {
+      "type": "A",
+      "name": "@",
+      "content": "192.0.2.1",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "Root domain - points to Cloudflare Pages"
+    },
+    {
+      "type": "CNAME",
+      "name": "www",
+      "content": "your-domain.com",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "WWW subdomain"
+    },
+    {
+      "type": "CNAME",
+      "name": "api",
+      "content": "ai-crypto-browser-api.your-account.workers.dev",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "API subdomain - points to Cloudflare Worker"
+    },
+    {
+      "type": "CNAME",
+      "name": "ws",
+      "content": "ai-crypto-browser-ws.your-account.workers.dev",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "WebSocket subdomain"
+    },
+    {
+      "type": "CNAME",
+      "name": "admin",
+      "content": "your-domain.com",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "Admin panel subdomain"
+    },
+    {
+      "type": "CNAME",
+      "name": "staging",
+      "content": "ai-crypto-browser-staging.pages.dev",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "Staging environment"
+    },
+    {
+      "type": "CNAME",
+      "name": "dev",
+      "content": "ai-crypto-browser-dev.pages.dev",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "Development environment"
+    },
+    {
+      "type": "TXT",
+      "name": "@",
+      "content": "v=spf1 include:_spf.google.com ~all",
+      "ttl": 3600,
+      "comment": "SPF record for email"
+    },
+    {
+      "type": "TXT",
+      "name": "_dmarc",
+      "content": "v=DMARC1; p=quarantine; rua=mailto:dmarc@your-domain.com",
+      "ttl": 3600,
+      "comment": "DMARC policy"
+    },
+    {
+      "type": "MX",
+      "name": "@",
+      "content": "10 mx.your-domain.com",
+      "ttl": 3600,
+      "comment": "Mail exchange record"
+    },
+    {
+      "type": "CNAME",
+      "name": "status",
+      "content": "status-page.your-domain.com",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "Status page"
+    },
+    {
+      "type": "CNAME",
+      "name": "docs",
+      "content": "documentation.your-domain.com",
+      "ttl": 1,
+      "proxied": true,
+      "comment": "Documentation site"
+    }
+  ],
+  "ssl_settings": {
+    "ssl_mode": "full_strict",
+    "min_tls_version": "1.2",
+    "tls_1_3": "on",
+    "automatic_https_rewrites": "on",
+    "always_use_https": "on",
+    "hsts": {
+      "enabled": true,
+      "max_age": 31536000,
+      "include_subdomains": true,
+      "preload": true
+    }
+  },
+  "security_settings": {
+    "security_level": "medium",
+    "challenge_passage": 30,
+    "browser_integrity_check": "on",
+    "hotlink_protection": "on",
+    "server_side_exclude": "on",
+    "privacy_pass": "on"
+  },
+  "performance_settings": {
+    "minify": {
+      "css": "on",
+      "html": "on",
+      "js": "on"
+    },
+    "brotli": "on",
+    "early_hints": "on",
+    "http2": "on",
+    "http3": "on",
+    "zero_rtt": "on",
+    "ipv6": "on"
+  },
+  "caching_settings": {
+    "caching_level": "standard",
+    "browser_cache_ttl": 14400,
+    "development_mode": "off",
+    "query_string_sort": "on",
+    "always_online": "on"
+  }
+}

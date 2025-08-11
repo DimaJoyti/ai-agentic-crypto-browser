@@ -1,0 +1,436 @@
+# Monitoring and Analytics Configuration
+# AI-Agentic Crypto Browser - Trading Bot Monitoring System
+
+# Collection Configuration
+collection:
+  # Metrics collection interval
+  metrics_interval: "30s"
+  
+  # Health check interval
+  health_check_interval: "60s"
+  
+  # Alert check interval
+  alert_check_interval: "10s"
+  
+  # Performance snapshot interval
+  snapshot_interval: "5m"
+
+# Data Retention Configuration
+retention:
+  # Metrics retention period
+  metrics_retention: "24h"
+  
+  # Alert retention period
+  alert_retention: "168h"  # 7 days
+  
+  # Performance snapshot retention
+  snapshot_retention: "24h"
+  
+  # Dashboard data retention
+  dashboard_retention: "72h"  # 3 days
+
+# Performance Thresholds
+thresholds:
+  # Bot performance thresholds
+  bot_performance:
+    min_win_rate: 0.40           # 40% minimum win rate
+    max_drawdown: 0.20           # 20% maximum drawdown
+    max_daily_loss: 0.05         # 5% maximum daily loss
+    min_sharpe_ratio: 0.50       # 0.5 minimum Sharpe ratio
+    min_profit_factor: 1.20      # 1.2 minimum profit factor
+    max_consecutive_losses: 5     # Maximum consecutive losses
+    
+  # System performance thresholds
+  system_performance:
+    max_cpu_usage: 80.0          # 80% maximum CPU usage
+    max_memory_usage: 85.0       # 85% maximum memory usage
+    max_response_time: "2s"      # 2 seconds maximum response time
+    max_error_rate: 5.0          # 5% maximum error rate
+    max_goroutines: 1000         # Maximum goroutines
+    
+  # Trading performance thresholds
+  trading_performance:
+    max_execution_time: "30s"    # 30 seconds maximum execution time
+    min_order_fill_rate: 0.95    # 95% minimum order fill rate
+    max_slippage: 0.01           # 1% maximum slippage
+    max_order_failure_rate: 0.05 # 5% maximum order failure rate
+    min_api_success_rate: 0.98   # 98% minimum API success rate
+
+# Feature Configuration
+features:
+  # Enable real-time alerts
+  enable_realtime_alerts: true
+  
+  # Enable dashboard
+  enable_dashboard: true
+  
+  # Enable metrics export
+  enable_metrics_export: true
+  
+  # Enable profiling
+  enable_profiling: false
+  
+  # Enable performance analytics
+  enable_performance_analytics: true
+  
+  # Enable risk analytics
+  enable_risk_analytics: true
+  
+  # Enable trading analytics
+  enable_trading_analytics: true
+  
+  # Enable historical data collection
+  enable_historical_data: true
+
+# Dashboard Configuration
+dashboard:
+  # Dashboard update interval
+  update_interval: "1m"
+  
+  # Maximum data points for charts
+  max_chart_points: 1440  # 24 hours at 1-minute intervals
+  
+  # Chart time ranges
+  chart_time_ranges:
+    - "1h"
+    - "6h"
+    - "24h"
+    - "7d"
+    - "30d"
+  
+  # Default time range
+  default_time_range: "24h"
+  
+  # Enable real-time updates
+  enable_realtime_updates: true
+  
+  # WebSocket update interval
+  websocket_update_interval: "5s"
+
+# Alert Configuration
+alerts:
+  # Alert processing configuration
+  processing:
+    # Maximum alerts per minute to prevent spam
+    max_alerts_per_minute: 10
+    
+    # Alert deduplication window
+    deduplication_window: "5m"
+    
+    # Alert escalation timeout
+    escalation_timeout: "30m"
+    
+    # Auto-resolve timeout for certain alert types
+    auto_resolve_timeout: "1h"
+  
+  # Alert severity levels
+  severity_levels:
+    info:
+      color: "#17a2b8"
+      priority: 1
+      auto_resolve: true
+      
+    warning:
+      color: "#ffc107"
+      priority: 2
+      auto_resolve: false
+      
+    high:
+      color: "#fd7e14"
+      priority: 3
+      auto_resolve: false
+      
+    critical:
+      color: "#dc3545"
+      priority: 4
+      auto_resolve: false
+      escalate: true
+  
+  # Alert channels
+  channels:
+    email:
+      enabled: true
+      smtp_host: "smtp.gmail.com"
+      smtp_port: 587
+      username: "alerts@example.com"
+      use_tls: true
+      to_addresses:
+        - "admin@example.com"
+        - "trading@example.com"
+      template: "default"
+      
+    webhook:
+      enabled: false
+      url: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+      timeout: "10s"
+      retry_attempts: 3
+      headers:
+        Content-Type: "application/json"
+        Authorization: "Bearer YOUR_TOKEN"
+        
+    slack:
+      enabled: false
+      webhook_url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+      channel: "#trading-alerts"
+      username: "TradingBot"
+      icon_emoji: ":robot_face:"
+      
+    discord:
+      enabled: false
+      webhook_url: "https://discord.com/api/webhooks/YOUR/WEBHOOK"
+      username: "TradingBot"
+      avatar_url: "https://example.com/bot-avatar.png"
+
+# Metrics Export Configuration
+metrics_export:
+  # Prometheus configuration
+  prometheus:
+    enabled: true
+    endpoint: "/metrics"
+    namespace: "trading_bots"
+    subsystem: "monitoring"
+    
+    # Custom metrics
+    custom_metrics:
+      - name: "bot_performance_total"
+        type: "counter"
+        help: "Total bot performance metrics"
+        labels: ["bot_id", "strategy", "metric_type"]
+        
+      - name: "portfolio_value"
+        type: "gauge"
+        help: "Current portfolio value"
+        labels: ["currency"]
+        
+      - name: "alert_total"
+        type: "counter"
+        help: "Total alerts generated"
+        labels: ["severity", "type", "bot_id"]
+  
+  # InfluxDB configuration
+  influxdb:
+    enabled: false
+    url: "http://localhost:8086"
+    database: "trading_bots"
+    username: "admin"
+    password: "password"
+    retention_policy: "autogen"
+    
+  # Custom webhook export
+  webhook:
+    enabled: false
+    url: "https://your-analytics-service.com/metrics"
+    interval: "1m"
+    timeout: "30s"
+    batch_size: 100
+
+# Analytics Configuration
+analytics:
+  # Performance analytics
+  performance:
+    # Enable performance tracking
+    enabled: true
+    
+    # Performance calculation intervals
+    calculation_intervals:
+      - "1h"
+      - "24h"
+      - "7d"
+      - "30d"
+    
+    # Benchmark comparisons
+    benchmarks:
+      - symbol: "BTC"
+        name: "Bitcoin"
+        weight: 0.6
+        
+      - symbol: "ETH"
+        name: "Ethereum"
+        weight: 0.3
+        
+      - symbol: "SPY"
+        name: "S&P 500"
+        weight: 0.1
+    
+    # Performance metrics to calculate
+    metrics:
+      - "total_return"
+      - "sharpe_ratio"
+      - "sortino_ratio"
+      - "calmar_ratio"
+      - "max_drawdown"
+      - "volatility"
+      - "beta"
+      - "alpha"
+      - "win_rate"
+      - "profit_factor"
+  
+  # Risk analytics
+  risk:
+    # Enable risk analytics
+    enabled: true
+    
+    # Risk calculation methods
+    var_methods:
+      - "historical"
+      - "parametric"
+      - "monte_carlo"
+    
+    # Confidence levels for VaR
+    var_confidence_levels:
+      - 0.95
+      - 0.99
+    
+    # Risk horizon
+    risk_horizon: "1d"
+    
+    # Correlation calculation
+    correlation:
+      enabled: true
+      lookback_period: "30d"
+      update_frequency: "1h"
+  
+  # Trading analytics
+  trading:
+    # Enable trading analytics
+    enabled: true
+    
+    # Execution analytics
+    execution:
+      track_slippage: true
+      track_fill_rates: true
+      track_execution_time: true
+      track_order_types: true
+    
+    # Market impact analysis
+    market_impact:
+      enabled: true
+      volume_threshold: 0.01  # 1% of average volume
+      price_impact_threshold: 0.001  # 0.1% price impact
+    
+    # Trading pattern analysis
+    patterns:
+      enabled: true
+      pattern_types:
+        - "time_of_day"
+        - "day_of_week"
+        - "market_conditions"
+        - "volatility_regimes"
+
+# Storage Configuration
+storage:
+  # Database configuration for metrics storage
+  database:
+    type: "postgresql"  # postgresql, mysql, sqlite
+    host: "localhost"
+    port: 5432
+    database: "trading_bots_monitoring"
+    username: "monitoring_user"
+    password: "monitoring_password"
+    ssl_mode: "disable"
+    
+    # Connection pool settings
+    max_open_connections: 25
+    max_idle_connections: 5
+    connection_max_lifetime: "1h"
+  
+  # Time-series database for high-frequency data
+  timeseries:
+    type: "influxdb"  # influxdb, prometheus, none
+    url: "http://localhost:8086"
+    database: "trading_metrics"
+    retention_policy: "30d"
+    
+  # Cache configuration
+  cache:
+    type: "redis"  # redis, memory, none
+    host: "localhost"
+    port: 6379
+    database: 1
+    password: ""
+    ttl: "1h"
+
+# Performance Optimization
+optimization:
+  # Metrics collection optimization
+  collection:
+    # Use parallel processing
+    parallel_processing: true
+    
+    # Number of worker threads
+    worker_threads: 4
+    
+    # Batch size for database operations
+    batch_size: 100
+    
+    # Buffer size for metrics
+    buffer_size: 1000
+  
+  # Memory optimization
+  memory:
+    # Maximum memory usage for metrics storage
+    max_memory_usage: "512MB"
+    
+    # Garbage collection frequency
+    gc_frequency: "5m"
+    
+    # Memory cleanup threshold
+    cleanup_threshold: 0.80
+  
+  # Database optimization
+  database:
+    # Use prepared statements
+    use_prepared_statements: true
+    
+    # Connection pooling
+    enable_connection_pooling: true
+    
+    # Query timeout
+    query_timeout: "30s"
+    
+    # Batch insert size
+    batch_insert_size: 500
+
+# Security Configuration
+security:
+  # API security
+  api:
+    # Enable authentication
+    enable_auth: true
+    
+    # API key authentication
+    api_key_auth: true
+    
+    # JWT authentication
+    jwt_auth: false
+    
+    # Rate limiting
+    rate_limiting:
+      enabled: true
+      requests_per_minute: 1000
+      burst_size: 100
+  
+  # Data encryption
+  encryption:
+    # Encrypt sensitive data at rest
+    encrypt_at_rest: true
+    
+    # Encryption algorithm
+    algorithm: "AES-256-GCM"
+    
+    # Key rotation interval
+    key_rotation_interval: "90d"
+  
+  # Audit logging
+  audit:
+    # Enable audit logging
+    enabled: true
+    
+    # Log all API requests
+    log_api_requests: true
+    
+    # Log data access
+    log_data_access: true
+    
+    # Audit log retention
+    retention_period: "1y"

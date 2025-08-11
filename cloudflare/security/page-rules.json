@@ -1,0 +1,120 @@
+{
+  "name": "AI Agentic Crypto Browser Page Rules",
+  "description": "Page rules for performance and security optimization",
+  "rules": [
+    {
+      "url": "*.your-domain.com/static/*",
+      "actions": {
+        "cache_level": "cache_everything",
+        "edge_cache_ttl": 31536000,
+        "browser_cache_ttl": 31536000,
+        "security_level": "medium"
+      },
+      "priority": 1,
+      "status": "active"
+    },
+    {
+      "url": "*.your-domain.com/_next/static/*",
+      "actions": {
+        "cache_level": "cache_everything",
+        "edge_cache_ttl": 31536000,
+        "browser_cache_ttl": 31536000,
+        "security_level": "medium"
+      },
+      "priority": 2,
+      "status": "active"
+    },
+    {
+      "url": "*.your-domain.com/api/*",
+      "actions": {
+        "cache_level": "bypass",
+        "security_level": "high",
+        "ssl": "strict"
+      },
+      "priority": 3,
+      "status": "active"
+    },
+    {
+      "url": "*.your-domain.com/admin/*",
+      "actions": {
+        "security_level": "high",
+        "ssl": "strict",
+        "cache_level": "bypass",
+        "browser_integrity_check": "on"
+      },
+      "priority": 4,
+      "status": "active"
+    },
+    {
+      "url": "*.your-domain.com/ws/*",
+      "actions": {
+        "cache_level": "bypass",
+        "security_level": "medium",
+        "ssl": "strict"
+      },
+      "priority": 5,
+      "status": "active"
+    },
+    {
+      "url": "*.your-domain.com/*.js",
+      "actions": {
+        "cache_level": "cache_everything",
+        "edge_cache_ttl": 86400,
+        "browser_cache_ttl": 86400,
+        "minify": {
+          "js": "on"
+        }
+      },
+      "priority": 6,
+      "status": "active"
+    },
+    {
+      "url": "*.your-domain.com/*.css",
+      "actions": {
+        "cache_level": "cache_everything",
+        "edge_cache_ttl": 86400,
+        "browser_cache_ttl": 86400,
+        "minify": {
+          "css": "on"
+        }
+      },
+      "priority": 7,
+      "status": "active"
+    },
+    {
+      "url": "*.your-domain.com/*.html",
+      "actions": {
+        "cache_level": "cache_everything",
+        "edge_cache_ttl": 3600,
+        "browser_cache_ttl": 3600,
+        "minify": {
+          "html": "on"
+        }
+      },
+      "priority": 8,
+      "status": "active"
+    },
+    {
+      "url": "*.your-domain.com/images/*",
+      "actions": {
+        "cache_level": "cache_everything",
+        "edge_cache_ttl": 2592000,
+        "browser_cache_ttl": 2592000,
+        "polish": "lossy"
+      },
+      "priority": 9,
+      "status": "active"
+    },
+    {
+      "url": "*.your-domain.com/",
+      "actions": {
+        "always_use_https": "on",
+        "security_level": "medium",
+        "cache_level": "standard",
+        "browser_integrity_check": "on"
+      },
+      "priority": 10,
+      "status": "active"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+# Cloudflare Pages Redirects Configuration
+# Redirects for the AI Agentic Crypto Browser
+
+# API routes - proxy to Cloudflare Workers
+/api/* https://api-worker.your-domain.workers.dev/:splat 200
+
+# WebSocket connections - proxy to Workers
+/ws/* https://ws-worker.your-domain.workers.dev/:splat 200
+
+# Health check
+/health /api/health 200
+
+# Auth routes
+/auth/* /api/auth/:splat 200
+
+# AI routes
+/ai/* /api/ai/:splat 200
+
+# Browser automation routes
+/browser/* /api/browser/:splat 200
+
+# Web3 routes
+/web3/* /api/web3/:splat 200
+
+# Trading routes
+/trading/* /api/trading/:splat 200
+
+# Analytics routes
+/analytics/* /api/analytics/:splat 200
+
+# Portfolio routes
+/portfolio/* /api/portfolio/:splat 200
+
+# Risk management routes
+/risk/* /api/risk/:splat 200
+
+# HFT routes
+/hft/* /api/hft/:splat 200
+
+# MCP routes
+/mcp/* /api/mcp/:splat 200
+
+# Solana routes
+/solana/* /api/solana/:splat 200
+
+# Fallback for SPA routing
+/* /index.html 200

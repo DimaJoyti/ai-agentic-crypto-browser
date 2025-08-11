@@ -1,0 +1,18 @@
+# Cloudflare Pages Configuration for AI Agentic Crypto Browser Frontend
+# This file is used for Cloudflare Pages deployment
+
+# Project name
+name = "ai-agentic-crypto-browser"
+
+# Compatibility date
+compatibility_date = "2024-01-01"
+
+# Build configuration
+[build]
+command = "npm run build:cloudflare"
+cwd = "."
+
+# Environment variables
+[vars]
+NODE_ENV = "production"
+NEXT_PUBLIC_CLOUDFLARE_DEPLOYMENT = "true"
