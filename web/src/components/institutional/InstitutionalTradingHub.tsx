@@ -92,12 +92,23 @@ export function InstitutionalTradingHub() {
     if (!isConnected) return
 
     // Generate mock institutional data
+    // Get API credentials from environment variables or use demo values
+    const getDemoApiKey = (suffix: string) =>
+      process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+        ? `demo_key_${suffix}`
+        : process.env[`PRIME_BROKER_API_KEY_${suffix.toUpperCase()}`] || `demo_key_${suffix}`
+
+    const getDemoSecret = (suffix: string) =>
+      process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+        ? `demo_secret_${suffix}`
+        : process.env[`PRIME_BROKER_SECRET_${suffix.toUpperCase()}`] || `demo_secret_${suffix}`
+
     const mockApiCredentials: APICredential[] = [
       {
         id: 'api1',
         name: 'Trading Bot Production',
-        apiKey: 'demo_key_1234567890abcdef1234567890abcdef',
-        secretKey: 'demo_secret_abcdef1234567890abcdef1234567890',
+        apiKey: getDemoApiKey('1234567890abcdef1234567890abcdef'),
+        secretKey: getDemoSecret('abcdef1234567890abcdef1234567890'),
         permissions: ['read', 'trade', 'withdraw'],
         ipWhitelist: ['192.168.1.100', '10.0.0.1'],
         rateLimit: 1000,
@@ -112,8 +123,8 @@ export function InstitutionalTradingHub() {
       {
         id: 'api2',
         name: 'Market Data Feed',
-        apiKey: 'demo_key_fedcba0987654321fedcba0987654321',
-        secretKey: 'demo_secret_0987654321fedcba0987654321fedcba',
+        apiKey: getDemoApiKey('fedcba0987654321fedcba0987654321'),
+        secretKey: getDemoSecret('0987654321fedcba0987654321fedcba'),
         permissions: ['read'],
         ipWhitelist: ['203.0.113.1', '203.0.113.2'],
         rateLimit: 5000,

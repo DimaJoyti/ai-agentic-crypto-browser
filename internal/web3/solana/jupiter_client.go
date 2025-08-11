@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
@@ -95,9 +96,14 @@ type JupiterSwapResponse struct {
 
 // NewJupiterClient creates a new Jupiter client
 func NewJupiterClient(service *Service) *JupiterClient {
+	baseURL := "https://quote-api.jup.ag/v6" // default
+	if envURL := os.Getenv("JUPITER_API_URL"); envURL != "" {
+		baseURL = envURL
+	}
+
 	return &JupiterClient{
 		service: service,
-		baseURL: "https://quote-api.jup.ag/v6",
+		baseURL: baseURL,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},

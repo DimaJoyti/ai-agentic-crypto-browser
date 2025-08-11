@@ -8,8 +8,8 @@ export class SolanaMarketService {
 
   constructor() {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-    this.coingeckoAPI = 'https://api.coingecko.com/api/v3'
-    this.solanaAPI = 'https://api.mainnet-beta.solana.com'
+    this.coingeckoAPI = process.env.NEXT_PUBLIC_COINGECKO_API_URL || 'https://api.coingecko.com/api/v3'
+    this.solanaAPI = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
   }
 
   async getSolPrice(): Promise<SolPrice> {

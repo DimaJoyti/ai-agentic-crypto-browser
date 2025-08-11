@@ -8,8 +8,8 @@ export class SolanaNFTService {
 
   constructor() {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-    this.magicEdenAPI = 'https://api-mainnet.magiceden.dev/v2'
-    this.tensorAPI = 'https://api.tensor.trade/graphql'
+    this.magicEdenAPI = process.env.NEXT_PUBLIC_MAGIC_EDEN_API_URL || 'https://api-mainnet.magiceden.dev/v2'
+    this.tensorAPI = process.env.NEXT_PUBLIC_TENSOR_API_URL || 'https://api.tensor.trade/graphql'
   }
 
   async getCollections(options: {

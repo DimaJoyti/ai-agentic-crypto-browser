@@ -8,8 +8,8 @@ export class SolanaDeFiService {
 
   constructor() {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-    this.defillama = 'https://api.llama.fi'
-    this.jupiterAPI = 'https://quote-api.jup.ag/v6'
+    this.defillama = process.env.NEXT_PUBLIC_DEFILLAMA_API_URL || 'https://api.llama.fi'
+    this.jupiterAPI = process.env.NEXT_PUBLIC_JUPITER_API_URL || 'https://quote-api.jup.ag/v6'
   }
 
   async getProtocols(options: {
