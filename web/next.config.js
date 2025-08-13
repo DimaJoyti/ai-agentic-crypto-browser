@@ -5,22 +5,50 @@ const nextConfig = {
   trailingSlash: true,
   skipTrailingSlashRedirect: true,
 
+  // Development optimizations
+  ...(process.env.NODE_ENV === 'development' && {
+    // Faster development builds
+    swcMinify: false,
+    // Disable source maps in development for faster builds
+    productionBrowserSourceMaps: false,
+    // Optimize for development
+    optimizeFonts: false,
+    // Faster refresh
+    reactStrictMode: false,
+  }),
+
   // Reduce experimental features that might cause chunk issues
   experimental: {
     optimizeCss: false, // Disable to prevent chunk conflicts
-    // Remove optimizePackageImports temporarily
-  },
-  // Use stable build ID to prevent chunk loading issues
-  generateBuildId: async () => {
-    return 'ai-browser-stable'
+    // Development optimizations
+    ...(process.env.NODE_ENV === 'development' && {
+      // Faster compilation
+      turbo: {
+        rules: {
+          '*.svg': {
+            loaders: ['@svgr/webpack'],
+            as: '*.js',
+          },
+        },
+      },
+      // Disable expensive optimizations in dev
+      optimizePackageImports: [],
+      // Faster builds
+      webVitalsAttribution: [],
+    }),
   },
 
-  // Add chunk loading timeout and retry configuration
+  // Use stable build ID to prevent chunk loading issues
+  generateBuildId: async () => {
+    return process.env.NODE_ENV === 'development' ? 'dev-build' : 'ai-browser-stable'
+  },
+
+  // Optimized development settings
   onDemandEntries: {
     // Period (in ms) where the server will keep pages in the buffer
-    maxInactiveAge: 25 * 1000,
+    maxInactiveAge: process.env.NODE_ENV === 'development' ? 60 * 1000 : 25 * 1000,
     // Number of pages that should be kept simultaneously without being disposed
-    pagesBufferLength: 2,
+    pagesBufferLength: process.env.NODE_ENV === 'development' ? 5 : 2,
   },
 
   // PWA and Performance Headers
@@ -92,8 +120,33 @@ const nextConfig = {
       tls: false,
     };
 
-    // Improve chunk loading reliability
-    if (!isServer) {
+    // Development-specific optimizations for faster builds
+    if (dev) {
+      // Disable source maps in development for faster builds
+      config.devtool = false;
+
+      // Optimize module resolution for faster builds
+      config.resolve.symlinks = false;
+      config.resolve.cacheWithContext = false;
+
+      // Faster file watching
+      config.watchOptions = {
+        poll: false,
+        ignored: /node_modules/,
+      };
+
+      // Disable chunk splitting in development for faster builds
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: false,
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
+        mergeDuplicateChunks: false,
+      };
+    }
+
+    // Production optimizations
+    if (!isServer && !dev) {
       // Configure chunk loading with better error handling
       config.output = {
         ...config.output,
@@ -103,7 +156,7 @@ const nextConfig = {
         chunkLoadingGlobal: 'webpackChunkAiBrowser',
       };
 
-      // Optimize chunk splitting for better loading
+      // Optimize chunk splitting for better loading (production only)
       config.optimization = {
         ...config.optimization,
         splitChunks: {

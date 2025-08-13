@@ -7,6 +7,7 @@ import { EnhancedNavigation } from './EnhancedNavigation'
 import { ThemeCustomizer } from '@/components/ui/theme-customizer'
 import { NotificationProvider, NotificationCenter, useNotifications } from '@/components/ui/notification-system'
 import { LoadingSpinner } from '@/components/ui/enhanced-loading'
+import { PerformanceOptimizer } from '@/components/dev/PerformanceOptimizer'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { 
@@ -341,6 +342,9 @@ function LayoutContent({ children, showNavigation = true, showHeader = true, cla
         isOpen={isNotificationCenterOpen}
         onClose={() => setIsNotificationCenterOpen(false)}
       />
+
+      {/* Performance Optimizer (Development Only) */}
+      <PerformanceOptimizer />
     </div>
   )
 }

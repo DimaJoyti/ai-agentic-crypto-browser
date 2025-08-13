@@ -95,6 +95,14 @@ module.exports = {
             transform: "scale(1.02)"
           },
         },
+        "button-pulse": {
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(59, 130, 246, 0.7)" },
+          "70%": { boxShadow: "0 0 0 10px rgba(59, 130, 246, 0)" },
+        },
+        "ripple": {
+          "0%": { transform: "scale(0)", opacity: "1" },
+          "100%": { transform: "scale(4)", opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -105,6 +113,8 @@ module.exports = {
         "glow": "glow 2s ease-in-out infinite alternate",
         "shimmer": "shimmer 2s linear infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "button-pulse": "button-pulse 2s infinite",
+        "ripple": "ripple 0.6s ease-out",
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

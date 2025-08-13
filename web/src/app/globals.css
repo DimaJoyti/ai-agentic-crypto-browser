@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import performance optimizations for development */
+@import '../styles/performance.css';
+
 /* Enhanced UX Styles */
 
 /* Accessibility Enhancements */
@@ -642,6 +645,58 @@
 
 .btn-glass {
   @apply glass-card hover:bg-white/20 transition-all duration-300;
+}
+
+/* Button animations */
+@keyframes button-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+}
+
+.btn-pulse {
+  animation: button-pulse 2s infinite;
+}
+
+/* Shimmer effect for premium buttons */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Button glow effects */
+.btn-glow-blue {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+.btn-glow-purple {
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.5);
+}
+
+.btn-glow-emerald {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+}
+
+.btn-glow-yellow {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
 }
 
 /* Enhanced card styles */

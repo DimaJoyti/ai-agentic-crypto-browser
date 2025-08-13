@@ -1,9 +1,11 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { FeatureStatus, FeatureBadge, QuickStats } from '@/components/ui/feature-status'
 import {
   Bot,
   Globe,
@@ -64,6 +66,12 @@ const stats = [
 ]
 
 export default function HomePage() {
+  const router = useRouter()
+
+  const handleNavigation = (path: string) => {
+    router.push(path)
+  }
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -116,42 +124,264 @@ export default function HomePage() {
               Web3 technology for autonomous browsing and cryptocurrency management.
             </motion.p>
 
+            {/* Enhanced Feature Cards */}
             <motion.div
-              className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.8 }}
             >
-              <Button asChild size="lg" className="text-lg px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse-glow">
-                <Link href="/trading">
-                  HFT Trading <Zap className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-4 glass-card hover:bg-white/20 transition-all duration-300">
-                <Link href="/performance">
-                  Performance <BarChart3 className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-4 glass-card hover:bg-white/20 transition-all duration-300">
-                <Link href="/compliance">
-                  Compliance <Shield className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-4 glass-card hover:bg-white/20 transition-all duration-300">
-                <Link href="/web3">
-                  Web3 Features <Wallet className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-4 glass-card hover:bg-white/20 transition-all duration-300 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/50">
-                <Link href="/solana">
-                  Solana Trading <Zap className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-4 glass-card hover:bg-white/20 transition-all duration-300">
-                <Link href="/dashboard">
-                  Dashboard <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+              {/* HFT Trading - Primary Feature */}
+              <motion.div
+                whileHover={{ scale: 1.02, y: -5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="lg:col-span-3"
+              >
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-300 group cursor-pointer"
+                     onClick={() => handleNavigation('/trading')}>
+                    <div className="absolute inset-0 bg-grid-pattern opacity-10" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                    <div className="relative flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-4 bg-white/20 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-colors">
+                          <Zap className="h-8 w-8" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold mb-2">High-Frequency Trading</h3>
+                          <p className="text-blue-100 text-lg">
+                            Advanced algorithmic trading with microsecond execution
+                          </p>
+                        </div>
+                      </div>
+                      <div className="hidden md:flex items-center gap-2 text-blue-200">
+                        <span className="text-sm">Start Trading</span>
+                        <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </div>
+              </motion.div>
+
+              {/* Performance Analytics */}
+              <motion.div
+                whileHover={{ scale: 1.02, y: -5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/50 dark:to-teal-950/50 p-6 shadow-xl hover:shadow-2xl transition-all duration-300 group border border-emerald-200/50 dark:border-emerald-800/50 h-full cursor-pointer"
+                     onClick={() => handleNavigation('/performance')}>
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full -translate-y-10 translate-x-10" />
+                    <div className="relative">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800/70 transition-colors">
+                          <BarChart3 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-xl font-bold text-emerald-800 dark:text-emerald-200">Performance</h3>
+                            <FeatureBadge type="trending" className="text-xs" />
+                          </div>
+                          <FeatureStatus status="online" label="Live Monitoring" className="mt-1" />
+                        </div>
+                      </div>
+                      <p className="text-emerald-700 dark:text-emerald-300 mb-4">
+                        Real-time analytics and performance optimization insights
+                      </p>
+                      <QuickStats
+                        stats={[
+                          { label: 'Uptime', value: '99.9%', color: 'green', trend: 'up' },
+                          { label: 'Response', value: '12ms', color: 'blue', trend: 'up' }
+                        ]}
+                        className="mb-4"
+                      />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded-full">
+                            Analytics
+                          </div>
+                          <div className="text-xs bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded-full">
+                            Metrics
+                          </div>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </div>
+              </motion.div>
+
+              {/* Compliance & Risk */}
+              <motion.div
+                whileHover={{ scale: 1.02, y: -5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/50 dark:to-red-950/50 p-6 shadow-xl hover:shadow-2xl transition-all duration-300 group border border-orange-200/50 dark:border-orange-800/50 h-full cursor-pointer"
+                     onClick={() => handleNavigation('/compliance')}>
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/10 rounded-full -translate-y-10 translate-x-10" />
+                    <div className="relative">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="p-3 bg-orange-100 dark:bg-orange-900/50 rounded-xl group-hover:bg-orange-200 dark:group-hover:bg-orange-800/70 transition-colors">
+                          <Shield className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-xl font-bold text-orange-800 dark:text-orange-200">Compliance</h3>
+                            <FeatureBadge type="premium" className="text-xs" />
+                          </div>
+                          <FeatureStatus status="online" label="98% Compliant" className="mt-1" />
+                        </div>
+                      </div>
+                      <p className="text-orange-700 dark:text-orange-300 mb-4">
+                        Regulatory compliance monitoring and risk management
+                      </p>
+                      <QuickStats
+                        stats={[
+                          { label: 'Risk Score', value: 'Low', color: 'green' },
+                          { label: 'Violations', value: '0', color: 'green' }
+                        ]}
+                        className="mb-4"
+                      />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 px-2 py-1 rounded-full">
+                            Risk
+                          </div>
+                          <div className="text-xs bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 px-2 py-1 rounded-full">
+                            Audit
+                          </div>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-orange-600 dark:text-orange-400 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </div>
+              </motion.div>
+
+              {/* Web3 Features */}
+              <motion.div
+                whileHover={{ scale: 1.02, y: -5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 p-6 shadow-xl hover:shadow-2xl transition-all duration-300 group border border-purple-200/50 dark:border-purple-800/50 h-full cursor-pointer"
+                     onClick={() => handleNavigation('/web3')}>
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -translate-y-10 translate-x-10" />
+                    <div className="relative">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl group-hover:bg-purple-200 dark:group-hover:bg-purple-800/70 transition-colors">
+                          <Wallet className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-xl font-bold text-purple-800 dark:text-purple-200">Web3 Features</h3>
+                            <FeatureBadge type="hot" className="text-xs" />
+                          </div>
+                          <FeatureStatus status="beta" label="Blockchain Ready" className="mt-1" />
+                        </div>
+                      </div>
+                      <p className="text-purple-700 dark:text-purple-300 mb-4">
+                        Decentralized finance and blockchain integration tools
+                      </p>
+                      <QuickStats
+                        stats={[
+                          { label: 'Networks', value: '5+', color: 'purple' },
+                          { label: 'Protocols', value: '12', color: 'blue' }
+                        ]}
+                        className="mb-4"
+                      />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-full">
+                            DeFi
+                          </div>
+                          <div className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-full">
+                            NFTs
+                          </div>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </div>
+              </motion.div>
+
+              {/* Dashboard */}
+              <motion.div
+                whileHover={{ scale: 1.02, y: -5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 p-6 shadow-xl hover:shadow-2xl transition-all duration-300 group border border-blue-200/50 dark:border-blue-800/50 h-full cursor-pointer"
+                     onClick={() => handleNavigation('/dashboard')}>
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -translate-y-10 translate-x-10" />
+                    <div className="relative">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl group-hover:bg-blue-200 dark:group-hover:bg-blue-800/70 transition-colors">
+                          <BarChart3 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-xl font-bold text-blue-800 dark:text-blue-200">Dashboard</h3>
+                            <FeatureBadge type="popular" className="text-xs" />
+                          </div>
+                          <FeatureStatus status="online" label="All Systems" className="mt-1" />
+                        </div>
+                      </div>
+                      <p className="text-blue-700 dark:text-blue-300 mb-4">
+                        Comprehensive overview of all trading activities
+                      </p>
+                      <QuickStats
+                        stats={[
+                          { label: 'Active', value: '24/7', color: 'blue' },
+                          { label: 'Widgets', value: '15+', color: 'green' }
+                        ]}
+                        className="mb-4"
+                      />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
+                            Overview
+                          </div>
+                          <div className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
+                            Reports
+                          </div>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </div>
+              </motion.div>
+
+              {/* Solana Trading - Special Feature */}
+              <motion.div
+                whileHover={{ scale: 1.02, y: -5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="lg:col-span-2"
+              >
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-6 text-white shadow-2xl hover:shadow-3xl transition-all duration-300 group cursor-pointer"
+                     onClick={() => handleNavigation('/solana')}>
+                    <div className="absolute inset-0 bg-grid-pattern opacity-10" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                    <div className="relative flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-colors">
+                          <Zap className="h-7 w-7" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold mb-2">Solana Trading</h3>
+                          <p className="text-emerald-100">
+                            High-speed trading on the Solana blockchain
+                          </p>
+                          <div className="flex items-center gap-3 mt-2">
+                            <div className="text-xs bg-white/20 text-white px-2 py-1 rounded-full">
+                              Ultra Fast
+                            </div>
+                            <div className="text-xs bg-white/20 text-white px-2 py-1 rounded-full">
+                              Low Fees
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="hidden md:flex items-center gap-2 text-emerald-200">
+                        <span className="text-sm">Trade Now</span>
+                        <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </div>
+              </motion.div>
             </motion.div>
           </motion.div>
         </div>
@@ -285,12 +515,12 @@ export default function HomePage() {
               and manage their cryptocurrency portfolios.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Button asChild size="lg" className="text-lg px-10 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-xl hover:shadow-2xl transition-all duration-300 animate-pulse-glow">
+              <Button asChild size="xl" variant="default" className="text-lg px-10 py-4 animate-pulse-glow">
                 <Link href="/auth/register">
                   Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-10 py-4 glass-card hover:bg-white/20 transition-all duration-300">
+              <Button asChild variant="glass" size="xl" className="text-lg px-10 py-4">
                 <Link href="/docs">
                   Read Documentation
                 </Link>

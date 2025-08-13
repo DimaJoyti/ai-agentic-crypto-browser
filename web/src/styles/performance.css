@@ -1,0 +1,231 @@
+/* Performance Optimizations for Development */
+
+/* Disable animations when performance mode is enabled */
+.performance-mode * {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+
+/* Reduce motion for better performance */
+.reduce-motion * {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+
+/* Optimize rendering performance */
+.performance-optimized {
+  /* Use GPU acceleration for better performance */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  
+  /* Optimize repaints */
+  will-change: auto;
+  
+  /* Reduce layout thrashing */
+  contain: layout style paint;
+}
+
+/* Fast loading states */
+.fast-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: fast-shimmer 1s infinite;
+}
+
+@keyframes fast-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Optimized scrolling */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.virtual-scroll {
+  overflow: hidden;
+  position: relative;
+}
+
+/* Memory-efficient animations */
+.efficient-fade {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.efficient-fade.visible {
+  opacity: 1;
+}
+
+.efficient-slide {
+  transform: translateY(20px);
+  transition: transform 0.2s ease;
+}
+
+.efficient-slide.visible {
+  transform: translateY(0);
+}
+
+/* Reduce paint complexity */
+.simple-shadow {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.simple-border {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Optimize images for development */
+.dev-image {
+  image-rendering: auto;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* Fast button styles */
+.fast-button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.fast-button:hover {
+  background: #2563eb;
+}
+
+/* Efficient grid layouts */
+.fast-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* Optimized flexbox */
+.fast-flex {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* Performance monitoring styles */
+.perf-monitor {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* Development-only styles */
+.dev-only {
+  border: 2px dashed #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  position: relative;
+}
+
+.dev-only::before {
+  content: 'DEV';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  background: #ff6b6b;
+  color: white;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 0 0 0 4px;
+}
+
+/* Lazy loading optimization */
+.lazy-load {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.lazy-load.loaded {
+  opacity: 1;
+}
+
+/* Intersection observer optimization */
+.observe-visibility {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.observe-visibility:not(.visible) {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* Memory leak prevention */
+.cleanup-on-unmount * {
+  /* Ensure proper cleanup */
+  pointer-events: auto;
+}
+
+/* Fast typography */
+.fast-text {
+  font-feature-settings: normal;
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Efficient transforms */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Development grid overlay */
+.dev-grid {
+  background-image: 
+    linear-gradient(rgba(255, 0, 0, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Performance debugging */
+.debug-performance * {
+  outline: 1px solid rgba(255, 0, 0, 0.2);
+}
+
+.debug-performance *:hover {
+  outline: 2px solid rgba(255, 0, 0, 0.5);
+}
+
+/* Responsive optimizations */
+@media (max-width: 768px) {
+  .mobile-optimized {
+    /* Reduce complexity on mobile */
+    box-shadow: none;
+    border-radius: 4px;
+    backdrop-filter: none;
+  }
+}
+
+/* Print optimizations */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-optimized {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+}
