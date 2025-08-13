@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
+	"github.com/ai-agentic-browser/internal/exchanges/common"
 	"github.com/ai-agentic-browser/internal/hft"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/shopspring/decimal"
 )
 
 // HFT Engine API handlers
@@ -482,5 +486,384 @@ func (s *APIServer) handleTradingSignals(w http.ResponseWriter, r *http.Request)
 	s.sendJSON(w, r, http.StatusOK, map[string]interface{}{
 		"signals": signals,
 		"count":   len(signals),
+	})
+}
+
+// Exchange Management Handlers
+
+// handleGetExchanges returns all active exchanges
+func (s *APIServer) handleGetExchanges(w http.ResponseWriter, r *http.Request) {
+	if s.exchangeManager == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Exchange manager not available")
+		return
+	}
+
+	exchanges := s.exchangeManager.GetActiveExchanges()
+
+	exchangeInfo := make([]map[string]interface{}, len(exchanges))
+	for i, name := range exchanges {
+		exchange, err := s.exchangeManager.GetExchange(name)
+		if err != nil {
+			continue
+		}
+
+		stats := exchange.GetConnectionStats()
+		latencyStats := exchange.GetLatencyStats()
+
+		exchangeInfo[i] = map[string]interface{}{
+			"name":             name,
+			"connected":        exchange.IsConnected(),
+			"connection_stats": stats,
+			"latency_stats":    latencyStats,
+		}
+	}
+
+	s.sendJSON(w, r, http.StatusOK, map[string]interface{}{
+		"exchanges": exchangeInfo,
+		"count":     len(exchangeInfo),
+	})
+}
+
+// handleGetTicker gets ticker data for a symbol
+func (s *APIServer) handleGetTicker(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	symbol := strings.ToUpper(vars["symbol"])
+	exchangeName := r.URL.Query().Get("exchange")
+
+	if symbol == "" {
+		s.sendError(w, r, http.StatusBadRequest, "Symbol is required")
+		return
+	}
+
+	if s.exchangeManager == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Exchange manager not available")
+		return
+	}
+
+	var exchange common.ExchangeClient
+	var err error
+
+	if exchangeName != "" {
+		exchange, err = s.exchangeManager.GetExchange(exchangeName)
+	} else {
+		exchange, err = s.exchangeManager.GetDefaultExchange()
+	}
+
+	if err != nil {
+		s.sendError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ticker, err := exchange.GetTicker(r.Context(), symbol)
+	if err != nil {
+		s.sendError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.sendJSON(w, r, http.StatusOK, ticker)
+}
+
+// handleGetOrderBook gets order book data for a symbol
+func (s *APIServer) handleGetOrderBook(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	symbol := strings.ToUpper(vars["symbol"])
+	exchangeName := r.URL.Query().Get("exchange")
+	limitStr := r.URL.Query().Get("limit")
+
+	if symbol == "" {
+		s.sendError(w, r, http.StatusBadRequest, "Symbol is required")
+		return
+	}
+
+	limit := 20 // default
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+
+	if s.exchangeManager == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Exchange manager not available")
+		return
+	}
+
+	var exchange common.ExchangeClient
+	var err error
+
+	if exchangeName != "" {
+		exchange, err = s.exchangeManager.GetExchange(exchangeName)
+	} else {
+		exchange, err = s.exchangeManager.GetDefaultExchange()
+	}
+
+	if err != nil {
+		s.sendError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	orderBook, err := exchange.GetOrderBook(r.Context(), symbol, limit)
+	if err != nil {
+		s.sendError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.sendJSON(w, r, http.StatusOK, orderBook)
+}
+
+// handleGetBestPrice gets the best price across all exchanges
+func (s *APIServer) handleGetBestPrice(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	symbol := strings.ToUpper(vars["symbol"])
+	sideStr := r.URL.Query().Get("side")
+
+	if symbol == "" {
+		s.sendError(w, r, http.StatusBadRequest, "Symbol is required")
+		return
+	}
+
+	if sideStr == "" {
+		s.sendError(w, r, http.StatusBadRequest, "Side is required (BUY or SELL)")
+		return
+	}
+
+	var side common.OrderSide
+	switch strings.ToUpper(sideStr) {
+	case "BUY":
+		side = common.OrderSideBuy
+	case "SELL":
+		side = common.OrderSideSell
+	default:
+		s.sendError(w, r, http.StatusBadRequest, "Invalid side, must be BUY or SELL")
+		return
+	}
+
+	if s.exchangeManager == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Exchange manager not available")
+		return
+	}
+
+	bestPrice, err := s.exchangeManager.GetBestPrice(r.Context(), symbol, side)
+	if err != nil {
+		s.sendError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.sendJSON(w, r, http.StatusOK, bestPrice)
+}
+
+// Order Management Handlers
+
+// OrderRequest represents an order submission request
+type OrderRequest struct {
+	Symbol      string `json:"symbol"`
+	Side        string `json:"side"`
+	Type        string `json:"type"`
+	Quantity    string `json:"quantity"`
+	Price       string `json:"price,omitempty"`
+	StopPrice   string `json:"stop_price,omitempty"`
+	TimeInForce string `json:"time_in_force,omitempty"`
+	Exchange    string `json:"exchange,omitempty"`
+	Strategy    string `json:"strategy,omitempty"`
+}
+
+// handleSubmitOrder submits an order for execution
+func (s *APIServer) handleSubmitOrder(w http.ResponseWriter, r *http.Request) {
+	var req OrderRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.sendError(w, r, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	if s.orderManager == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Order manager not available")
+		return
+	}
+
+	// Validate required fields
+	if req.Symbol == "" {
+		s.sendError(w, r, http.StatusBadRequest, "Symbol is required")
+		return
+	}
+	if req.Side == "" {
+		s.sendError(w, r, http.StatusBadRequest, "Side is required")
+		return
+	}
+	if req.Quantity == "" {
+		s.sendError(w, r, http.StatusBadRequest, "Quantity is required")
+		return
+	}
+
+	// Parse quantity
+	quantity, err := decimal.NewFromString(req.Quantity)
+	if err != nil {
+		s.sendError(w, r, http.StatusBadRequest, "Invalid quantity")
+		return
+	}
+
+	// Parse price if provided
+	var price decimal.Decimal
+	if req.Price != "" {
+		price, err = decimal.NewFromString(req.Price)
+		if err != nil {
+			s.sendError(w, r, http.StatusBadRequest, "Invalid price")
+			return
+		}
+	}
+
+	// Parse stop price if provided
+	var stopPrice decimal.Decimal
+	if req.StopPrice != "" {
+		stopPrice, err = decimal.NewFromString(req.StopPrice)
+		if err != nil {
+			s.sendError(w, r, http.StatusBadRequest, "Invalid stop price")
+			return
+		}
+	}
+
+	// Convert side
+	var side common.OrderSide
+	switch strings.ToUpper(req.Side) {
+	case "BUY":
+		side = common.OrderSideBuy
+	case "SELL":
+		side = common.OrderSideSell
+	default:
+		s.sendError(w, r, http.StatusBadRequest, "Invalid side, must be BUY or SELL")
+		return
+	}
+
+	// Convert order type
+	var orderType common.OrderType
+	switch strings.ToUpper(req.Type) {
+	case "MARKET":
+		orderType = common.OrderTypeMarket
+	case "LIMIT":
+		orderType = common.OrderTypeLimit
+	case "STOP_LOSS":
+		orderType = common.OrderTypeStopLoss
+	case "STOP_LOSS_LIMIT":
+		orderType = common.OrderTypeStopLossLimit
+	case "TAKE_PROFIT":
+		orderType = common.OrderTypeTakeProfit
+	case "TAKE_PROFIT_LIMIT":
+		orderType = common.OrderTypeTakeProfitLimit
+	default:
+		orderType = common.OrderTypeLimit
+	}
+
+	// Convert time in force
+	var timeInForce common.TimeInForce
+	switch strings.ToUpper(req.TimeInForce) {
+	case "GTC":
+		timeInForce = common.TimeInForceGTC
+	case "IOC":
+		timeInForce = common.TimeInForceIOC
+	case "FOK":
+		timeInForce = common.TimeInForceFOK
+	default:
+		timeInForce = common.TimeInForceGTC
+	}
+
+	// Create order request
+	orderReq := &common.OrderRequest{
+		Symbol:      strings.ToUpper(req.Symbol),
+		Side:        side,
+		Type:        orderType,
+		Quantity:    quantity,
+		Price:       price,
+		StopPrice:   stopPrice,
+		TimeInForce: timeInForce,
+		Metadata:    make(map[string]interface{}),
+	}
+
+	// Add strategy if specified
+	if req.Strategy != "" {
+		orderReq.Metadata["strategy"] = req.Strategy
+	}
+
+	// Submit order
+	managedOrder, err := s.orderManager.SubmitOrder(r.Context(), orderReq)
+	if err != nil {
+		s.sendError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.sendJSON(w, r, http.StatusCreated, managedOrder)
+
+	// Broadcast order update
+	s.BroadcastMessage("order_submitted", map[string]interface{}{
+		"order_id": managedOrder.ID.String(),
+		"symbol":   managedOrder.OriginalRequest.Symbol,
+		"side":     string(managedOrder.OriginalRequest.Side),
+		"quantity": managedOrder.OriginalRequest.Quantity.String(),
+		"status":   string(managedOrder.Status),
+	})
+}
+
+// handleGetOrder gets a managed order by ID
+func (s *APIServer) handleGetOrder(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	orderIDStr := vars["id"]
+
+	if orderIDStr == "" {
+		s.sendError(w, r, http.StatusBadRequest, "Order ID is required")
+		return
+	}
+
+	orderID, err := uuid.Parse(orderIDStr)
+	if err != nil {
+		s.sendError(w, r, http.StatusBadRequest, "Invalid order ID")
+		return
+	}
+
+	if s.orderManager == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Order manager not available")
+		return
+	}
+
+	order, err := s.orderManager.GetOrder(orderID)
+	if err != nil {
+		s.sendError(w, r, http.StatusNotFound, err.Error())
+		return
+	}
+
+	s.sendJSON(w, r, http.StatusOK, order)
+}
+
+// handleCancelOrder cancels a managed order
+func (s *APIServer) handleCancelOrder(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	orderIDStr := vars["id"]
+
+	if orderIDStr == "" {
+		s.sendError(w, r, http.StatusBadRequest, "Order ID is required")
+		return
+	}
+
+	orderID, err := uuid.Parse(orderIDStr)
+	if err != nil {
+		s.sendError(w, r, http.StatusBadRequest, "Invalid order ID")
+		return
+	}
+
+	if s.orderManager == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Order manager not available")
+		return
+	}
+
+	err = s.orderManager.CancelOrder(r.Context(), orderID)
+	if err != nil {
+		s.sendError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.sendJSON(w, r, http.StatusOK, map[string]string{
+		"status":  "cancelled",
+		"message": "Order cancelled successfully",
+	})
+
+	// Broadcast order update
+	s.BroadcastMessage("order_cancelled", map[string]interface{}{
+		"order_id": orderID.String(),
 	})
 }

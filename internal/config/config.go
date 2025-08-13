@@ -21,6 +21,8 @@ type Config struct {
 	RateLimit     RateLimitConfig
 	Security      SecurityConfig
 	Logger        LoggerConfig
+	Firebase      FirebaseConfig
+	MCP           MCPConfig
 }
 
 type ServerConfig struct {
@@ -275,6 +277,84 @@ func Load() (*Config, error) {
 			Level:  getEnv("LOG_LEVEL", "info"),
 			Format: getEnv("LOG_FORMAT", "json"),
 		},
+		Firebase: FirebaseConfig{
+			ProjectID:          getEnv("FIREBASE_PROJECT_ID", "ai-agentic-crypto-browser"),
+			CredentialsPath:    getEnv("FIREBASE_CREDENTIALS_PATH", "./configs/firebase-service-account.json"),
+			DatabaseURL:        getEnv("FIREBASE_DATABASE_URL", ""),
+			StorageBucket:      getEnv("FIREBASE_STORAGE_BUCKET", ""),
+			EnableAuth:         getBoolEnv("FIREBASE_ENABLE_AUTH", true),
+			EnableFirestore:    getBoolEnv("FIREBASE_ENABLE_FIRESTORE", true),
+			EnableRealtimeDB:   getBoolEnv("FIREBASE_ENABLE_REALTIME_DB", true),
+			EnableStorage:      getBoolEnv("FIREBASE_ENABLE_STORAGE", true),
+			EnableAnalytics:    getBoolEnv("FIREBASE_ENABLE_ANALYTICS", true),
+			EnableMessaging:    getBoolEnv("FIREBASE_ENABLE_MESSAGING", true),
+			EnableRemoteConfig: getBoolEnv("FIREBASE_ENABLE_REMOTE_CONFIG", false),
+			EnableDynamicLinks: getBoolEnv("FIREBASE_ENABLE_DYNAMIC_LINKS", false),
+			EnableMLKit:        getBoolEnv("FIREBASE_ENABLE_ML_KIT", false),
+			EnablePerformance:  getBoolEnv("FIREBASE_ENABLE_PERFORMANCE", true),
+			EnableCrashlytics:  getBoolEnv("FIREBASE_ENABLE_CRASHLYTICS", true),
+			EnableAppCheck:     getBoolEnv("FIREBASE_ENABLE_APP_CHECK", true),
+			EnableExtensions:   getBoolEnv("FIREBASE_ENABLE_EXTENSIONS", false),
+			EnableHosting:      getBoolEnv("FIREBASE_ENABLE_HOSTING", false),
+			EnableFunctions:    getBoolEnv("FIREBASE_ENABLE_FUNCTIONS", true),
+			EnableEmulators:    getBoolEnv("FIREBASE_ENABLE_EMULATORS", false),
+			EmulatorConfig: EmulatorConfig{
+				Host:          getEnv("FIREBASE_EMULATOR_HOST", "localhost"),
+				AuthPort:      getIntEnv("FIREBASE_AUTH_EMULATOR_PORT", 9099),
+				FirestorePort: getIntEnv("FIREBASE_FIRESTORE_EMULATOR_PORT", 8080),
+				DatabasePort:  getIntEnv("FIREBASE_DATABASE_EMULATOR_PORT", 9000),
+				StoragePort:   getIntEnv("FIREBASE_STORAGE_EMULATOR_PORT", 9199),
+				FunctionsPort: getIntEnv("FIREBASE_FUNCTIONS_EMULATOR_PORT", 5001),
+				HostingPort:   getIntEnv("FIREBASE_HOSTING_EMULATOR_PORT", 5000),
+				PubSubPort:    getIntEnv("FIREBASE_PUBSUB_EMULATOR_PORT", 8085),
+				UIPort:        getIntEnv("FIREBASE_UI_EMULATOR_PORT", 4000),
+			},
+		},
+		MCP: MCPConfig{
+			CryptoAnalysis: CryptoAnalysisConfig{
+				Enabled:        getBoolEnv("MCP_CRYPTO_ANALYSIS_ENABLED", true),
+				UpdateInterval: getDurationEnv("MCP_CRYPTO_ANALYSIS_UPDATE_INTERVAL", 30*time.Second),
+				Symbols:        getSliceEnv("MCP_CRYPTO_ANALYSIS_SYMBOLS", []string{"BTCUSDT", "ETHUSDT", "ADAUSDT", "SOLUSDT"}),
+			},
+			SentimentAnalysis: SentimentConfig{
+				Enabled:        getBoolEnv("MCP_SENTIMENT_ANALYSIS_ENABLED", true),
+				Sources:        getSliceEnv("MCP_SENTIMENT_SOURCES", []string{"reddit", "twitter", "news"}),
+				UpdateInterval: getDurationEnv("MCP_SENTIMENT_UPDATE_INTERVAL", 5*time.Minute),
+			},
+			BrowserAutomation: BrowserConfig{
+				Headless:   getBoolEnv("MCP_BROWSER_HEADLESS", true),
+				DisableGPU: getBoolEnv("MCP_BROWSER_DISABLE_GPU", true),
+				NoSandbox:  getBoolEnv("MCP_BROWSER_NO_SANDBOX", true),
+				Timeout:    getDurationEnv("MCP_BROWSER_TIMEOUT", 30*time.Second),
+			},
+			Firebase: MCPFirebaseConfig{
+				Enabled: getBoolEnv("MCP_FIREBASE_ENABLED", true),
+				Collections: map[string]string{
+					"trading_signals":       "trading_signals",
+					"market_data":           "market_data",
+					"user_portfolios":       "user_portfolios",
+					"trading_strategies":    "trading_strategies",
+					"risk_metrics":          "risk_metrics",
+					"performance_analytics": "performance_analytics",
+				},
+				RealtimePaths: map[string]string{
+					"live_prices":    "/live_prices",
+					"active_orders":  "/active_orders",
+					"user_sessions":  "/user_sessions",
+					"system_status":  "/system_status",
+				},
+			},
+			Cloudflare: CloudflareConfig{
+				Enabled: getBoolEnv("MCP_CLOUDFLARE_ENABLED", false),
+			},
+			Search: SearchConfig{
+				Enabled:   getBoolEnv("MCP_SEARCH_ENABLED", true),
+				Providers: getSliceEnv("MCP_SEARCH_PROVIDERS", []string{"google", "bing"}),
+			},
+			UpdateInterval: getDurationEnv("MCP_UPDATE_INTERVAL", 1*time.Minute),
+			EnableRealtime: getBoolEnv("MCP_ENABLE_REALTIME", true),
+			BufferSize:     getIntEnv("MCP_BUFFER_SIZE", 1000),
+		},
 	}
 
 	if err := cfg.validate(); err != nil {
@@ -369,4 +449,87 @@ type TerminalConfig struct {
 type LoggerConfig struct {
 	Level  string `json:"level"`
 	Format string `json:"format"`
+}
+
+// FirebaseConfig contains Firebase configuration
+type FirebaseConfig struct {
+	ProjectID          string         `json:"project_id"`
+	CredentialsPath    string         `json:"credentials_path"`
+	DatabaseURL        string         `json:"database_url"`
+	StorageBucket      string         `json:"storage_bucket"`
+	EnableAuth         bool           `json:"enable_auth"`
+	EnableFirestore    bool           `json:"enable_firestore"`
+	EnableRealtimeDB   bool           `json:"enable_realtime_db"`
+	EnableStorage      bool           `json:"enable_storage"`
+	EnableAnalytics    bool           `json:"enable_analytics"`
+	EnableMessaging    bool           `json:"enable_messaging"`
+	EnableRemoteConfig bool           `json:"enable_remote_config"`
+	EnableDynamicLinks bool           `json:"enable_dynamic_links"`
+	EnableMLKit        bool           `json:"enable_ml_kit"`
+	EnablePerformance  bool           `json:"enable_performance"`
+	EnableCrashlytics  bool           `json:"enable_crashlytics"`
+	EnableAppCheck     bool           `json:"enable_app_check"`
+	EnableExtensions   bool           `json:"enable_extensions"`
+	EnableHosting      bool           `json:"enable_hosting"`
+	EnableFunctions    bool           `json:"enable_functions"`
+	EnableEmulators    bool           `json:"enable_emulators"`
+	EmulatorConfig     EmulatorConfig `json:"emulator_config"`
+}
+
+// EmulatorConfig contains Firebase emulator configuration
+type EmulatorConfig struct {
+	AuthPort      int    `json:"auth_port"`
+	FirestorePort int    `json:"firestore_port"`
+	DatabasePort  int    `json:"database_port"`
+	StoragePort   int    `json:"storage_port"`
+	FunctionsPort int    `json:"functions_port"`
+	HostingPort   int    `json:"hosting_port"`
+	PubSubPort    int    `json:"pubsub_port"`
+	UIPort        int    `json:"ui_port"`
+	Host          string `json:"host"`
+}
+
+// MCPConfig contains MCP integration configuration
+type MCPConfig struct {
+	CryptoAnalysis    CryptoAnalysisConfig `json:"crypto_analysis"`
+	SentimentAnalysis SentimentConfig      `json:"sentiment_analysis"`
+	BrowserAutomation BrowserConfig        `json:"browser_automation"`
+	Firebase          MCPFirebaseConfig    `json:"firebase"`
+	Cloudflare        CloudflareConfig     `json:"cloudflare"`
+	Search            SearchConfig         `json:"search"`
+	UpdateInterval    time.Duration        `json:"update_interval"`
+	EnableRealtime    bool                 `json:"enable_realtime"`
+	BufferSize        int                  `json:"buffer_size"`
+}
+
+// CryptoAnalysisConfig contains crypto analysis configuration
+type CryptoAnalysisConfig struct {
+	Enabled        bool          `json:"enabled"`
+	UpdateInterval time.Duration `json:"update_interval"`
+	Symbols        []string      `json:"symbols"`
+}
+
+// SentimentConfig contains sentiment analysis configuration
+type SentimentConfig struct {
+	Enabled        bool          `json:"enabled"`
+	Sources        []string      `json:"sources"`
+	UpdateInterval time.Duration `json:"update_interval"`
+}
+
+// MCPFirebaseConfig contains Firebase-specific MCP configuration
+type MCPFirebaseConfig struct {
+	Enabled       bool              `json:"enabled"`
+	Collections   map[string]string `json:"collections"`
+	RealtimePaths map[string]string `json:"realtime_paths"`
+}
+
+// CloudflareConfig contains Cloudflare configuration
+type CloudflareConfig struct {
+	Enabled bool `json:"enabled"`
+}
+
+// SearchConfig contains search configuration
+type SearchConfig struct {
+	Enabled   bool     `json:"enabled"`
+	Providers []string `json:"providers"`
 }

@@ -115,6 +115,67 @@ features:
   analytics: true
   notifications: true
 
+# Firebase Configuration
+firebase:
+  project_id: "ai-agentic-crypto-browser"
+  credentials_path: "./configs/firebase-service-account.json"
+  database_url: "https://ai-agentic-crypto-browser-default-rtdb.firebaseio.com"
+  storage_bucket: "ai-agentic-crypto-browser.appspot.com"
+  enable_auth: true
+  enable_firestore: true
+  enable_realtime_db: true
+  enable_storage: true
+  enable_analytics: true
+  enable_messaging: true
+  enable_emulators: false
+  emulator_config:
+    host: "localhost"
+    auth_port: 9099
+    firestore_port: 8080
+    database_port: 9000
+    storage_port: 9199
+    functions_port: 5001
+    hosting_port: 5000
+    pubsub_port: 8085
+    ui_port: 4000
+
+# MCP Integration Configuration
+mcp:
+  crypto_analysis:
+    enabled: true
+    update_interval: "30s"
+    symbols: ["BTCUSDT", "ETHUSDT", "ADAUSDT", "SOLUSDT"]
+  sentiment_analysis:
+    enabled: true
+    sources: ["reddit", "twitter", "news"]
+    update_interval: "5m"
+  browser_automation:
+    enabled: true
+    headless: true
+    timeout: "30s"
+  firebase:
+    enabled: true
+    collections:
+      trading_signals: "trading_signals"
+      market_data: "market_data"
+      user_portfolios: "user_portfolios"
+      trading_strategies: "trading_strategies"
+      risk_metrics: "risk_metrics"
+      performance_analytics: "performance_analytics"
+    realtime_paths:
+      live_prices: "/live_prices"
+      active_orders: "/active_orders"
+      user_sessions: "/user_sessions"
+      system_status: "/system_status"
+  cloudflare:
+    enabled: false
+  search:
+    enabled: true
+    providers: ["google", "bing"]
+  update_interval: "1m"
+  enable_realtime: true
+  buffer_size: 1000
+
 # Environment Configuration
 environment: "development"
 debug: false

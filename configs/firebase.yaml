@@ -1,0 +1,316 @@
+# Firebase Configuration for AI Agentic Crypto Browser
+
+# Firebase Project Configuration
+firebase:
+  project_id: "ai-agentic-crypto-browser"
+  credentials_path: "./configs/firebase-service-account.json"
+  database_url: "https://ai-agentic-crypto-browser-default-rtdb.firebaseio.com"
+  storage_bucket: "ai-agentic-crypto-browser.appspot.com"
+
+  # Service Enablement
+  enable_auth: true
+  enable_firestore: true
+  enable_realtime_db: true
+  enable_storage: true
+  enable_analytics: true
+  enable_messaging: true
+  enable_remote_config: false
+  enable_dynamic_links: false
+  enable_ml_kit: false
+  enable_performance: true
+  enable_crashlytics: true
+  enable_app_check: true
+  enable_extensions: false
+  enable_hosting: false
+  enable_functions: true
+
+  # Development Configuration
+  enable_emulators: false  # Set to true for local development
+  emulator_config:
+    host: "localhost"
+    auth_port: 9099
+    firestore_port: 8080
+    database_port: 9000
+    storage_port: 9199
+    functions_port: 5001
+    hosting_port: 5000
+    pubsub_port: 8085
+    ui_port: 4000
+
+# MCP Integration Configuration
+mcp:
+  firebase:
+    # Crypto Trading Data Collections
+    collections:
+      trading_signals: "trading_signals"
+      market_data: "market_data"
+      user_portfolios: "user_portfolios"
+      trading_strategies: "trading_strategies"
+      risk_metrics: "risk_metrics"
+      performance_analytics: "performance_analytics"
+      user_preferences: "user_preferences"
+      system_logs: "system_logs"
+      audit_trail: "audit_trail"
+      notifications: "notifications"
+
+    # Realtime Database Paths
+    realtime_paths:
+      live_prices: "/live_prices"
+      active_orders: "/active_orders"
+      user_sessions: "/user_sessions"
+      system_status: "/system_status"
+      alerts: "/alerts"
+      chat_rooms: "/chat_rooms"
+
+    # Data Retention Policies
+    retention:
+      trading_signals: "30d"
+      market_data: "90d"
+      user_portfolios: "1y"
+      system_logs: "30d"
+      audit_trail: "7y"
+      performance_analytics: "1y"
+
+    # Security Rules
+    security:
+      enable_row_level_security: true
+      require_authentication: true
+      admin_only_collections:
+        - "system_logs"
+        - "audit_trail"
+        - "admin_settings"
+      user_specific_collections:
+        - "user_portfolios"
+        - "user_preferences"
+        - "user_notifications"
+
+# Authentication Configuration
+auth:
+  # Supported Sign-in Methods
+  providers:
+    email_password: true
+    google: true
+    github: true
+    anonymous: false
+    phone: false
+    twitter: false
+    facebook: false
+
+  # Custom Claims for Role-Based Access
+  custom_claims:
+    roles:
+      - "admin"
+      - "trader"
+      - "analyst"
+      - "viewer"
+    permissions:
+      - "read_market_data"
+      - "execute_trades"
+      - "manage_strategies"
+      - "view_analytics"
+      - "admin_access"
+
+  # Session Management
+  session_timeout: "24h"
+  refresh_token_expiry: "30d"
+  require_email_verification: true
+  password_policy:
+    min_length: 8
+    require_uppercase: true
+    require_lowercase: true
+    require_numbers: true
+    require_symbols: true
+
+# Firestore Configuration
+firestore:
+  # Database Settings
+  location: "us-central1"
+  
+  # Indexing Strategy
+  indexes:
+    - collection: "trading_signals"
+      fields:
+        - field: "symbol"
+          order: "ASCENDING"
+        - field: "timestamp"
+          order: "DESCENDING"
+    
+    - collection: "market_data"
+      fields:
+        - field: "symbol"
+          order: "ASCENDING"
+        - field: "timestamp"
+          order: "DESCENDING"
+        - field: "exchange"
+          order: "ASCENDING"
+
+    - collection: "user_portfolios"
+      fields:
+        - field: "user_id"
+          order: "ASCENDING"
+        - field: "created_at"
+          order: "DESCENDING"
+
+  # Backup Configuration
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    retention_days: 30
+    location: "us-central1"
+
+# Realtime Database Configuration
+realtime_database:
+  # Rules and Security
+  rules_file: "./firebase-database-rules.json"
+  
+  # Performance Settings
+  max_connections: 1000
+  idle_timeout: "5m"
+  
+  # Data Structure
+  structure:
+    live_prices:
+      ttl: "1h"
+      max_entries: 10000
+    
+    active_orders:
+      ttl: "24h"
+      max_entries: 50000
+    
+    user_sessions:
+      ttl: "30d"
+      max_entries: 100000
+
+# Storage Configuration
+storage:
+  # Bucket Settings
+  default_bucket: "ai-agentic-crypto-browser.appspot.com"
+  
+  # File Upload Limits
+  max_file_size: "10MB"
+  allowed_file_types:
+    - "image/jpeg"
+    - "image/png"
+    - "application/pdf"
+    - "text/csv"
+    - "application/json"
+  
+  # Folder Structure
+  folders:
+    user_documents: "/users/{user_id}/documents"
+    trading_reports: "/reports/trading"
+    system_backups: "/backups/system"
+    analytics_exports: "/exports/analytics"
+
+# Analytics Configuration
+analytics:
+  # Event Tracking
+  events:
+    - "user_login"
+    - "trade_executed"
+    - "strategy_created"
+    - "portfolio_viewed"
+    - "alert_triggered"
+    - "system_error"
+  
+  # Custom Dimensions
+  custom_dimensions:
+    user_tier: "dimension1"
+    trading_experience: "dimension2"
+    preferred_exchange: "dimension3"
+  
+  # Conversion Goals
+  conversions:
+    - "first_trade"
+    - "strategy_profit"
+    - "premium_upgrade"
+
+# Performance Monitoring
+performance:
+  # Trace Collection
+  traces:
+    - "api_response_time"
+    - "database_query_time"
+    - "trading_execution_time"
+    - "market_data_latency"
+  
+  # Custom Metrics
+  metrics:
+    - "active_users"
+    - "trades_per_minute"
+    - "system_load"
+    - "error_rate"
+
+# Cloud Functions Configuration
+functions:
+  # Runtime Settings
+  runtime: "nodejs18"
+  memory: "256MB"
+  timeout: "60s"
+  
+  # Triggers
+  triggers:
+    - name: "onTradeExecuted"
+      type: "firestore"
+      document: "trading_signals/{signalId}"
+    
+    - name: "onUserRegistered"
+      type: "auth"
+      event: "user.create"
+    
+    - name: "scheduledBackup"
+      type: "schedule"
+      schedule: "0 3 * * *"  # Daily at 3 AM
+    
+    - name: "marketDataProcessor"
+      type: "pubsub"
+      topic: "market-data-updates"
+
+# Monitoring and Alerting
+monitoring:
+  # Alert Conditions
+  alerts:
+    - name: "High Error Rate"
+      condition: "error_rate > 5%"
+      notification: "email"
+    
+    - name: "Database Latency"
+      condition: "db_latency > 1000ms"
+      notification: "slack"
+    
+    - name: "Storage Usage"
+      condition: "storage_usage > 80%"
+      notification: "email"
+
+# Development Environment
+development:
+  # Local Testing
+  use_emulators: true
+  emulator_ports:
+    auth: 9099
+    firestore: 8080
+    database: 9000
+    storage: 9199
+    functions: 5001
+  
+  # Debug Settings
+  debug_mode: true
+  verbose_logging: true
+  mock_external_apis: true
+
+# Production Environment
+production:
+  # Security Hardening
+  enforce_https: true
+  enable_cors: false
+  rate_limiting: true
+  
+  # Performance Optimization
+  enable_caching: true
+  compression: true
+  cdn_enabled: true
+  
+  # Monitoring
+  detailed_monitoring: true
+  error_reporting: true
+  performance_tracking: true

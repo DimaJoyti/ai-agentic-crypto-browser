@@ -83,7 +83,7 @@ func GetSwapQuoteHandler(solanaService *solana.Service, logger *observability.Lo
 		}
 
 		// Log the swap request
-		logger.Info(ctx, "Getting swap quote", map[string]interface{}{
+		logger.Info(ctx, "Getting swap quote", map[string]any{
 			"input_mint":   swapReq.InputMint.String(),
 			"output_mint":  swapReq.OutputMint.String(),
 			"amount":       swapReq.Amount.String(),
@@ -91,7 +91,7 @@ func GetSwapQuoteHandler(solanaService *solana.Service, logger *observability.Lo
 		})
 
 		// Placeholder swap quote
-		quote := map[string]interface{}{
+		quote := map[string]any{
 			"inputAmount":  req.Amount,
 			"outputAmount": req.Amount.Mul(decimal.NewFromFloat(0.99)), // 1% slippage
 			"priceImpact":  0.1,
@@ -101,9 +101,13 @@ func GetSwapQuoteHandler(solanaService *solana.Service, logger *observability.Lo
 
 		// Return quote
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(quote)
+		if err := json.NewEncoder(w).Encode(quote); err != nil {
+			logger.Error(ctx, "Failed to encode swap quote response", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
 
-		logger.Info(ctx, "Swap quote generated", map[string]interface{}{
+		logger.Info(ctx, "Swap quote generated", map[string]any{
 			"input_mint":    req.InputMint,
 			"output_mint":   req.OutputMint,
 			"input_amount":  req.Amount.String(),
@@ -162,22 +166,25 @@ func ExecuteSwapHandler(solanaService *solana.Service, logger *observability.Log
 			InputMint:     inputMint,
 			OutputMint:    outputMint,
 			Amount:        req.Amount,
-			SlippageBps:   req.SlippageBps,
-			UserPublicKey: userPublicKey,
+			SlippageBps:   req.SlippageBps, // Used for slippage calculation in actual implementation
+			UserPublicKey: userPublicKey,   // Used for transaction signing in actual implementation
 			Protocol:      solana.DeFiProtocol(req.Protocol),
 		}
 
+		// TODO: Use swapReq for actual Solana swap execution
+		_ = swapReq // Suppress unused variable warning for placeholder implementation
+
 		// Log the swap execution
-		logger.Info(ctx, "Executing swap", map[string]interface{}{
-			"input_mint":     swapReq.InputMint.String(),
-			"output_mint":    swapReq.OutputMint.String(),
-			"amount":         swapReq.Amount.String(),
-			"user_pubkey":    swapReq.UserPublicKey.String(),
-			"protocol":       string(swapReq.Protocol),
+		logger.Info(ctx, "Executing swap", map[string]any{
+			"input_mint":  swapReq.InputMint.String(),
+			"output_mint": swapReq.OutputMint.String(),
+			"amount":      swapReq.Amount.String(),
+			"user_pubkey": swapReq.UserPublicKey.String(),
+			"protocol":    string(swapReq.Protocol),
 		})
 
 		// Placeholder swap execution
-		result := map[string]interface{}{
+		result := map[string]any{
 			"signature":    "placeholder_signature_" + uuid.New().String(),
 			"inputAmount":  req.Amount,
 			"outputAmount": req.Amount.Mul(decimal.NewFromFloat(0.99)),
@@ -186,9 +193,13 @@ func ExecuteSwapHandler(solanaService *solana.Service, logger *observability.Log
 
 		// Return result
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
+		if err := json.NewEncoder(w).Encode(result); err != nil {
+			logger.Error(ctx, "Failed to encode swap execution response", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
 
-		logger.Info(ctx, "Swap executed successfully", map[string]interface{}{
+		logger.Info(ctx, "Swap executed successfully", map[string]any{
 			"user_id":       user.ID,
 			"signature":     result["signature"],
 			"input_amount":  result["inputAmount"],
@@ -255,13 +266,16 @@ func AddLiquidityHandler(solanaService *solana.Service, logger *observability.Lo
 			TokenBMint:    tokenBMint,
 			AmountA:       req.AmountA,
 			AmountB:       req.AmountB,
-			SlippageBps:   req.SlippageBps,
-			UserPublicKey: userPublicKey,
+			SlippageBps:   req.SlippageBps, // Used for slippage calculation in actual implementation
+			UserPublicKey: userPublicKey,   // Used for transaction signing in actual implementation
 			Protocol:      solana.DeFiProtocol(req.Protocol),
 		}
 
+		// TODO: Use liquidityReq for actual Solana liquidity addition
+		_ = liquidityReq // Suppress unused variable warning for placeholder implementation
+
 		// Log the liquidity addition
-		logger.Info(ctx, "Adding liquidity", map[string]interface{}{
+		logger.Info(ctx, "Adding liquidity", map[string]any{
 			"pool_address": liquidityReq.PoolAddress.String(),
 			"token_a":      liquidityReq.TokenAMint.String(),
 			"token_b":      liquidityReq.TokenBMint.String(),
@@ -271,7 +285,7 @@ func AddLiquidityHandler(solanaService *solana.Service, logger *observability.Lo
 		})
 
 		// Placeholder liquidity addition
-		result := map[string]interface{}{
+		result := map[string]any{
 			"signature": "placeholder_signature_" + uuid.New().String(),
 			"lpTokens":  req.AmountA.Add(req.AmountB).Mul(decimal.NewFromFloat(0.5)),
 			"poolShare": decimal.NewFromFloat(0.01), // 1% pool share
@@ -280,9 +294,13 @@ func AddLiquidityHandler(solanaService *solana.Service, logger *observability.Lo
 
 		// Return result
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
+		if err := json.NewEncoder(w).Encode(result); err != nil {
+			logger.Error(ctx, "Failed to encode liquidity addition response", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
 
-		logger.Info(ctx, "Liquidity added successfully", map[string]interface{}{
+		logger.Info(ctx, "Liquidity added successfully", map[string]any{
 			"user_id":    user.ID,
 			"signature":  result["signature"],
 			"lp_tokens":  result["lpTokens"],
@@ -328,32 +346,36 @@ func GetPortfolioHandler(solanaService *solana.Service, logger *observability.Lo
 			// For placeholder, just use a new wallet ID
 			walletID = uuid.New()
 			// Log the public key usage
-			logger.Info(ctx, "Using public key for positions", map[string]interface{}{
+			logger.Info(ctx, "Using public key for positions", map[string]any{
 				"public_key": publicKey.String(),
 			})
 		}
 
 		// Log the request
-		logger.Info(ctx, "Getting user positions", map[string]interface{}{
+		logger.Info(ctx, "Getting user positions", map[string]any{
 			"user_id":   user.ID,
 			"wallet_id": walletID,
 		})
 
 		// Placeholder positions
-		positions := []interface{}{}
+		positions := []any{}
 
 		// Placeholder protocol stats
-		stats := []interface{}{}
+		stats := []any{}
 
 		// Return portfolio data
-		response := map[string]interface{}{
+		response := map[string]any{
 			"success":       true,
 			"positions":     positions,
 			"protocolStats": stats,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			logger.Error(ctx, "Failed to encode user positions response", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -385,7 +407,7 @@ func GetProtocolTVLHandler(solanaService *solana.Service, logger *observability.
 		}
 
 		// Log the request
-		logger.Info(ctx, "Getting protocol TVL", map[string]interface{}{
+		logger.Info(ctx, "Getting protocol TVL", map[string]any{
 			"protocol": protocol,
 		})
 
@@ -393,13 +415,17 @@ func GetProtocolTVLHandler(solanaService *solana.Service, logger *observability.
 		tvl := decimal.NewFromInt(1000000) // $1M TVL
 
 		// Return TVL
-		response := map[string]interface{}{
+		response := map[string]any{
 			"success":  true,
 			"protocol": protocol,
 			"tvl":      tvl,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			logger.Error(ctx, "Failed to encode protocol TVL response", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
 	}
 }

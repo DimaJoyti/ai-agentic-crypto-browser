@@ -343,6 +343,13 @@ func (mis *IntegrationService) SubscribeToInsights() <-chan MarketInsight {
 	return mis.insightChan
 }
 
+// GetFirebaseClient returns the Firebase client
+func (mis *IntegrationService) GetFirebaseClient() *FirebaseClient {
+	mis.mu.RLock()
+	defer mis.mu.RUnlock()
+	return mis.firebaseClient
+}
+
 // initializeClients initializes all MCP tool clients
 func (mis *IntegrationService) initializeClients() {
 	mis.cryptoAnalyzer = NewCryptoAnalyzer(mis.logger, mis.config.CryptoAnalysis)
@@ -588,13 +595,11 @@ func (mis *IntegrationService) collectNewsData(ctx context.Context)      {}
 // Placeholder MCP client types - will be implemented in separate files
 type SentimentEngine struct{ logger *observability.Logger }
 type BrowserAutomator struct{ logger *observability.Logger }
-type FirebaseClient struct{ logger *observability.Logger }
 type CloudflareEdge struct{ logger *observability.Logger }
 type SearchEngine struct{ logger *observability.Logger }
 
 type SentimentConfig struct{}
 type BrowserConfig struct{}
-type FirebaseConfig struct{}
 type CloudflareConfig struct{}
 type SearchConfig struct{}
 
@@ -603,9 +608,6 @@ func NewSentimentEngine(logger *observability.Logger, config SentimentConfig) *S
 }
 func NewBrowserAutomator(logger *observability.Logger, config BrowserConfig) *BrowserAutomator {
 	return &BrowserAutomator{logger: logger}
-}
-func NewFirebaseClient(logger *observability.Logger, config FirebaseConfig) *FirebaseClient {
-	return &FirebaseClient{logger: logger}
 }
 func NewCloudflareEdge(logger *observability.Logger, config CloudflareConfig) *CloudflareEdge {
 	return &CloudflareEdge{logger: logger}
@@ -621,10 +623,6 @@ func (se *SentimentEngine) IsHealthy() bool                 { return true }
 func (ba *BrowserAutomator) Start(ctx context.Context) error { return nil }
 func (ba *BrowserAutomator) Stop(ctx context.Context) error  { return nil }
 func (ba *BrowserAutomator) IsHealthy() bool                 { return true }
-
-func (fc *FirebaseClient) Start(ctx context.Context) error { return nil }
-func (fc *FirebaseClient) Stop(ctx context.Context) error  { return nil }
-func (fc *FirebaseClient) IsHealthy() bool                 { return true }
 
 func (ce *CloudflareEdge) Start(ctx context.Context) error { return nil }
 func (ce *CloudflareEdge) Stop(ctx context.Context) error  { return nil }

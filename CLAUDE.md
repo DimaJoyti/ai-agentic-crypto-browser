@@ -19,14 +19,18 @@ AI-Powered Agentic Crypto Browser - A comprehensive autonomous cryptocurrency tr
 - `make deps` - Download and tidy Go dependencies (`go mod download && go mod tidy`)
 - `make setup` - Full environment setup (install tools, deps, create .env)
 
-**Note**: This project uses Go 1.23.0 with toolchain go1.24.5. Single module architecture containing all services.
+**Note**: This project uses Go 1.23.0 with toolchain go1.24.5. Single module architecture containing all services. The main HFT trading system entry point is at `cmd/main.go`, with individual microservices in their respective `cmd/` subdirectories.
 
 ### Individual Services (Default Ports)
+- `go run cmd/main.go` - Start main HFT trading system (unified entry point)
 - `go run cmd/auth-service/main.go` - Start auth service (port 8081)
 - `go run cmd/ai-agent/main.go` - Start AI agent service (port 8082)  
 - `go run cmd/browser-service/main.go` - Start browser service (port 8083)
 - `go run cmd/web3-service/main.go` - Start Web3 service (port 8084)
 - `go run cmd/api-gateway/main.go` - Start API gateway (port 8080)
+- `go run cmd/trading-bots/main.go` - Start trading bots service
+- `go run cmd/crypto-analyzer/main.go` - Start crypto analyzer CLI
+- `go run cmd/terminal-service/main.go` - Start terminal service
 
 ### Make Shortcuts for Services
 - `make run-auth` - Start auth service
@@ -36,6 +40,10 @@ AI-Powered Agentic Crypto Browser - A comprehensive autonomous cryptocurrency tr
 - `make run-gateway` - Start API gateway
 - `make run-hft` - Start HFT Trading System (`go run cmd/main.go`)
 - `make build-hft` - Build HFT Trading System binary (`bin/ai-agentic-browser`)
+- `make run-trading-bots` - Start trading bots service
+- `make build-trading-bots` - Build trading bots service to bin/
+- `make build-trading-bots-prod` - Build trading bots for production
+- `make build-crypto-analyzer` - Build crypto analyzer CLI tool
 
 ### Frontend Development
 - `cd web && npm install` - Install frontend dependencies
@@ -74,20 +82,27 @@ AI-Powered Agentic Crypto Browser - A comprehensive autonomous cryptocurrency tr
 ## Architecture
 
 ### Backend Services (Go)
-**Microservices architecture with the following services:**
+**Microservices architecture with hybrid HFT system integration:**
 
+- **Main HFT System** (`cmd/main.go`) - Unified high-frequency trading engine with API server
 - **API Gateway** (`cmd/api-gateway/`) - Main entry point, request routing, middleware
 - **Auth Service** (`cmd/auth-service/`) - JWT authentication, user management, RBAC
 - **AI Agent Service** (`cmd/ai-agent/`) - AI chat, voice commands, conversational interfaces
 - **Browser Service** (`cmd/browser-service/`) - Headless Chrome automation, intelligent web scraping
-- **Web3 Service** (`cmd/web3-service/`) - **Advanced autonomous trading platform** with:
-  - Real-time market data streaming from multiple exchanges
-  - Autonomous trading engines with AI-driven risk management
-  - Multi-chain DeFi protocol integration and yield optimization
-  - Portfolio analytics with 20+ performance metrics
-  - Voice-controlled AI trading interface
-  - Real-time system monitoring and alerting
-  - Portfolio rebalancing and strategy management
+- **Web3 Service** (`cmd/web3-service/`) - Multi-chain blockchain interactions and DeFi protocols
+- **Trading Bots Service** (`cmd/trading-bots/`) - Specialized trading bot orchestration
+- **Terminal Service** (`cmd/terminal-service/`) - Interactive trading terminal interface
+- **Crypto Analyzer** (`cmd/crypto-analyzer/`) - CLI tool for market analysis and insights
+
+**Advanced Trading Platform Features:**
+- Real-time market data streaming from multiple exchanges
+- Autonomous trading engines with AI-driven risk management
+- Multi-exchange arbitrage and market making strategies
+- Advanced backtesting and paper trading capabilities
+- Machine learning-based prediction and adaptation
+- Portfolio analytics with 20+ performance metrics
+- Voice-controlled AI trading interface
+- Real-time system monitoring and alerting
 
 **Core packages:**
 - `internal/config/` - Environment-based configuration management
@@ -99,15 +114,21 @@ AI-Powered Agentic Crypto Browser - A comprehensive autonomous cryptocurrency tr
 - `internal/analytics/` - Portfolio analytics, performance metrics, risk analysis
 - `internal/monitoring/` - System monitoring, health scoring, performance tracking
 - `internal/alerts/` - Multi-channel alert management and notifications
-- `internal/binance/` - **NEW** Binance API integration and WebSocket client
-- `internal/tradingview/` - **NEW** TradingView integration and signal processing
-- `internal/hft/` - **NEW** High-frequency trading engine with order management
-- `internal/mcp/` - **NEW** MCP tools integration for crypto analysis
-- `internal/compliance/` - **NEW** Compliance monitoring and audit trail
+- `internal/binance/` - Binance API integration and WebSocket client
+- `internal/tradingview/` - TradingView integration and signal processing
+- `internal/hft/` - High-frequency trading engine with order management
+- `internal/mcp/` - MCP tools integration for crypto analysis
+- `internal/compliance/` - Compliance monitoring and audit trail
+- `internal/exchanges/` - **NEW** Multi-exchange integration and order routing
+- `internal/backtesting/` - **NEW** Strategy backtesting and historical analysis
+- `internal/paper_trading/` - **NEW** Paper trading simulation and testing
+- `internal/risk/` - **NEW** Advanced risk management and position sizing
+- `internal/strategies/` - **NEW** Trading strategy implementations
+- `internal/ml/` - **NEW** Machine learning models and prediction engines
 - `pkg/database/` - PostgreSQL and Redis database utilities
 - `pkg/middleware/` - HTTP middleware (JWT auth, rate limiting, CORS, logging, tracing)
 - `pkg/observability/` - OpenTelemetry tracing and structured logging
-- `pkg/strategies/` - **NEW** Trading strategy engine with arbitrage and market making
+- `pkg/strategies/` - Trading strategy engine with arbitrage and market making
 
 ### Frontend (Next.js/React)
 - **Stack**: Next.js 14, TypeScript, TailwindCSS, Radix UI components
@@ -265,6 +286,8 @@ CHROME_USER_DATA_DIR=/tmp/chrome-user-data
 - **Unit Tests**: `go test ./...` for all Go packages
 - **Test with Coverage**: `make test-coverage` (creates coverage.html report)
 - **Run Single Test**: `go test -run TestFunctionName ./internal/package/`
+- **Run Single Package Tests**: `go test ./internal/hft/` (example for HFT package)
+- **Run Tests with Race Detection**: `go test -race ./...`
 - **Verbose Tests**: `go test -v ./...`
 - **Integration Tests**: `go test -tags=integration ./test/...`
 - **Frontend Tests**: `cd web && npm run lint` and `cd web && npm run type-check`
@@ -369,19 +392,20 @@ Services have these startup dependencies:
 4. Add OpenTelemetry tracing spans for observability
 5. Implement corresponding health checks if needed
 
-### Adding New Web3 Trading Strategies
-1. Define strategy in `internal/web3/trading_strategies.go`
-2. Implement risk assessment logic in `internal/web3/risk_assessment.go`
-3. Add strategy to trading engine in `internal/web3/trading_engine.go`
-4. Update portfolio rebalancer if needed
-5. Add comprehensive testing with mock market data
+### Adding New Trading Strategies
+1. Define strategy in `internal/strategies/` or `pkg/strategies/`
+2. Implement risk assessment logic in `internal/risk/`
+3. Add strategy to HFT engine in `internal/hft/engine.go` or trading engine
+4. Add backtesting support in `internal/backtesting/`
+5. Test with paper trading in `internal/paper_trading/`
+6. Add comprehensive testing with historical market data
 
 ### Working with Real-time Market Data
-1. Add new data sources in `internal/realtime/market_data_service.go`
-2. Update WebSocket connection handling for new exchanges
-3. Implement data validation and error handling
-4. Add buffering and rate limiting for high-frequency data
-5. Update analytics in `internal/analytics/` to process new data types
+1. Add new exchange integrations in `internal/exchanges/`
+2. Update WebSocket connection handling in exchange-specific services
+3. Implement data validation and error handling in `internal/exchanges/common/`
+4. Add buffering and rate limiting for high-frequency data in HFT engine
+5. Update analytics in `internal/analytics/` and ML models in `internal/ml/`
 
 ### Configuration Changes
 1. Update `internal/config/config.go` struct definitions

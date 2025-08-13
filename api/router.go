@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ai-agentic-browser/internal/binance"
+	"github.com/ai-agentic-browser/internal/exchanges"
 	"github.com/ai-agentic-browser/internal/hft"
 	"github.com/ai-agentic-browser/internal/mcp"
 	"github.com/ai-agentic-browser/internal/tradingview"
@@ -31,6 +32,11 @@ type APIServer struct {
 	tradingViewService *tradingview.Service
 	mcpService         *mcp.IntegrationService
 	strategyEngine     *strategies.StrategyEngine
+
+	// Exchange infrastructure
+	exchangeManager   *exchanges.Manager
+	orderManager      *exchanges.OrderManager
+	marketDataService *exchanges.MarketDataService
 
 	// WebSocket upgrader
 	upgrader    websocket.Upgrader
@@ -107,6 +113,17 @@ func (s *APIServer) SetServices(
 	s.tradingViewService = tradingViewService
 	s.mcpService = mcpService
 	s.strategyEngine = strategyEngine
+}
+
+// SetExchangeServices sets the exchange infrastructure services
+func (s *APIServer) SetExchangeServices(
+	exchangeManager *exchanges.Manager,
+	orderManager *exchanges.OrderManager,
+	marketDataService *exchanges.MarketDataService,
+) {
+	s.exchangeManager = exchangeManager
+	s.orderManager = orderManager
+	s.marketDataService = marketDataService
 }
 
 // Start begins the API server
@@ -247,6 +264,35 @@ func (s *APIServer) setupRoutes() {
 	mcpRouter.HandleFunc("/sentiment/{symbol}", s.handleMCPSentiment).Methods("GET")
 	mcpRouter.HandleFunc("/news/{symbol}", s.handleMCPNews).Methods("GET")
 
+	// Firebase MCP endpoints
+	firebaseRouter := s.router.PathPrefix("/api/firebase").Subrouter()
+
+	// Firebase Status
+	firebaseRouter.HandleFunc("/status", s.handleFirebaseStatus).Methods("GET")
+
+	// Firebase Authentication
+	firebaseRouter.HandleFunc("/auth/users", s.handleFirebaseAuth).Methods("POST")
+	firebaseRouter.HandleFunc("/auth/users/{uid}", s.handleFirebaseAuth).Methods("GET")
+	firebaseRouter.HandleFunc("/auth/verify", s.handleFirebaseVerifyToken).Methods("POST")
+
+	// Firestore Database
+	firebaseRouter.HandleFunc("/firestore/{collection}", s.handleFirestoreDocument).Methods("GET", "POST")
+	firebaseRouter.HandleFunc("/firestore/{collection}/{documentId}", s.handleFirestoreDocument).Methods("GET", "PUT", "DELETE")
+	firebaseRouter.HandleFunc("/firestore/batch", s.handleFirebaseBatchWrite).Methods("POST")
+
+	// Realtime Database
+	firebaseRouter.HandleFunc("/realtime/{path:.*}", s.handleFirebaseRealtimeDB).Methods("GET", "POST", "PUT", "PATCH", "DELETE")
+
+	// Exchange endpoints
+	exchangeRouter := s.router.PathPrefix("/api/exchanges").Subrouter()
+	exchangeRouter.HandleFunc("", s.handleGetExchanges).Methods("GET")
+	exchangeRouter.HandleFunc("/ticker/{symbol}", s.handleGetTicker).Methods("GET")
+	exchangeRouter.HandleFunc("/orderbook/{symbol}", s.handleGetOrderBook).Methods("GET")
+	exchangeRouter.HandleFunc("/best-price/{symbol}", s.handleGetBestPrice).Methods("GET")
+	exchangeRouter.HandleFunc("/orders", s.handleSubmitOrder).Methods("POST")
+	exchangeRouter.HandleFunc("/orders/{id}", s.handleGetOrder).Methods("GET")
+	exchangeRouter.HandleFunc("/orders/{id}/cancel", s.handleCancelOrder).Methods("POST")
+
 	// WebSocket endpoint
 	if s.config.EnableWebSocket {
 		s.router.HandleFunc("/ws/trading", s.handleWebSocket)
@@ -323,6 +369,9 @@ func (s *APIServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 			"tradingview_service": s.tradingViewService != nil,
 			"mcp_service":         s.mcpService != nil,
 			"strategy_engine":     s.strategyEngine != nil,
+			"exchange_manager":    s.exchangeManager != nil,
+			"order_manager":       s.orderManager != nil,
+			"market_data_service": s.marketDataService != nil,
 		},
 	}
 
