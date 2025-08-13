@@ -15,21 +15,21 @@ import (
 type DashboardManager struct {
 	logger     *observability.Logger
 	config     *AnalyticsConfig
-	dashboards map[string]*Dashboard
-	widgets    map[string]*Widget
+	dashboards map[string]*DashboardConfig
+	widgets    map[string]*DashboardWidget
 	layouts    map[string]*DashboardLayout
 	themes     map[string]*DashboardTheme
 	mu         sync.RWMutex
 }
 
-// Dashboard represents a real-time dashboard
-type Dashboard struct {
+// DashboardConfig represents a real-time dashboard configuration
+type DashboardConfig struct {
 	DashboardID string                 `json:"dashboard_id"`
 	Name        string                 `json:"name"`
 	Description string                 `json:"description"`
 	Category    DashboardCategory      `json:"category"`
 	Layout      *DashboardLayout       `json:"layout"`
-	Widgets     []*Widget              `json:"widgets"`
+	Widgets     []*DashboardWidget     `json:"widgets"`
 	Theme       string                 `json:"theme"`
 	RefreshRate time.Duration          `json:"refresh_rate"`
 	AutoRefresh bool                   `json:"auto_refresh"`
@@ -84,8 +84,8 @@ type GridSize struct {
 	Height int `json:"height"`
 }
 
-// Widget represents a dashboard widget
-type Widget struct {
+// DashboardWidget represents a dashboard widget configuration
+type DashboardWidget struct {
 	WidgetID      string                 `json:"widget_id"`
 	Name          string                 `json:"name"`
 	Type          WidgetType             `json:"type"`
@@ -174,13 +174,6 @@ const (
 	DataSourceTypePredictions DataSourceType = "predictions"
 	DataSourceTypeCustom      DataSourceType = "custom"
 )
-
-// TimeRange defines time range for data
-type TimeRange struct {
-	From     time.Time `json:"from"`
-	To       time.Time `json:"to"`
-	Relative string    `json:"relative,omitempty"` // e.g., "1h", "24h", "7d"
-}
 
 // WidgetVisualization defines widget visualization
 type WidgetVisualization struct {
@@ -292,8 +285,8 @@ func NewDashboardManager(logger *observability.Logger, config *AnalyticsConfig) 
 	dm := &DashboardManager{
 		logger:     logger,
 		config:     config,
-		dashboards: make(map[string]*Dashboard),
-		widgets:    make(map[string]*Widget),
+		dashboards: make(map[string]*DashboardConfig),
+		widgets:    make(map[string]*DashboardWidget),
 		layouts:    make(map[string]*DashboardLayout),
 		themes:     make(map[string]*DashboardTheme),
 	}
@@ -318,7 +311,7 @@ func (dm *DashboardManager) Start(ctx context.Context) error {
 }
 
 // CreateDashboard creates a new dashboard
-func (dm *DashboardManager) CreateDashboard(dashboard *Dashboard) error {
+func (dm *DashboardManager) CreateDashboard(dashboard *DashboardConfig) error {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 
@@ -342,7 +335,7 @@ func (dm *DashboardManager) CreateDashboard(dashboard *Dashboard) error {
 }
 
 // GetDashboard retrieves a dashboard by ID
-func (dm *DashboardManager) GetDashboard(dashboardID string) (*Dashboard, error) {
+func (dm *DashboardManager) GetDashboard(dashboardID string) (*DashboardConfig, error) {
 	dm.mu.RLock()
 	defer dm.mu.RUnlock()
 
@@ -360,11 +353,11 @@ func (dm *DashboardManager) GetDashboard(dashboardID string) (*Dashboard, error)
 }
 
 // GetDashboards retrieves all dashboards
-func (dm *DashboardManager) GetDashboards() []*Dashboard {
+func (dm *DashboardManager) GetDashboards() []*DashboardConfig {
 	dm.mu.RLock()
 	defer dm.mu.RUnlock()
 
-	dashboards := make([]*Dashboard, 0, len(dm.dashboards))
+	dashboards := make([]*DashboardConfig, 0, len(dm.dashboards))
 	for _, dashboard := range dm.dashboards {
 		dashboards = append(dashboards, dashboard)
 	}
@@ -373,11 +366,11 @@ func (dm *DashboardManager) GetDashboards() []*Dashboard {
 }
 
 // GetDashboardsByCategory retrieves dashboards by category
-func (dm *DashboardManager) GetDashboardsByCategory(category DashboardCategory) []*Dashboard {
+func (dm *DashboardManager) GetDashboardsByCategory(category DashboardCategory) []*DashboardConfig {
 	dm.mu.RLock()
 	defer dm.mu.RUnlock()
 
-	dashboards := make([]*Dashboard, 0)
+	dashboards := make([]*DashboardConfig, 0)
 	for _, dashboard := range dm.dashboards {
 		if dashboard.Category == category {
 			dashboards = append(dashboards, dashboard)
@@ -388,7 +381,7 @@ func (dm *DashboardManager) GetDashboardsByCategory(category DashboardCategory) 
 }
 
 // UpdateDashboard updates a dashboard
-func (dm *DashboardManager) UpdateDashboard(dashboard *Dashboard) error {
+func (dm *DashboardManager) UpdateDashboard(dashboard *DashboardConfig) error {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 
@@ -496,7 +489,7 @@ func (dm *DashboardManager) initializeDefaultThemes() {
 // initializeDefaultDashboards initializes default dashboards
 func (dm *DashboardManager) initializeDefaultDashboards() {
 	// System Overview Dashboard
-	systemDashboard := &Dashboard{
+	systemDashboard := &DashboardConfig{
 		Name:        "System Overview",
 		Description: "Real-time system performance and health metrics",
 		Category:    CategoryOverview,
@@ -526,7 +519,7 @@ func (dm *DashboardManager) initializeDefaultDashboards() {
 	}
 
 	// Add widgets to system dashboard
-	systemDashboard.Widgets = []*Widget{
+	systemDashboard.Widgets = []*DashboardWidget{
 		{
 			Name:     "CPU Usage",
 			Type:     WidgetTypeGauge,
@@ -545,7 +538,7 @@ func (dm *DashboardManager) initializeDefaultDashboards() {
 			DataSource: &WidgetDataSource{
 				Type:        DataSourceTypeMetrics,
 				MetricName:  "cpu_usage",
-				TimeRange:   TimeRange{Relative: "5m"},
+				TimeRange:   TimeRange{Start: time.Now().Add(-5 * time.Minute), End: time.Now()},
 				Aggregation: "avg",
 			},
 			Visualization: &WidgetVisualization{
@@ -573,7 +566,7 @@ func (dm *DashboardManager) initializeDefaultDashboards() {
 			DataSource: &WidgetDataSource{
 				Type:        DataSourceTypeMetrics,
 				MetricName:  "memory_usage",
-				TimeRange:   TimeRange{Relative: "5m"},
+				TimeRange:   TimeRange{Start: time.Now().Add(-5 * time.Minute), End: time.Now()},
 				Aggregation: "avg",
 			},
 			Visualization: &WidgetVisualization{
@@ -607,7 +600,7 @@ func (dm *DashboardManager) updateDashboards(ctx context.Context) {
 // refreshDashboardData refreshes data for all dashboards
 func (dm *DashboardManager) refreshDashboardData() {
 	dm.mu.RLock()
-	dashboards := make([]*Dashboard, 0, len(dm.dashboards))
+	dashboards := make([]*DashboardConfig, 0, len(dm.dashboards))
 	for _, dashboard := range dm.dashboards {
 		if dashboard.AutoRefresh {
 			dashboards = append(dashboards, dashboard)
@@ -621,7 +614,7 @@ func (dm *DashboardManager) refreshDashboardData() {
 }
 
 // refreshDashboard refreshes data for a specific dashboard
-func (dm *DashboardManager) refreshDashboard(dashboard *Dashboard) {
+func (dm *DashboardManager) refreshDashboard(dashboard *DashboardConfig) {
 	for _, widget := range dashboard.Widgets {
 		if widget.IsVisible {
 			dm.refreshWidget(widget)
@@ -630,7 +623,7 @@ func (dm *DashboardManager) refreshDashboard(dashboard *Dashboard) {
 }
 
 // refreshWidget refreshes data for a specific widget
-func (dm *DashboardManager) refreshWidget(widget *Widget) {
+func (dm *DashboardManager) refreshWidget(widget *DashboardWidget) {
 	// Simulate data refresh
 	widget.LastUpdated = time.Now()
 
@@ -652,8 +645,8 @@ func (dm *DashboardManager) ExportDashboard(dashboardID string) ([]byte, error) 
 }
 
 // ImportDashboard imports a dashboard configuration
-func (dm *DashboardManager) ImportDashboard(data []byte) (*Dashboard, error) {
-	var dashboard Dashboard
+func (dm *DashboardManager) ImportDashboard(data []byte) (*DashboardConfig, error) {
+	var dashboard DashboardConfig
 	if err := json.Unmarshal(data, &dashboard); err != nil {
 		return nil, fmt.Errorf("failed to parse dashboard: %w", err)
 	}

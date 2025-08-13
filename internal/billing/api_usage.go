@@ -3,6 +3,7 @@ package billing
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -30,14 +31,18 @@ type APIUsageRecord struct {
 	APIKey        string          `json:"api_key"`
 	Endpoint      string          `json:"endpoint"`
 	Method        string          `json:"method"`
-	RequestType   string          `json:"request_type"`   // basic, premium, enterprise
-	ResponseTime  int64           `json:"response_time"`  // milliseconds
+	RequestType   string          `json:"request_type"`  // basic, premium, enterprise
+	ResponseTime  int64           `json:"response_time"` // milliseconds
 	StatusCode    int             `json:"status_code"`
-	RequestSize   int64           `json:"request_size"`   // bytes
-	ResponseSize  int64           `json:"response_size"`  // bytes
+	RequestSize   int64           `json:"request_size"`  // bytes
+	ResponseSize  int64           `json:"response_size"` // bytes
 	Cost          decimal.Decimal `json:"cost"`
 	Timestamp     time.Time       `json:"timestamp"`
 	BillingPeriod string          `json:"billing_period"` // 2024-01, 2024-02, etc.
+	Duration      time.Duration   `json:"duration"`
+	Success       bool            `json:"success"`
+	ErrorCode     string          `json:"error_code,omitempty"`
+	Metadata      json.RawMessage `json:"metadata,omitempty"`
 }
 
 // APIUsageSummary provides usage summary for billing

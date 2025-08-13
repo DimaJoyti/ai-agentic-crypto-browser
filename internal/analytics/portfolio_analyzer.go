@@ -16,24 +16,24 @@ type PortfolioPerformanceAnalyzer struct {
 	config    PerformanceConfig
 	metrics   PortfolioPerformanceMetrics
 	history   []PortfolioSnapshot
-	positions map[string]*Position
+	positions map[string]*PortfolioPosition
 	mu        sync.RWMutex
 	isRunning int32
 }
 
 // PortfolioSnapshot represents a point-in-time portfolio snapshot
 type PortfolioSnapshot struct {
-	Timestamp   time.Time       `json:"timestamp"`
-	TotalValue  decimal.Decimal `json:"total_value"`
-	Cash        decimal.Decimal `json:"cash"`
-	Positions   []Position      `json:"positions"`
-	DailyReturn decimal.Decimal `json:"daily_return"`
-	TotalReturn decimal.Decimal `json:"total_return"`
-	Benchmark   decimal.Decimal `json:"benchmark,omitempty"`
+	Timestamp   time.Time           `json:"timestamp"`
+	TotalValue  decimal.Decimal     `json:"total_value"`
+	Cash        decimal.Decimal     `json:"cash"`
+	Positions   []PortfolioPosition `json:"positions"`
+	DailyReturn decimal.Decimal     `json:"daily_return"`
+	TotalReturn decimal.Decimal     `json:"total_return"`
+	Benchmark   decimal.Decimal     `json:"benchmark,omitempty"`
 }
 
-// Position represents a portfolio position
-type Position struct {
+// PortfolioPosition represents a portfolio position
+type PortfolioPosition struct {
 	Symbol        string          `json:"symbol"`
 	Quantity      decimal.Decimal `json:"quantity"`
 	AveragePrice  decimal.Decimal `json:"average_price"`
@@ -67,7 +67,7 @@ func NewPortfolioPerformanceAnalyzer(logger *observability.Logger, config Perfor
 		logger:    logger,
 		config:    config,
 		history:   make([]PortfolioSnapshot, 0, config.MetricsBufferSize),
-		positions: make(map[string]*Position),
+		positions: make(map[string]*PortfolioPosition),
 	}
 }
 
@@ -86,7 +86,7 @@ func (ppa *PortfolioPerformanceAnalyzer) Stop(ctx context.Context) error {
 }
 
 // UpdatePosition updates a position in the portfolio
-func (ppa *PortfolioPerformanceAnalyzer) UpdatePosition(position Position) {
+func (ppa *PortfolioPerformanceAnalyzer) UpdatePosition(position PortfolioPosition) {
 	ppa.mu.Lock()
 	defer ppa.mu.Unlock()
 
@@ -595,11 +595,11 @@ func (ppa *PortfolioPerformanceAnalyzer) GetMetrics() PortfolioPerformanceMetric
 }
 
 // GetPositions returns current portfolio positions
-func (ppa *PortfolioPerformanceAnalyzer) GetPositions() map[string]*Position {
+func (ppa *PortfolioPerformanceAnalyzer) GetPositions() map[string]*PortfolioPosition {
 	ppa.mu.RLock()
 	defer ppa.mu.RUnlock()
 
-	positions := make(map[string]*Position)
+	positions := make(map[string]*PortfolioPosition)
 	for k, v := range ppa.positions {
 		positions[k] = v
 	}

@@ -172,7 +172,7 @@ function LayoutContent({ children, showNavigation = true, showHeader = true, cla
                   <span className="text-muted-foreground">AI Browser</span>
                   <span className="text-muted-foreground">/</span>
                   <span className="font-medium capitalize">
-                    {pathname.split('/').filter(Boolean).pop() || 'Home'}
+                    {pathname?.split('/').filter(Boolean).pop() || 'Home'}
                   </span>
                 </nav>
               </div>

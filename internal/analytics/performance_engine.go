@@ -19,7 +19,7 @@ type PerformanceEngine struct {
 	portfolioAnalyzer *PortfolioPerformanceAnalyzer
 	benchmarkEngine   *BenchmarkEngine
 	// optimizationEngine will be added in future versions
-	metrics   *PerformanceMetrics
+	metrics   *EnginePerformanceMetrics
 	mu        sync.RWMutex
 	isRunning int32
 	stopChan  chan struct{}
@@ -47,8 +47,8 @@ type AlertThresholds struct {
 	VolatilityThreshold  float64       `json:"volatility_threshold"`
 }
 
-// PerformanceMetrics contains comprehensive performance metrics
-type PerformanceMetrics struct {
+// EnginePerformanceMetrics contains comprehensive performance metrics
+type EnginePerformanceMetrics struct {
 	Timestamp    time.Time                   `json:"timestamp"`
 	Trading      TradingPerformanceMetrics   `json:"trading"`
 	System       SystemPerformanceMetrics    `json:"system"`
@@ -229,7 +229,7 @@ func NewPerformanceEngine(logger *observability.Logger, config PerformanceConfig
 		logger:   logger,
 		config:   config,
 		stopChan: make(chan struct{}),
-		metrics:  &PerformanceMetrics{},
+		metrics:  &EnginePerformanceMetrics{},
 	}
 
 	// Initialize sub-analyzers
@@ -389,7 +389,7 @@ func (pe *PerformanceEngine) checkPerformanceAlerts(ctx context.Context) {
 }
 
 // GetMetrics returns current performance metrics
-func (pe *PerformanceEngine) GetMetrics() *PerformanceMetrics {
+func (pe *PerformanceEngine) GetMetrics() *EnginePerformanceMetrics {
 	pe.mu.RLock()
 	defer pe.mu.RUnlock()
 	return pe.metrics

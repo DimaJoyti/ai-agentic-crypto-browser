@@ -147,7 +147,7 @@ func TestPortfolioPerformanceAnalyzer(t *testing.T) {
 	}
 
 	// Add a test position
-	position := Position{
+	position := PortfolioPosition{
 		Symbol:       "BTCUSD",
 		Quantity:     decimal.NewFromFloat(0.5),
 		AveragePrice: decimal.NewFromFloat(50000),

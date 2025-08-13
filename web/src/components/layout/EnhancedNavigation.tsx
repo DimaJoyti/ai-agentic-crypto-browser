@@ -131,7 +131,7 @@ export function EnhancedNavigation({ className }: EnhancedNavigationProps) {
   useEffect(() => {
     navigationItems.forEach(item => {
       if (item.children) {
-        const hasActiveChild = item.children.some(child => pathname.startsWith(child.href))
+        const hasActiveChild = item.children.some(child => pathname?.startsWith(child.href))
         if (hasActiveChild) {
           setExpandedItems(prev => new Set([...Array.from(prev), item.id]))
         }
@@ -155,7 +155,7 @@ export function EnhancedNavigation({ className }: EnhancedNavigationProps) {
     if (href === '/') {
       return pathname === '/'
     }
-    return pathname.startsWith(href)
+    return pathname?.startsWith(href) || false
   }
 
   const filteredItems = navigationItems.filter(item =>

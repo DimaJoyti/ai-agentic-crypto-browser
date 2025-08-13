@@ -447,7 +447,7 @@ func demoRealTimeDashboards(ctx context.Context, logger *observability.Logger) {
 	}
 
 	// Create custom trading dashboard
-	tradingDashboard := &analytics.Dashboard{
+	tradingDashboard := &analytics.DashboardConfig{
 		Name:        "Custom Trading Dashboard",
 		Description: "Real-time trading analytics and market insights",
 		Category:    analytics.CategoryTrading,
@@ -471,7 +471,7 @@ func demoRealTimeDashboards(ctx context.Context, logger *observability.Logger) {
 	}
 
 	// Add widgets to trading dashboard
-	tradingDashboard.Widgets = []*analytics.Widget{
+	tradingDashboard.Widgets = []*analytics.DashboardWidget{
 		{
 			Name:     "BTC Price",
 			Type:     analytics.WidgetTypeMetric,
@@ -487,7 +487,10 @@ func demoRealTimeDashboards(ctx context.Context, logger *observability.Logger) {
 			DataSource: &analytics.WidgetDataSource{
 				Type:       analytics.DataSourceTypeMetrics,
 				MetricName: "btc_price",
-				TimeRange:  analytics.TimeRange{Relative: "1m"},
+				TimeRange: analytics.TimeRange{
+					Start: time.Now().Add(-time.Minute),
+					End:   time.Now(),
+				},
 			},
 			RefreshRate: 5 * time.Second,
 			IsVisible:   true,
