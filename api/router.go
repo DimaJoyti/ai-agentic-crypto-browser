@@ -27,11 +27,17 @@ type APIServer struct {
 	server *http.Server
 
 	// Core services
-	hftEngine          *hft.HFTEngine
-	binanceService     *binance.Service
-	tradingViewService *tradingview.Service
-	mcpService         *mcp.IntegrationService
-	strategyEngine     *strategies.StrategyEngine
+	hftEngine           *hft.HFTEngine
+	smartOrderRouter    *hft.SmartOrderRouter
+	advancedRiskManager *hft.AdvancedRiskManager
+	postTradeAnalytics  *hft.PostTradeAnalytics
+	hpNetworking        *hft.HighPerformanceNetworking
+	realtimeDashboard   *hft.RealtimeDashboard
+	testingFramework    *hft.TestingSimulationFramework
+	binanceService      *binance.Service
+	tradingViewService  *tradingview.Service
+	mcpService          *mcp.IntegrationService
+	strategyEngine      *strategies.StrategyEngine
 
 	// Exchange infrastructure
 	exchangeManager   *exchanges.Manager
@@ -227,6 +233,65 @@ func (s *APIServer) setupRoutes() {
 	tradingRouter.HandleFunc("/positions", s.handleTradingPositions).Methods("GET")
 	tradingRouter.HandleFunc("/signals", s.handleTradingSignals).Methods("GET")
 
+	// Smart Order Routing endpoints
+	sorRouter := s.router.PathPrefix("/api/sor").Subrouter()
+	sorRouter.HandleFunc("/route", s.handleSORRoute).Methods("POST")
+	sorRouter.HandleFunc("/execute", s.handleSORExecute).Methods("POST")
+	sorRouter.HandleFunc("/metrics", s.handleSORMetrics).Methods("GET")
+	sorRouter.HandleFunc("/best-prices", s.handleSORBestPrices).Methods("GET")
+	sorRouter.HandleFunc("/venues", s.handleSORVenues).Methods("GET")
+
+	// Advanced Risk Management endpoints
+	riskRouter := s.router.PathPrefix("/api/risk").Subrouter()
+	riskRouter.HandleFunc("/metrics", s.handleRiskMetrics).Methods("GET")
+	riskRouter.HandleFunc("/limits", s.handleRiskLimits).Methods("GET", "POST", "PUT")
+	riskRouter.HandleFunc("/violations", s.handleRiskViolations).Methods("GET")
+	riskRouter.HandleFunc("/validate", s.handleRiskValidate).Methods("POST")
+	riskRouter.HandleFunc("/emergency-stop", s.handleRiskEmergencyStop).Methods("POST")
+	riskRouter.HandleFunc("/status", s.handleRiskStatus).Methods("GET")
+
+	// Post-Trade Analytics endpoints
+	analyticsRouter := s.router.PathPrefix("/api/analytics").Subrouter()
+	analyticsRouter.HandleFunc("/execution-metrics", s.handleAnalyticsExecutionMetrics).Methods("GET")
+	analyticsRouter.HandleFunc("/performance", s.handleAnalyticsPerformance).Methods("GET")
+	analyticsRouter.HandleFunc("/realtime", s.handleAnalyticsRealtime).Methods("GET")
+	analyticsRouter.HandleFunc("/trades", s.handleAnalyticsTrades).Methods("GET", "POST")
+	analyticsRouter.HandleFunc("/summary", s.handleAnalyticsSummary).Methods("GET")
+	analyticsRouter.HandleFunc("/slippage", s.handleAnalyticsSlippage).Methods("GET")
+	analyticsRouter.HandleFunc("/market-impact", s.handleAnalyticsMarketImpact).Methods("GET")
+
+	// High-Performance Networking endpoints
+	networkingRouter := s.router.PathPrefix("/api/networking").Subrouter()
+	networkingRouter.HandleFunc("/metrics", s.handleNetworkingMetrics).Methods("GET")
+	networkingRouter.HandleFunc("/connections", s.handleNetworkingConnections).Methods("GET", "POST")
+	networkingRouter.HandleFunc("/connections/{id}", s.handleNetworkingConnection).Methods("GET", "DELETE")
+	networkingRouter.HandleFunc("/send", s.handleNetworkingSend).Methods("POST")
+	networkingRouter.HandleFunc("/receive", s.handleNetworkingReceive).Methods("GET")
+	networkingRouter.HandleFunc("/status", s.handleNetworkingStatus).Methods("GET")
+
+	// Real-Time Dashboard endpoints
+	dashboardRouter := s.router.PathPrefix("/api/dashboard").Subrouter()
+	dashboardRouter.HandleFunc("/metrics", s.handleDashboardMetrics).Methods("GET")
+	dashboardRouter.HandleFunc("/alerts", s.handleDashboardAlerts).Methods("GET")
+	dashboardRouter.HandleFunc("/alerts/{id}/acknowledge", s.handleDashboardAcknowledgeAlert).Methods("POST")
+	dashboardRouter.HandleFunc("/alerts/{id}/resolve", s.handleDashboardResolveAlert).Methods("POST")
+	dashboardRouter.HandleFunc("/sessions", s.handleDashboardSessions).Methods("POST")
+	dashboardRouter.HandleFunc("/sessions/{id}", s.handleDashboardSession).Methods("GET", "PUT", "DELETE")
+	dashboardRouter.HandleFunc("/widgets", s.handleDashboardWidgets).Methods("GET")
+	dashboardRouter.HandleFunc("/layouts", s.handleDashboardLayouts).Methods("GET")
+	dashboardRouter.HandleFunc("/status", s.handleDashboardStatus).Methods("GET")
+
+	// Testing & Simulation Framework endpoints
+	testingRouter := s.router.PathPrefix("/api/testing").Subrouter()
+	testingRouter.HandleFunc("/tests", s.handleTestingTests).Methods("GET", "POST")
+	testingRouter.HandleFunc("/tests/{id}", s.handleTestingTest).Methods("GET")
+	testingRouter.HandleFunc("/simulations", s.handleTestingSimulations).Methods("GET", "POST")
+	testingRouter.HandleFunc("/simulations/{id}", s.handleTestingSimulation).Methods("GET")
+	testingRouter.HandleFunc("/environments", s.handleTestingEnvironments).Methods("GET", "POST")
+	testingRouter.HandleFunc("/environments/{id}", s.handleTestingEnvironment).Methods("GET")
+	testingRouter.HandleFunc("/results", s.handleTestingResults).Methods("GET")
+	testingRouter.HandleFunc("/status", s.handleTestingStatus).Methods("GET")
+
 	// Portfolio endpoints
 	portfolioRouter := s.router.PathPrefix("/api/portfolio").Subrouter()
 	portfolioRouter.HandleFunc("/summary", s.handlePortfolioSummary).Methods("GET")
@@ -242,11 +307,12 @@ func (s *APIServer) setupRoutes() {
 	strategyRouter.HandleFunc("/{id}/stop", s.handleStrategyStop).Methods("POST")
 	strategyRouter.HandleFunc("/{id}/performance", s.handleStrategyPerformance).Methods("GET")
 
-	// Risk management endpoints
-	riskRouter := s.router.PathPrefix("/api/risk").Subrouter()
-	riskRouter.HandleFunc("/limits", s.handleRiskLimits).Methods("GET", "POST")
-	riskRouter.HandleFunc("/limits/{id}", s.handleRiskLimit).Methods("GET", "PUT", "DELETE")
-	riskRouter.HandleFunc("/violations", s.handleRiskViolations).Methods("GET")
+	// Legacy risk management endpoints (keeping for compatibility)
+	legacyRiskRouter := s.router.PathPrefix("/api/legacy-risk").Subrouter()
+	legacyRiskRouter.HandleFunc("/limits", s.handleRiskLimits).Methods("GET", "POST")
+	legacyRiskRouter.HandleFunc("/limits/{id}", s.handleRiskLimit).Methods("GET", "PUT", "DELETE")
+	legacyRiskRouter.HandleFunc("/violations", s.handleLegacyRiskViolations).Methods("GET")
+	legacyRiskRouter.HandleFunc("/metrics", s.handleLegacyRiskMetrics).Methods("GET")
 	riskRouter.HandleFunc("/metrics", s.handleRiskMetrics).Methods("GET")
 	riskRouter.HandleFunc("/emergency-stop", s.handleEmergencyStop).Methods("POST")
 

@@ -3,21 +3,186 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/ai-agentic-browser/internal/hft"
+	"github.com/ai-agentic-browser/pkg/observability"
 	"github.com/gorilla/mux"
 )
+
+// RiskHandlers provides HTTP handlers for Advanced Risk Management
+type RiskHandlers struct {
+	riskManager *hft.AdvancedRiskManager
+	logger      *observability.Logger
+}
+
+// NewRiskHandlers creates new risk management HTTP handlers
+func NewRiskHandlers(riskManager *hft.AdvancedRiskManager, logger *observability.Logger) *RiskHandlers {
+	return &RiskHandlers{
+		riskManager: riskManager,
+		logger:      logger,
+	}
+}
 
 // Risk Management API handlers
 
 // handleRiskLimits handles risk limits management
 func (s *APIServer) handleRiskLimits(w http.ResponseWriter, r *http.Request) {
+	if s.advancedRiskManager == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Advanced Risk Manager not available")
+		return
+	}
+
+	riskHandlers := NewRiskHandlers(s.advancedRiskManager, s.logger)
+
 	switch r.Method {
 	case "GET":
-		s.handleGetRiskLimits(w, r)
-	case "POST":
-		s.handleCreateRiskLimit(w, r)
+		riskHandlers.GetLimits(w, r)
+	case "POST", "PUT":
+		riskHandlers.UpdateLimits(w, r)
 	}
+}
+
+// GetLimits handles risk limits requests
+func (h *RiskHandlers) GetLimits(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	limits := h.riskManager.GetLimits()
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(limits); err != nil {
+		h.logger.Error(ctx, "Failed to encode limits", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+}
+
+// UpdateLimits handles risk limits update requests
+func (h *RiskHandlers) UpdateLimits(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var limits hft.RiskLimits
+	if err := json.NewDecoder(r.Body).Decode(&limits); err != nil {
+		h.logger.Error(ctx, "Failed to decode limits update request", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.riskManager.UpdateLimits(ctx, &limits); err != nil {
+		h.logger.Error(ctx, "Failed to update risk limits", err)
+		http.Error(w, "Failed to update limits: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  "success",
+		"message": "Risk limits updated successfully",
+	})
+}
+
+// GetMetrics handles risk metrics requests
+func (h *RiskHandlers) GetMetrics(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	metrics := h.riskManager.GetMetrics()
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(metrics); err != nil {
+		h.logger.Error(ctx, "Failed to encode risk metrics", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+}
+
+// GetViolations handles risk violations requests
+func (h *RiskHandlers) GetViolations(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse limit parameter
+	limit := 50 // Default limit
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+
+	violations := h.riskManager.GetViolations(limit)
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(violations); err != nil {
+		h.logger.Error(ctx, "Failed to encode violations", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+}
+
+// ValidateOrder handles order validation requests
+func (h *RiskHandlers) ValidateOrder(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var orderReq hft.OrderRequest
+	if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
+		h.logger.Error(ctx, "Failed to decode order validation request", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate the order
+	err := h.riskManager.ValidateOrder(ctx, &orderReq)
+
+	response := map[string]interface{}{
+		"order_id": orderReq.ID.String(),
+		"symbol":   orderReq.Symbol,
+		"valid":    err == nil,
+	}
+
+	if err != nil {
+		response["error"] = err.Error()
+		response["reason"] = "Risk validation failed"
+	} else {
+		response["message"] = "Order passed risk validation"
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		h.logger.Error(ctx, "Failed to encode validation response", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+}
+
+// EmergencyStop handles emergency stop requests
+func (h *RiskHandlers) EmergencyStop(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var req struct {
+		Reason string `json:"reason"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error(ctx, "Failed to decode emergency stop request", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Reason == "" {
+		req.Reason = "Manual emergency stop via API"
+	}
+
+	if err := h.riskManager.EmergencyStop(ctx, req.Reason); err != nil {
+		h.logger.Error(ctx, "Failed to trigger emergency stop", err)
+		http.Error(w, "Failed to trigger emergency stop: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  "success",
+		"message": "Emergency stop activated",
+		"reason":  req.Reason,
+	})
 }
 
 // handleGetRiskLimits returns all risk limits
@@ -199,8 +364,8 @@ func (s *APIServer) handleRiskLimit(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleRiskViolations returns current risk violations
-func (s *APIServer) handleRiskViolations(w http.ResponseWriter, r *http.Request) {
+// Legacy handleRiskViolations - kept for compatibility
+func (s *APIServer) handleLegacyRiskViolations(w http.ResponseWriter, r *http.Request) {
 	violations := []map[string]interface{}{
 		{
 			"id":           "violation_1",
@@ -244,8 +409,8 @@ func (s *APIServer) handleRiskViolations(w http.ResponseWriter, r *http.Request)
 	})
 }
 
-// handleRiskMetrics returns comprehensive risk metrics
-func (s *APIServer) handleRiskMetrics(w http.ResponseWriter, r *http.Request) {
+// Legacy handleRiskMetrics - kept for compatibility
+func (s *APIServer) handleLegacyRiskMetrics(w http.ResponseWriter, r *http.Request) {
 	metrics := map[string]interface{}{
 		"overall_risk_score": 3.2,
 		"risk_level":         "MODERATE",

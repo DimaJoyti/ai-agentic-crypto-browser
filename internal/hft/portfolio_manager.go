@@ -66,12 +66,12 @@ type Portfolio struct {
 	HighWaterMark decimal.Decimal            `json:"high_water_mark"`
 	Positions     map[string]*Position       `json:"positions"`
 	Allocations   map[string]decimal.Decimal `json:"allocations"`
-	RiskMetrics   *RiskMetrics               `json:"risk_metrics"`
+	RiskMetrics   *PortfolioRiskMetrics      `json:"risk_metrics"`
 	LastUpdate    time.Time                  `json:"last_update"`
 }
 
-// RiskMetrics contains portfolio risk metrics
-type RiskMetrics struct {
+// PortfolioRiskMetrics contains portfolio risk metrics
+type PortfolioRiskMetrics struct {
 	VaR95             decimal.Decimal    `json:"var_95"`             // Value at Risk 95%
 	VaR99             decimal.Decimal    `json:"var_99"`             // Value at Risk 99%
 	ExpectedShortfall decimal.Decimal    `json:"expected_shortfall"` // Conditional VaR
@@ -107,7 +107,7 @@ func NewPortfolioManager(logger *observability.Logger, config HFTConfig) *Portfo
 		CashBalance: decimal.NewFromFloat(100000),
 		Positions:   make(map[string]*Position),
 		Allocations: make(map[string]decimal.Decimal),
-		RiskMetrics: &RiskMetrics{},
+		RiskMetrics: &PortfolioRiskMetrics{},
 		LastUpdate:  time.Now(),
 	}
 
@@ -439,7 +439,7 @@ func (pm *PortfolioManager) calculateRiskMetrics() {
 	// In production, you would use historical returns and more sophisticated calculations
 
 	if pm.portfolio.RiskMetrics == nil {
-		pm.portfolio.RiskMetrics = &RiskMetrics{}
+		pm.portfolio.RiskMetrics = &PortfolioRiskMetrics{}
 	}
 
 	// Calculate basic metrics

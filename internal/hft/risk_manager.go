@@ -16,8 +16,8 @@ import (
 type RiskManager struct {
 	logger     *observability.Logger
 	config     HFTConfig
-	riskLimits map[string]*RiskLimit
-	violations []RiskViolation
+	riskLimits map[string]*BasicRiskLimit
+	violations []BasicRiskViolation
 
 	// Risk metrics
 	dailyPnL      decimal.Decimal
@@ -37,8 +37,8 @@ type RiskManager struct {
 	mu        sync.RWMutex
 }
 
-// RiskLimit defines risk limits for trading
-type RiskLimit struct {
+// BasicRiskLimit defines risk limits for trading
+type BasicRiskLimit struct {
 	ID              uuid.UUID       `json:"id"`
 	Name            string          `json:"name"`
 	Type            RiskLimitType   `json:"type"`
@@ -67,8 +67,8 @@ const (
 	RiskLimitTypeConcentration RiskLimitType = "CONCENTRATION"
 )
 
-// RiskViolation represents a risk limit violation
-type RiskViolation struct {
+// BasicRiskViolation represents a risk limit violation
+type BasicRiskViolation struct {
 	ID            uuid.UUID         `json:"id"`
 	LimitID       uuid.UUID         `json:"limit_id"`
 	LimitName     string            `json:"limit_name"`
@@ -109,8 +109,8 @@ func NewRiskManager(logger *observability.Logger, config HFTConfig) *RiskManager
 	rm := &RiskManager{
 		logger:        logger,
 		config:        config,
-		riskLimits:    make(map[string]*RiskLimit),
-		violations:    make([]RiskViolation, 0),
+		riskLimits:    make(map[string]*BasicRiskLimit),
+		violations:    make([]BasicRiskViolation, 0),
 		positionSizes: make(map[string]decimal.Decimal),
 		orderCounts:   make(map[string]int64),
 		lastResetTime: time.Now(),
@@ -233,7 +233,7 @@ func (rm *RiskManager) UpdatePosition(update PositionUpdate) {
 }
 
 // AddRiskLimit adds a new risk limit
-func (rm *RiskManager) AddRiskLimit(limit *RiskLimit) {
+func (rm *RiskManager) AddRiskLimit(limit *BasicRiskLimit) {
 	rm.mu.Lock()
 	defer rm.mu.Unlock()
 
@@ -304,7 +304,7 @@ func (rm *RiskManager) EmergencyStop(reason string) {
 // initializeDefaultLimits sets up default risk limits
 func (rm *RiskManager) initializeDefaultLimits() {
 	// Daily loss limit
-	rm.AddRiskLimit(&RiskLimit{
+	rm.AddRiskLimit(&BasicRiskLimit{
 		Name:         "Daily Loss Limit",
 		Type:         RiskLimitTypeDailyLoss,
 		MaxDailyLoss: rm.config.MaxDailyLoss,
@@ -312,7 +312,7 @@ func (rm *RiskManager) initializeDefaultLimits() {
 	})
 
 	// Position size limit
-	rm.AddRiskLimit(&RiskLimit{
+	rm.AddRiskLimit(&BasicRiskLimit{
 		Name:            "Position Size Limit",
 		Type:            RiskLimitTypePosition,
 		MaxPositionSize: rm.config.MaxPositionSize,
@@ -320,7 +320,7 @@ func (rm *RiskManager) initializeDefaultLimits() {
 	})
 
 	// Order rate limit
-	rm.AddRiskLimit(&RiskLimit{
+	rm.AddRiskLimit(&BasicRiskLimit{
 		Name:            "Order Rate Limit",
 		Type:            RiskLimitTypeOrderRate,
 		MaxOrdersPerMin: int64(rm.config.MaxOrdersPerSecond * 60),
@@ -511,7 +511,7 @@ func (rm *RiskManager) performRiskChecks(ctx context.Context) {
 }
 
 // GetViolations returns all risk violations
-func (rm *RiskManager) GetViolations() []RiskViolation {
+func (rm *RiskManager) GetViolations() []BasicRiskViolation {
 	rm.mu.RLock()
 	defer rm.mu.RUnlock()
 
@@ -519,11 +519,11 @@ func (rm *RiskManager) GetViolations() []RiskViolation {
 }
 
 // GetRiskLimits returns all risk limits
-func (rm *RiskManager) GetRiskLimits() map[string]*RiskLimit {
+func (rm *RiskManager) GetRiskLimits() map[string]*BasicRiskLimit {
 	rm.mu.RLock()
 	defer rm.mu.RUnlock()
 
-	limits := make(map[string]*RiskLimit)
+	limits := make(map[string]*BasicRiskLimit)
 	for id, limit := range rm.riskLimits {
 		limits[id] = limit
 	}
@@ -542,15 +542,20 @@ func (rm *RiskManager) GetMetrics() RiskMetrics {
 	defer rm.mu.RUnlock()
 
 	return RiskMetrics{
-		VaR95:             decimal.NewFromFloat(-1000.0), // Mock VaR calculation
-		VaR99:             decimal.NewFromFloat(-2000.0), // Mock VaR calculation
-		ExpectedShortfall: decimal.NewFromFloat(-2500.0), // Mock ES calculation
-		SharpeRatio:       1.5,
-		SortinoRatio:      2.0,
-		MaxDrawdown:       rm.maxDrawdown,
-		Beta:              0.8,
-		Alpha:             0.1,
-		Volatility:        0.2,
-		Correlation:       map[string]float64{"BTC": 0.7, "ETH": 0.6},
+		TotalValue:         decimal.NewFromFloat(100000.0),  // Mock total value
+		TotalExposure:      decimal.NewFromFloat(50000.0),   // Mock exposure
+		NetPosition:        decimal.NewFromFloat(25000.0),   // Mock net position
+		Leverage:           2.0,                             // Mock leverage
+		Concentration:      0.3,                             // Mock concentration
+		DailyPnL:           rm.dailyPnL,                     // Actual daily P&L
+		WeeklyPnL:          decimal.NewFromFloat(5000.0),    // Mock weekly P&L
+		MonthlyPnL:         decimal.NewFromFloat(15000.0),   // Mock monthly P&L
+		UnrealizedPnL:      decimal.NewFromFloat(2000.0),    // Mock unrealized P&L
+		MaxDrawdown:        rm.maxDrawdown.InexactFloat64(), // Convert to float64
+		VaR95:              decimal.NewFromFloat(-1000.0),   // Mock VaR calculation
+		VaR99:              decimal.NewFromFloat(-2000.0),   // Mock VaR calculation
+		ExpectedShortfall:  decimal.NewFromFloat(-2500.0),   // Mock ES calculation
+		BetaExposure:       0.8,                             // Mock beta exposure
+		VolatilityExposure: 0.2,                             // Mock volatility exposure
 	}
 }

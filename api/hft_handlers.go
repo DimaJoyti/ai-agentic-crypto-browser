@@ -867,3 +867,541 @@ func (s *APIServer) handleCancelOrder(w http.ResponseWriter, r *http.Request) {
 		"order_id": orderID.String(),
 	})
 }
+
+// Smart Order Routing handlers
+
+// handleSORRoute handles order routing requests
+func (s *APIServer) handleSORRoute(w http.ResponseWriter, r *http.Request) {
+	if s.smartOrderRouter == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Smart Order Router not available")
+		return
+	}
+
+	// Create SOR handlers instance
+	sorHandlers := NewSORHandlers(s.smartOrderRouter, s.logger)
+	sorHandlers.RouteOrder(w, r)
+}
+
+// handleSORExecute handles order execution requests
+func (s *APIServer) handleSORExecute(w http.ResponseWriter, r *http.Request) {
+	if s.smartOrderRouter == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Smart Order Router not available")
+		return
+	}
+
+	// Create SOR handlers instance
+	sorHandlers := NewSORHandlers(s.smartOrderRouter, s.logger)
+	sorHandlers.ExecuteOrder(w, r)
+}
+
+// handleSORMetrics handles SOR metrics requests
+func (s *APIServer) handleSORMetrics(w http.ResponseWriter, r *http.Request) {
+	if s.smartOrderRouter == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Smart Order Router not available")
+		return
+	}
+
+	// Create SOR handlers instance
+	sorHandlers := NewSORHandlers(s.smartOrderRouter, s.logger)
+	sorHandlers.GetMetrics(w, r)
+}
+
+// handleSORBestPrices handles best prices requests
+func (s *APIServer) handleSORBestPrices(w http.ResponseWriter, r *http.Request) {
+	if s.smartOrderRouter == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Smart Order Router not available")
+		return
+	}
+
+	// Create SOR handlers instance
+	sorHandlers := NewSORHandlers(s.smartOrderRouter, s.logger)
+	sorHandlers.GetBestPrices(w, r)
+}
+
+// handleSORVenues handles venues information requests
+func (s *APIServer) handleSORVenues(w http.ResponseWriter, r *http.Request) {
+	if s.smartOrderRouter == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Smart Order Router not available")
+		return
+	}
+
+	// Create SOR handlers instance
+	sorHandlers := NewSORHandlers(s.smartOrderRouter, s.logger)
+	sorHandlers.GetVenues(w, r)
+}
+
+// Advanced Risk Management handlers
+
+// handleRiskMetrics handles risk metrics requests
+func (s *APIServer) handleRiskMetrics(w http.ResponseWriter, r *http.Request) {
+	if s.advancedRiskManager == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Advanced Risk Manager not available")
+		return
+	}
+
+	riskHandlers := NewRiskHandlers(s.advancedRiskManager, s.logger)
+	riskHandlers.GetMetrics(w, r)
+}
+
+// handleRiskViolations handles risk violations requests
+func (s *APIServer) handleRiskViolations(w http.ResponseWriter, r *http.Request) {
+	if s.advancedRiskManager == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Advanced Risk Manager not available")
+		return
+	}
+
+	riskHandlers := NewRiskHandlers(s.advancedRiskManager, s.logger)
+	riskHandlers.GetViolations(w, r)
+}
+
+// handleRiskValidate handles order validation requests
+func (s *APIServer) handleRiskValidate(w http.ResponseWriter, r *http.Request) {
+	if s.advancedRiskManager == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Advanced Risk Manager not available")
+		return
+	}
+
+	riskHandlers := NewRiskHandlers(s.advancedRiskManager, s.logger)
+	riskHandlers.ValidateOrder(w, r)
+}
+
+// handleRiskEmergencyStop handles emergency stop requests
+func (s *APIServer) handleRiskEmergencyStop(w http.ResponseWriter, r *http.Request) {
+	if s.advancedRiskManager == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Advanced Risk Manager not available")
+		return
+	}
+
+	riskHandlers := NewRiskHandlers(s.advancedRiskManager, s.logger)
+	riskHandlers.EmergencyStop(w, r)
+}
+
+// handleRiskStatus handles risk status requests
+func (s *APIServer) handleRiskStatus(w http.ResponseWriter, r *http.Request) {
+	if s.advancedRiskManager == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Advanced Risk Manager not available")
+		return
+	}
+
+	status := map[string]interface{}{
+		"emergency_mode": s.advancedRiskManager.IsEmergencyMode(),
+		"system_status":  "operational",
+	}
+
+	// Add current risk level assessment
+	metrics := s.advancedRiskManager.GetMetrics()
+	if metrics != nil {
+		riskLevel := "LOW"
+		if metrics.Concentration > 50.0 {
+			riskLevel = "MEDIUM"
+		}
+		if metrics.MaxDrawdown > 10.0 {
+			riskLevel = "HIGH"
+		}
+		if metrics.MaxDrawdown > 20.0 {
+			riskLevel = "CRITICAL"
+		}
+
+		status["risk_level"] = riskLevel
+		status["last_update"] = metrics.LastUpdate
+	}
+
+	s.sendJSON(w, r, http.StatusOK, status)
+}
+
+// Post-Trade Analytics handlers
+
+// handleAnalyticsExecutionMetrics handles execution metrics requests
+func (s *APIServer) handleAnalyticsExecutionMetrics(w http.ResponseWriter, r *http.Request) {
+	if s.postTradeAnalytics == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Post-Trade Analytics not available")
+		return
+	}
+
+	analyticsHandlers := NewAnalyticsHandlers(s.postTradeAnalytics, s.logger)
+	analyticsHandlers.GetExecutionMetrics(w, r)
+}
+
+// handleAnalyticsPerformance handles performance data requests
+func (s *APIServer) handleAnalyticsPerformance(w http.ResponseWriter, r *http.Request) {
+	if s.postTradeAnalytics == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Post-Trade Analytics not available")
+		return
+	}
+
+	analyticsHandlers := NewAnalyticsHandlers(s.postTradeAnalytics, s.logger)
+	analyticsHandlers.GetPerformanceData(w, r)
+}
+
+// handleAnalyticsRealtime handles real-time metrics requests
+func (s *APIServer) handleAnalyticsRealtime(w http.ResponseWriter, r *http.Request) {
+	if s.postTradeAnalytics == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Post-Trade Analytics not available")
+		return
+	}
+
+	analyticsHandlers := NewAnalyticsHandlers(s.postTradeAnalytics, s.logger)
+	analyticsHandlers.GetRealtimeMetrics(w, r)
+}
+
+// handleAnalyticsTrades handles trade history and recording requests
+func (s *APIServer) handleAnalyticsTrades(w http.ResponseWriter, r *http.Request) {
+	if s.postTradeAnalytics == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Post-Trade Analytics not available")
+		return
+	}
+
+	analyticsHandlers := NewAnalyticsHandlers(s.postTradeAnalytics, s.logger)
+
+	switch r.Method {
+	case "GET":
+		analyticsHandlers.GetTradeHistory(w, r)
+	case "POST":
+		analyticsHandlers.RecordTrade(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// handleAnalyticsSummary handles analytics summary requests
+func (s *APIServer) handleAnalyticsSummary(w http.ResponseWriter, r *http.Request) {
+	if s.postTradeAnalytics == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Post-Trade Analytics not available")
+		return
+	}
+
+	analyticsHandlers := NewAnalyticsHandlers(s.postTradeAnalytics, s.logger)
+	analyticsHandlers.GetAnalyticsSummary(w, r)
+}
+
+// handleAnalyticsSlippage handles slippage analysis requests
+func (s *APIServer) handleAnalyticsSlippage(w http.ResponseWriter, r *http.Request) {
+	if s.postTradeAnalytics == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Post-Trade Analytics not available")
+		return
+	}
+
+	analyticsHandlers := NewAnalyticsHandlers(s.postTradeAnalytics, s.logger)
+	analyticsHandlers.GetSlippageAnalysis(w, r)
+}
+
+// handleAnalyticsMarketImpact handles market impact analysis requests
+func (s *APIServer) handleAnalyticsMarketImpact(w http.ResponseWriter, r *http.Request) {
+	if s.postTradeAnalytics == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Post-Trade Analytics not available")
+		return
+	}
+
+	analyticsHandlers := NewAnalyticsHandlers(s.postTradeAnalytics, s.logger)
+	analyticsHandlers.GetMarketImpactAnalysis(w, r)
+}
+
+// High-Performance Networking handlers
+
+// handleNetworkingMetrics handles networking metrics requests
+func (s *APIServer) handleNetworkingMetrics(w http.ResponseWriter, r *http.Request) {
+	if s.hpNetworking == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "High-Performance Networking not available")
+		return
+	}
+
+	networkingHandlers := NewNetworkingHandlers(s.hpNetworking, s.logger)
+	networkingHandlers.GetMetrics(w, r)
+}
+
+// handleNetworkingConnections handles connections requests
+func (s *APIServer) handleNetworkingConnections(w http.ResponseWriter, r *http.Request) {
+	if s.hpNetworking == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "High-Performance Networking not available")
+		return
+	}
+
+	networkingHandlers := NewNetworkingHandlers(s.hpNetworking, s.logger)
+
+	switch r.Method {
+	case "GET":
+		networkingHandlers.GetConnections(w, r)
+	case "POST":
+		networkingHandlers.CreateConnection(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// handleNetworkingConnection handles single connection requests
+func (s *APIServer) handleNetworkingConnection(w http.ResponseWriter, r *http.Request) {
+	if s.hpNetworking == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "High-Performance Networking not available")
+		return
+	}
+
+	networkingHandlers := NewNetworkingHandlers(s.hpNetworking, s.logger)
+
+	switch r.Method {
+	case "GET":
+		networkingHandlers.GetConnection(w, r)
+	case "DELETE":
+		networkingHandlers.CloseConnection(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// handleNetworkingSend handles message sending requests
+func (s *APIServer) handleNetworkingSend(w http.ResponseWriter, r *http.Request) {
+	if s.hpNetworking == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "High-Performance Networking not available")
+		return
+	}
+
+	networkingHandlers := NewNetworkingHandlers(s.hpNetworking, s.logger)
+	networkingHandlers.SendMessage(w, r)
+}
+
+// handleNetworkingReceive handles message receiving requests
+func (s *APIServer) handleNetworkingReceive(w http.ResponseWriter, r *http.Request) {
+	if s.hpNetworking == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "High-Performance Networking not available")
+		return
+	}
+
+	networkingHandlers := NewNetworkingHandlers(s.hpNetworking, s.logger)
+	networkingHandlers.ReceiveMessage(w, r)
+}
+
+// handleNetworkingStatus handles networking status requests
+func (s *APIServer) handleNetworkingStatus(w http.ResponseWriter, r *http.Request) {
+	if s.hpNetworking == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "High-Performance Networking not available")
+		return
+	}
+
+	networkingHandlers := NewNetworkingHandlers(s.hpNetworking, s.logger)
+	networkingHandlers.GetStatus(w, r)
+}
+
+// Real-Time Dashboard handlers
+
+// handleDashboardMetrics handles dashboard metrics requests
+func (s *APIServer) handleDashboardMetrics(w http.ResponseWriter, r *http.Request) {
+	if s.realtimeDashboard == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Real-Time Dashboard not available")
+		return
+	}
+
+	dashboardHandlers := NewDashboardHandlers(s.realtimeDashboard, s.logger)
+	dashboardHandlers.GetLiveMetrics(w, r)
+}
+
+// handleDashboardAlerts handles dashboard alerts requests
+func (s *APIServer) handleDashboardAlerts(w http.ResponseWriter, r *http.Request) {
+	if s.realtimeDashboard == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Real-Time Dashboard not available")
+		return
+	}
+
+	dashboardHandlers := NewDashboardHandlers(s.realtimeDashboard, s.logger)
+	dashboardHandlers.GetAlerts(w, r)
+}
+
+// handleDashboardAcknowledgeAlert handles alert acknowledgment requests
+func (s *APIServer) handleDashboardAcknowledgeAlert(w http.ResponseWriter, r *http.Request) {
+	if s.realtimeDashboard == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Real-Time Dashboard not available")
+		return
+	}
+
+	dashboardHandlers := NewDashboardHandlers(s.realtimeDashboard, s.logger)
+	dashboardHandlers.AcknowledgeAlert(w, r)
+}
+
+// handleDashboardResolveAlert handles alert resolution requests
+func (s *APIServer) handleDashboardResolveAlert(w http.ResponseWriter, r *http.Request) {
+	if s.realtimeDashboard == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Real-Time Dashboard not available")
+		return
+	}
+
+	dashboardHandlers := NewDashboardHandlers(s.realtimeDashboard, s.logger)
+	dashboardHandlers.ResolveAlert(w, r)
+}
+
+// handleDashboardSessions handles session creation requests
+func (s *APIServer) handleDashboardSessions(w http.ResponseWriter, r *http.Request) {
+	if s.realtimeDashboard == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Real-Time Dashboard not available")
+		return
+	}
+
+	dashboardHandlers := NewDashboardHandlers(s.realtimeDashboard, s.logger)
+	dashboardHandlers.CreateSession(w, r)
+}
+
+// handleDashboardSession handles session management requests
+func (s *APIServer) handleDashboardSession(w http.ResponseWriter, r *http.Request) {
+	if s.realtimeDashboard == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Real-Time Dashboard not available")
+		return
+	}
+
+	dashboardHandlers := NewDashboardHandlers(s.realtimeDashboard, s.logger)
+
+	switch r.Method {
+	case "GET":
+		dashboardHandlers.GetSession(w, r)
+	case "PUT":
+		dashboardHandlers.UpdateSession(w, r)
+	case "DELETE":
+		dashboardHandlers.CloseSession(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// handleDashboardWidgets handles widgets requests
+func (s *APIServer) handleDashboardWidgets(w http.ResponseWriter, r *http.Request) {
+	if s.realtimeDashboard == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Real-Time Dashboard not available")
+		return
+	}
+
+	dashboardHandlers := NewDashboardHandlers(s.realtimeDashboard, s.logger)
+	dashboardHandlers.GetWidgets(w, r)
+}
+
+// handleDashboardLayouts handles layouts requests
+func (s *APIServer) handleDashboardLayouts(w http.ResponseWriter, r *http.Request) {
+	if s.realtimeDashboard == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Real-Time Dashboard not available")
+		return
+	}
+
+	dashboardHandlers := NewDashboardHandlers(s.realtimeDashboard, s.logger)
+	dashboardHandlers.GetLayouts(w, r)
+}
+
+// handleDashboardStatus handles dashboard status requests
+func (s *APIServer) handleDashboardStatus(w http.ResponseWriter, r *http.Request) {
+	if s.realtimeDashboard == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Real-Time Dashboard not available")
+		return
+	}
+
+	dashboardHandlers := NewDashboardHandlers(s.realtimeDashboard, s.logger)
+	dashboardHandlers.GetStatus(w, r)
+}
+
+// Testing & Simulation Framework handlers
+
+// handleTestingTests handles test execution and listing requests
+func (s *APIServer) handleTestingTests(w http.ResponseWriter, r *http.Request) {
+	if s.testingFramework == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Testing Framework not available")
+		return
+	}
+
+	testingHandlers := NewHFTTestingHandlers(s.testingFramework, s.logger)
+
+	switch r.Method {
+	case "GET":
+		testingHandlers.GetTestResults(w, r)
+	case "POST":
+		testingHandlers.RunTest(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// handleTestingTest handles single test requests
+func (s *APIServer) handleTestingTest(w http.ResponseWriter, r *http.Request) {
+	if s.testingFramework == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Testing Framework not available")
+		return
+	}
+
+	// For now, redirect to test results
+	testingHandlers := NewHFTTestingHandlers(s.testingFramework, s.logger)
+	testingHandlers.GetTestResults(w, r)
+}
+
+// handleTestingSimulations handles simulation execution and listing requests
+func (s *APIServer) handleTestingSimulations(w http.ResponseWriter, r *http.Request) {
+	if s.testingFramework == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Testing Framework not available")
+		return
+	}
+
+	testingHandlers := NewHFTTestingHandlers(s.testingFramework, s.logger)
+
+	switch r.Method {
+	case "GET":
+		testingHandlers.GetSimulations(w, r)
+	case "POST":
+		testingHandlers.RunSimulation(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// handleTestingSimulation handles single simulation requests
+func (s *APIServer) handleTestingSimulation(w http.ResponseWriter, r *http.Request) {
+	if s.testingFramework == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Testing Framework not available")
+		return
+	}
+
+	testingHandlers := NewHFTTestingHandlers(s.testingFramework, s.logger)
+	testingHandlers.GetSimulation(w, r)
+}
+
+// handleTestingEnvironments handles test environment requests
+func (s *APIServer) handleTestingEnvironments(w http.ResponseWriter, r *http.Request) {
+	if s.testingFramework == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Testing Framework not available")
+		return
+	}
+
+	testingHandlers := NewHFTTestingHandlers(s.testingFramework, s.logger)
+
+	switch r.Method {
+	case "GET":
+		testingHandlers.GetEnvironments(w, r)
+	case "POST":
+		testingHandlers.CreateEnvironment(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// handleTestingEnvironment handles single environment requests
+func (s *APIServer) handleTestingEnvironment(w http.ResponseWriter, r *http.Request) {
+	if s.testingFramework == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Testing Framework not available")
+		return
+	}
+
+	testingHandlers := NewHFTTestingHandlers(s.testingFramework, s.logger)
+	testingHandlers.GetEnvironment(w, r)
+}
+
+// handleTestingResults handles test results requests
+func (s *APIServer) handleTestingResults(w http.ResponseWriter, r *http.Request) {
+	if s.testingFramework == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Testing Framework not available")
+		return
+	}
+
+	testingHandlers := NewHFTTestingHandlers(s.testingFramework, s.logger)
+	testingHandlers.GetTestResults(w, r)
+}
+
+// handleTestingStatus handles testing framework status requests
+func (s *APIServer) handleTestingStatus(w http.ResponseWriter, r *http.Request) {
+	if s.testingFramework == nil {
+		s.sendError(w, r, http.StatusServiceUnavailable, "Testing Framework not available")
+		return
+	}
+
+	testingHandlers := NewHFTTestingHandlers(s.testingFramework, s.logger)
+	testingHandlers.GetStatus(w, r)
+}
